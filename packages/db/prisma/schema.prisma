@@ -1,0 +1,328 @@
+// Wine Club SaaS Database Schema
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===== User & Authentication =====
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  image     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  businesses BusinessUser[]
+  auditLogs  AuditLog[]
+  Consumer   Consumer?
+
+  @@map("users")
+}
+
+// ===== Business (Tenant) =====
+model Business {
+  id              String   @id @default(cuid())
+  name            String
+  slug            String   @unique
+  logoUrl         String?
+  country         String   @default("US")
+  currency        String   @default("USD")
+  timeZone        String   @default("America/New_York")
+  stripeAccountId String?  @unique
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  users           BusinessUser[]
+  locations       Location[]
+  membershipPlans MembershipPlan[]
+  members         Member[]
+  transactions    Transaction[]
+  payoutSummaries PayoutSummary[]
+  auditLogs       AuditLog[]
+
+  @@index([slug])
+  @@map("businesses")
+}
+
+// ===== Business User (Join Table with Role) =====
+model BusinessUser {
+  id         String   @id @default(cuid())
+  userId     String
+  businessId String
+  role       Role     @default(STAFF)
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, businessId])
+  @@index([businessId])
+  @@index([userId])
+  @@map("business_users")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  STAFF
+}
+
+// ===== Location (Optional for v1) =====
+model Location {
+  id         String   @id @default(cuid())
+  businessId String
+  name       String
+  address1   String?
+  address2   String?
+  city       String?
+  state      String?
+  postalCode String?
+  country    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@map("locations")
+}
+
+// ===== Membership Plans =====
+model MembershipPlan {
+  id              String     @id @default(cuid())
+  businessId      String
+  name            String
+  description     String?
+  status          PlanStatus @default(ACTIVE)
+  benefits        Json?
+  stripeProductId String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  business      Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  prices        Price[]
+  subscriptions Subscription[]
+
+  @@index([businessId])
+  @@index([status])
+  @@map("membership_plans")
+}
+
+enum PlanStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+// ===== Price =====
+model Price {
+  id               String   @id @default(cuid())
+  membershipPlanId String
+  nickname         String?
+  interval         Interval
+  unitAmount       Int // cents
+  currency         String   @default("USD")
+  trialDays        Int?
+  stripePriceId    String?
+  isDefault        Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  membershipPlan MembershipPlan @relation(fields: [membershipPlanId], references: [id], onDelete: Cascade)
+  subscriptions  Subscription[]
+
+  @@index([membershipPlanId])
+  @@index([stripePriceId])
+  @@map("prices")
+}
+
+enum Interval {
+  month
+  year
+}
+
+// ===== Consumer (End User / Member) =====
+model Consumer {
+  id        String   @id @default(cuid())
+  userId    String?  @unique
+  email     String   @unique
+  name      String?
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user           User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  members        Member[]
+  paymentMethods PaymentMethod[]
+  transactions   Transaction[]
+
+  @@index([email])
+  @@map("consumers")
+}
+
+// ===== Member (Business-Consumer relationship) =====
+model Member {
+  id         String       @id @default(cuid())
+  businessId String
+  consumerId String
+  status     MemberStatus @default(ACTIVE)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  business      Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  consumer      Consumer       @relation(fields: [consumerId], references: [id], onDelete: Cascade)
+  subscriptions Subscription[]
+
+  @@unique([businessId, consumerId])
+  @@index([businessId])
+  @@index([consumerId])
+  @@index([status])
+  @@map("members")
+}
+
+enum MemberStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+// ===== Subscription =====
+model Subscription {
+  id                   String             @id @default(cuid())
+  memberId             String
+  membershipPlanId     String
+  priceId              String
+  stripeSubscriptionId String             @unique
+  currentPeriodEnd     DateTime
+  status               SubscriptionStatus
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  member         Member         @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  membershipPlan MembershipPlan @relation(fields: [membershipPlanId], references: [id])
+  price          Price          @relation(fields: [priceId], references: [id])
+  transactions   Transaction[]
+
+  @@index([memberId])
+  @@index([stripeSubscriptionId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+enum SubscriptionStatus {
+  active
+  trialing
+  past_due
+  canceled
+  unpaid
+  incomplete
+  incomplete_expired
+  paused
+}
+
+// ===== Payment Method =====
+model PaymentMethod {
+  id                     String   @id @default(cuid())
+  consumerId             String
+  stripePaymentMethodId  String   @unique
+  brand                  String?
+  last4                  String?
+  expMonth               Int?
+  expYear                Int?
+  isDefault              Boolean  @default(false)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  consumer Consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade)
+
+  @@index([consumerId])
+  @@map("payment_methods")
+}
+
+// ===== Transaction =====
+model Transaction {
+  id                     String          @id @default(cuid())
+  businessId             String
+  consumerId             String
+  subscriptionId         String?
+  amount                 Int // cents
+  currency               String
+  type                   TransactionType
+  stripePaymentIntentId  String?
+  stripeChargeId         String?
+  createdAt              DateTime        @default(now())
+
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  consumer     Consumer      @relation(fields: [consumerId], references: [id], onDelete: Cascade)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@index([businessId])
+  @@index([consumerId])
+  @@index([subscriptionId])
+  @@index([createdAt])
+  @@map("transactions")
+}
+
+enum TransactionType {
+  CHARGE
+  REFUND
+  PAYOUT_FEE
+}
+
+// ===== Payout Summary =====
+model PayoutSummary {
+  id          String   @id @default(cuid())
+  businessId  String
+  periodStart DateTime
+  periodEnd   DateTime
+  gross       Int // cents
+  fees        Int // cents
+  net         Int // cents
+  createdAt   DateTime @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([periodStart, periodEnd])
+  @@map("payout_summaries")
+}
+
+// ===== Webhook Event =====
+model WebhookEvent {
+  id              String   @id @default(cuid())
+  type            String
+  receivedAt      DateTime @default(now())
+  body            Json
+  signatureValid  Boolean  @default(false)
+  accountId       String?
+  processed       Boolean  @default(false)
+  processingError String?
+
+  @@index([type])
+  @@index([accountId])
+  @@index([receivedAt])
+  @@map("webhook_events")
+}
+
+// ===== Audit Log =====
+model AuditLog {
+  id           String   @id @default(cuid())
+  businessId   String
+  actorUserId  String?
+  type         String
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  actor    User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([businessId])
+  @@index([actorUserId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+

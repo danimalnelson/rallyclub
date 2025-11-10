@@ -1,0 +1,18 @@
+# Node modules
+node_modules/
+.pnp/
+.pnp.js
+
+# Build outputs
+.next/
+out/
+dist/
+build/
+
+# Testing
+coverage/
+
+# Misc
+.DS_Store
+*.log
+
