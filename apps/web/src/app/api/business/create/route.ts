@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
       data: {
         name: data.name,
         slug: data.slug,
+        status: "CREATED",
         country: data.country,
         currency: data.currency,
         timeZone: data.timeZone,

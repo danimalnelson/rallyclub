@@ -72,6 +72,7 @@ model Business {
   id                   String   @id @default(cuid())
   name                 String
   slug                 String   @unique
+  status               BusinessStatus @default(CREATED)
   logoUrl              String?
   description          String?
   website              String?
@@ -96,6 +97,13 @@ model Business {
 
   @@index([slug])
   @@map("businesses")
+}
+
+enum BusinessStatus {
+  CREATED
+  ONBOARDING_PENDING
+  ONBOARDING_COMPLETE
+  SUSPENDED
 }
 
 // ===== Business User (Join Table with Role) =====

@@ -45,6 +45,14 @@ export default async function BusinessDashboardPage({
     notFound();
   }
 
+  if (business.status !== "ONBOARDING_COMPLETE") {
+    if (!business.stripeAccountId) {
+      redirect(`/onboarding/connect?businessId=${business.id}`);
+    }
+
+    redirect(`/onboarding/success?businessId=${business.id}`);
+  }
+
   // Get active members
   const activeMembers = await prisma.member.count({
     where: {

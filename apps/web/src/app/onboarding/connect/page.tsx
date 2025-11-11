@@ -12,6 +12,7 @@ function ConnectContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [businessName, setBusinessName] = useState("");
+  const [status, setStatus] = useState<"CREATED" | "ONBOARDING_PENDING" | "ONBOARDING_COMPLETE" | "SUSPENDED" | null>(null);
 
   useEffect(() => {
     if (!businessId) {
@@ -25,6 +26,12 @@ function ConnectContent() {
       .then(data => {
         if (data.name) {
           setBusinessName(data.name);
+        }
+        if (data.status) {
+          setStatus(data.status);
+          if (data.status === "ONBOARDING_COMPLETE") {
+            router.replace(`/onboarding/success?businessId=${businessId}`);
+          }
         }
       })
       .catch(err => {
@@ -144,6 +151,12 @@ function ConnectContent() {
             {error && (
               <div className="p-3 bg-destructive/10 text-destructive rounded-md text-sm">
                 {error}
+              </div>
+            )}
+
+            {status === "ONBOARDING_PENDING" && (
+              <div className="p-3 bg-primary/10 text-primary rounded-md text-sm">
+                We sent you to Stripe Connect earlier. You can continue onboarding or reconnect if needed.
               </div>
             )}
 

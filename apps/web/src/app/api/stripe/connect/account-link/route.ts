@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@wine-club/db";
+import { prisma, Prisma } from "@wine-club/db";
 import { stripe, createAccountLink } from "@wine-club/lib";
 import { z } from "zod";
 
@@ -58,10 +58,24 @@ export async function POST(req: NextRequest) {
 
       accountId = account.id;
 
-      // Save to database
+      const updateData: Prisma.BusinessUpdateInput = {
+        stripeAccountId: accountId,
+      };
+
+      if (business.status !== "ONBOARDING_COMPLETE") {
+        updateData.status = "ONBOARDING_PENDING";
+      }
+
       await prisma.business.update({
         where: { id: business.id },
-        data: { stripeAccountId: accountId },
+        data: updateData,
+      });
+    } else if (business.status !== "ONBOARDING_COMPLETE") {
+      await prisma.business.update({
+        where: { id: business.id },
+        data: {
+          status: "ONBOARDING_PENDING",
+        },
       });
     }
 

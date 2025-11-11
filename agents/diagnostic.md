@@ -1,42 +1,38 @@
-# Diagnostic Directive — Auth Flow
+# Diagnostic Playbook — Auth Flow
 
-## Objective
-Investigate and fix issues with the NextAuth `/auth/signin` route in the deployed Vercel environment.
+Use this checklist when authentication breaks unexpectedly and you need rapid triage before running the full mission.
 
-## Steps
-1. **Run local and build-time logs**
-   - Check Vercel logs for build/runtime errors on `auth/*` routes.
-   - Run `pnpm dev` locally and inspect any NextAuth warnings.
+## 1. Evidence Collection
+- Run `vercel logs --since 15m` and capture auth-related stack traces.
+- Start `pnpm dev`; reproduce the issue and copy console output.
+- Record browser network errors for `/api/auth/*` requests.
 
-2. **Check environment variables**
-   - Verify `NEXTAUTH_URL`, `NEXTAUTH_SECRET`, and provider credentials are defined both locally and on Vercel.
-   - Confirm `NEXTAUTH_URL` matches `https://membership-saas-1mpiqobwh-dannelson.vercel.app`.
+## 2. Environment Validation
+- Compare `.env.local`, Vercel project env, and `.env.example`.
+- Confirm `NEXTAUTH_URL`, `NEXTAUTH_SECRET`, provider keys, and `DATABASE_URL` are present and identical where required.
+- Note discrepancies for follow-up.
 
-3. **Confirm Prisma + DB connection**
-   - Ensure `DATABASE_URL` (Neon) matches what Prisma expects.
-   - Run `pnpm prisma db pull` and `pnpm prisma migrate status` to confirm connectivity.
+## 3. Database Connectivity
+- Execute `pnpm prisma db pull` to confirm credentials.
+- Run `pnpm prisma migrate status` to verify migrations.
+- Inspect Prisma logs for connection failures or schema drift.
 
-4. **Check Adapter**
-   - Ensure NextAuth is using the correct Prisma adapter in `/lib/auth.ts` or `/pages/api/auth/[...nextauth].ts`.
+## 4. Adapter & Configuration
+- Review `/lib/auth.ts` or `app/api/auth/[...nextauth]/route.ts` for adapter wiring.
+- Ensure callbacks, session strategy, and authorized redirects align with environment.
+- Check that secret-dependent code branches handle missing vars gracefully.
 
-5. **Browser-side**
-   - Open dev console on `/auth/signin`.
-   - Note any 500/404 network calls to `api/auth`.
+## 5. Browser Flow
+- Hit `/auth/signin` in a private window.
+- Inspect cookies, redirects, and any blocked third-party storage.
+- Capture screenshots or HAR files if anomalies appear.
 
-6. **Remediation Loop**
-   - For each failing area:
-     - Propose or apply a patch (code, env, config).
-     - Re-run build/test.
-     - Verify sign-in success locally.
-   - Repeat until the page loads correctly.
+## 6. Remediation Prep
+- Summarize findings: root cause hypothesis, impacted components, suspected fix.
+- Decide whether to escalate to `mission.auth.md`.
+- Update `/logs/auth-progress.md` with collected evidence before making changes.
 
-## Rules
-- Always check for missing env vars before code edits.
-- Do not hardcode secrets.
-- Document fixes and update `.env.example`.
-
-## Output
-A concise summary:
-- Root cause
-- Fix applied
-- Verification result
+## Safety
+- Do not paste secrets into logs or summaries.
+- Pause and confirm before modifying production env vars.
+- If diagnosis implicates multiple subsystems, escalate to a human or broader mission.

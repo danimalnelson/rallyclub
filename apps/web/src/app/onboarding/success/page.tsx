@@ -11,6 +11,8 @@ function SuccessContent() {
   
   const [businessName, setBusinessName] = useState("");
   const [businessSlug, setBusinessSlug] = useState("");
+  const [status, setStatus] = useState<"CREATED" | "ONBOARDING_PENDING" | "ONBOARDING_COMPLETE" | "SUSPENDED" | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   useEffect(() => {
     if (!businessId) {
@@ -19,17 +21,41 @@ function SuccessContent() {
     }
 
     // Fetch business details
-    fetch(`/api/business/${businessId}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.name) {
-          setBusinessName(data.name);
-          setBusinessSlug(data.slug);
-        }
-      })
-      .catch(err => {
-        console.error("Error fetching business:", err);
-      });
+    let interval: ReturnType<typeof setInterval>;
+
+    const fetchBusiness = () => {
+      fetch(`/api/business/${businessId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.name) {
+            setBusinessName(data.name);
+            setBusinessSlug(data.slug);
+          }
+          if (data.status) {
+            setStatus(data.status);
+            if (data.status === "ONBOARDING_COMPLETE") {
+              setIsVerifying(false);
+              if (interval) {
+                clearInterval(interval);
+              }
+            } else {
+              setIsVerifying(true);
+            }
+          }
+        })
+        .catch(err => {
+          console.error("Error fetching business:", err);
+        });
+    };
+
+    fetchBusiness();
+    interval = setInterval(fetchBusiness, 5000);
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
   }, [businessId, router]);
 
   return (
@@ -87,6 +113,16 @@ function SuccessContent() {
             <div className="bg-muted/50 border rounded-lg p-6 space-y-4">
               <h4 className="font-semibold">What&apos;s Next?</h4>
               
+              {isVerifying && (
+                <div className="flex items-start gap-3 rounded-md border border-dashed border-amber-400 bg-amber-50 p-3 text-sm text-amber-700">
+                  <span className="mt-1">⏳</span>
+                  <p>
+                    We&apos;re waiting for Stripe to confirm your account. This usually takes a few seconds.
+                    Once complete, we&apos;ll unlock your dashboard automatically.
+                  </p>
+                </div>
+              )}
+
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
                   <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5 text-sm">
@@ -140,8 +176,9 @@ function SuccessContent() {
                 onClick={() => router.push(`/app/${businessId}`)}
                 size="lg"
                 className="min-w-64"
+                disabled={status !== "ONBOARDING_COMPLETE"}
               >
-                Go to Dashboard →
+                {status === "ONBOARDING_COMPLETE" ? "Go to Dashboard →" : "Finishing Stripe Setup..."}
               </Button>
             </div>
           </CardContent>

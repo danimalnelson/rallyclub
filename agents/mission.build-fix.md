@@ -1,53 +1,49 @@
-# Mission Objective — Autonomous Build Recovery
+# Mission — Build Recovery
 
-## Goal
-Continuously monitor and repair build failures (local or Vercel) until a successful deployment occurs.
+## Trigger
+- Activate when `pnpm build`, CI, or Vercel deployments fail.
+- Resume normal missions once builds pass locally and on Vercel.
 
-## Tasks
-1. **Detect Build Errors**
-   - Parse the latest Vercel build logs (via `vercel logs --since 30m`).
-   - Identify the error type: missing env var, import/path issue, TS build error, Prisma schema error, etc.
-   - Map each error to the responsible file or config.
+## Objective
+Restore a clean, deployable build pipeline and publish a healthy production deployment.
 
-2. **Diagnose & Fix**
-   - Apply a patch or configuration fix.
-   - Re-run a local build using:
-     ```bash
-     bash scripts/run-full-tests.sh
-     pnpm build
-     ```
-   - If build succeeds locally, trigger a new Vercel deploy:
-     ```bash
-     vercel --prod --confirm
-     ```
+## Prerequisites
+- Access to Vercel CLI (`vercel`) and project credentials.
+- Local environment variables configured; secrets never hardcoded.
+- Logging destinations ready (`/logs/build-progress.md`, `/logs/build-patches.md`).
 
-3. **Verify Success**
-   - Wait for deployment logs to confirm `state: READY`.
-   - Run health check:
-     ```bash
-     curl -I https://YOUR_APP_URL.vercel.app
-     ```
-   - Log results to `/logs/build-progress.md`.
+## Operating Loop
+1. **Capture Error**
+   - Fetch recent logs: `vercel logs --since 30m`.
+   - Record the failure signature in `/logs/build-patches.md`.
+2. **Diagnose**
+   - Categorize the issue (env var, import, schema, TS, etc.).
+   - Pinpoint responsible files/configuration.
+3. **Fix**
+   - Apply minimal patches to resolve the root cause.
+   - Run locally:
+     - `bash scripts/run-full-tests.sh`
+     - `pnpm build`
+4. **Redeploy**
+   - When local tests + build succeed, run `vercel --prod --confirm`.
+   - Wait for deployment to reach `state: READY`.
+5. **Verify**
+   - Health check: `curl -I https://YOUR_APP_URL.vercel.app`.
+   - Log outcomes and links in `/logs/build-progress.md`.
+6. **Iterate**
+   - If any step fails, document the attempt, update the diagnosis, and repeat from step 1.
 
-4. **Iterate**
-   - If build fails again:
-     - Log the error snippet.
-     - Apply another patch.
-     - Repeat steps 1–3.
+## Verification
+- Local tests and builds succeed without errors.
+- Vercel deployment status READY.
+- Health check returns HTTP 200.
 
-5. **Exit**
-   - Stop only when:
-     - Vercel deployment succeeds (`state: READY`)
-     - and site responds with HTTP 200.
-   - Write a final summary of fixes in `/logs/build-progress.md`.
+## Exit Criteria
+- Latest production build healthy with documented summary in `/logs/build-progress.md`.
+- No unresolved build errors or pending follow-ups.
 
-## Safety Rules
-- Never expose secrets from `.env`.
-- For env var errors, request verification before creating defaults.
-- Prefer minimal file edits.
-- Keep a patch log in `/logs/build-patches.md`.
-
-## Execution Safety
-Do not run commands that pipe or filter long-running output
-(e.g., using `| tail`, `| grep`, or `| head`) during autonomous runs.
-Instead, redirect output to a log file and read it from there.
+## Safety
+- Never expose secrets; reference `process.env.*` only.
+- Confirm with a human before introducing placeholder env values.
+- Prefer reversible patches and maintain a chronological log of changes.
+- Avoid piping long-running commands (`| tail`, `| grep`, `| head`); redirect to a log file if filtering is required.

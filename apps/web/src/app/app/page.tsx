@@ -43,6 +43,20 @@ export default async function AppHomePage() {
     redirect("/onboarding");
   }
 
+  const onboardingBusiness = businesses.find(
+    (business: any) => business.status !== "ONBOARDING_COMPLETE"
+  );
+
+  if (onboardingBusiness) {
+    if (!onboardingBusiness.stripeAccountId) {
+      redirect(`/onboarding/connect?businessId=${onboardingBusiness.id}`);
+    }
+
+    if (onboardingBusiness.status !== "ONBOARDING_COMPLETE") {
+      redirect(`/onboarding/success?businessId=${onboardingBusiness.id}`);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
@@ -96,8 +110,16 @@ export default async function AppHomePage() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Status</span>
-                        <span className={`font-medium ${business.stripeAccountId ? 'text-green-600' : 'text-yellow-600'}`}>
-                          {business.stripeAccountId ? 'Connected' : 'Setup Required'}
+                        <span
+                          className={`font-medium ${
+                            business.status === "ONBOARDING_COMPLETE"
+                              ? "text-green-600"
+                              : "text-yellow-600"
+                          }`}
+                        >
+                          {business.status === "ONBOARDING_COMPLETE"
+                            ? "Connected"
+                            : "Setup Required"}
                         </span>
                       </div>
                     </div>

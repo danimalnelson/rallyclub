@@ -85,6 +85,10 @@ export async function POST(req: NextRequest) {
 
 async function handleWebhookEvent(event: Stripe.Event, accountId?: string) {
   switch (event.type) {
+    case "account.updated":
+      await handleAccountUpdated(event.data.object as Stripe.Account);
+      break;
+
     case "checkout.session.completed":
       await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session, accountId);
       break;
@@ -458,6 +462,58 @@ async function handleChargeRefunded(charge: Stripe.Charge, accountId?: string) {
         currency: charge.currency,
         businessName: transaction.business.name,
       }),
+    });
+  }
+}
+
+async function handleAccountUpdated(account: Stripe.Account) {
+  if (!account.id) {
+    return;
+  }
+
+  const business = await prisma.business.findUnique({
+    where: { stripeAccountId: account.id },
+    include: {
+      users: {
+        take: 1,
+      },
+    },
+  });
+
+  if (!business) {
+    return;
+  }
+
+  const isComplete = Boolean(account.details_submitted && account.charges_enabled);
+  const updateData: any = {
+    contactEmail: account.business_profile?.support_email || account.email || undefined,
+    contactPhone: account.business_profile?.support_phone || undefined,
+    website: account.business_profile?.url || undefined,
+  };
+
+  if (isComplete && business.status !== "ONBOARDING_COMPLETE") {
+    updateData.status = "ONBOARDING_COMPLETE";
+  } else if (!isComplete && business.status === "CREATED") {
+    updateData.status = "ONBOARDING_PENDING";
+  }
+
+  await prisma.business.update({
+    where: { id: business.id },
+    data: updateData,
+  });
+
+  if (isComplete && business.users.length > 0) {
+    await prisma.auditLog.create({
+      data: {
+        businessId: business.id,
+        actorUserId: business.users[0]?.userId ?? undefined,
+        type: "STRIPE_ONBOARDING_COMPLETE",
+        metadata: {
+          accountId: account.id,
+          charges_enabled: account.charges_enabled,
+          details_submitted: account.details_submitted,
+        },
+      },
     });
   }
 }

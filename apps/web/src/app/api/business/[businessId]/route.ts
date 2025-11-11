@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@wine-club/db";
 
 export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ businessId: string }> }
+  _req: Request,
+  context: { params: Promise<{ businessId: string }> }
 ) {
   const session = await getServerSession(authOptions);
 
@@ -13,7 +13,7 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { businessId } = await params;
+  const { businessId } = await context.params;
   const business = await prisma.business.findFirst({
     where: {
       id: businessId,
