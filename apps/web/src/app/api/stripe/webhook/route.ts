@@ -3,6 +3,13 @@ import { headers } from "next/headers";
 import Stripe from "stripe";
 import { prisma } from "@wine-club/db";
 import { verifyWebhookSignature } from "@wine-club/lib";
+import {
+  sendEmail,
+  subscriptionConfirmationEmail,
+  paymentFailedEmail,
+  refundProcessedEmail,
+  subscriptionCancelledEmail,
+} from "@wine-club/lib/email";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2023-10-16",
@@ -97,6 +104,10 @@ async function handleWebhookEvent(event: Stripe.Event, accountId?: string) {
 
     case "invoice.payment_failed":
       await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice, accountId);
+      break;
+
+    case "charge.refunded":
+      await handleChargeRefunded(event.data.object as Stripe.Charge, accountId);
       break;
 
     default:
@@ -242,7 +253,15 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription, accou
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription, accountId?: string) {
   const existingSub = await prisma.subscription.findUnique({
     where: { stripeSubscriptionId: subscription.id },
-    include: { member: true },
+    include: {
+      member: {
+        include: {
+          consumer: true,
+          business: true,
+        },
+      },
+      membershipPlan: true,
+    },
   });
 
   if (!existingSub) {
@@ -262,6 +281,21 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription, acco
       status: "CANCELED",
     },
   });
+
+  // Send cancellation email
+  if (existingSub.member.consumer.email) {
+    const cancellationDate = new Date(subscription.current_period_end * 1000);
+    await sendEmail({
+      to: existingSub.member.consumer.email,
+      subject: `Subscription Cancelled - ${existingSub.member.business.name}`,
+      html: subscriptionCancelledEmail({
+        customerName: existingSub.member.consumer.name || "Valued Member",
+        planName: existingSub.membershipPlan.name,
+        cancellationDate: cancellationDate.toLocaleDateString(),
+        businessName: existingSub.member.business.name,
+      }),
+    });
+  }
 }
 
 async function handleInvoicePaid(invoice: Stripe.Invoice, accountId?: string) {
@@ -275,7 +309,15 @@ async function handleInvoicePaid(invoice: Stripe.Invoice, accountId?: string) {
 
   const subscription = await prisma.subscription.findUnique({
     where: { stripeSubscriptionId: subscriptionId },
-    include: { member: true },
+    include: {
+      member: {
+        include: {
+          consumer: true,
+        },
+      },
+      membershipPlan: true,
+      price: true,
+    },
   });
 
   if (!subscription) {
@@ -295,6 +337,29 @@ async function handleInvoicePaid(invoice: Stripe.Invoice, accountId?: string) {
       stripeChargeId: invoice.charge as string | null,
     },
   });
+
+  // Send confirmation email on successful payment
+  // Note: More sophisticated logic could check if this is the first invoice
+  if (subscription.member.consumer.email && invoice.billing_reason === "subscription_create") {
+    const business = await prisma.business.findUnique({
+      where: { id: subscription.member.businessId },
+    });
+
+    if (business) {
+      await sendEmail({
+        to: subscription.member.consumer.email,
+        subject: `Welcome to ${business.name}!`,
+        html: subscriptionConfirmationEmail({
+          customerName: subscription.member.consumer.name || "Valued Member",
+          planName: subscription.membershipPlan.name,
+          amount: invoice.amount_paid,
+          currency: invoice.currency,
+          interval: subscription.price.interval,
+          businessName: business.name,
+        }),
+      });
+    }
+  }
 }
 
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice, accountId?: string) {
@@ -308,7 +373,14 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice, accountId?: s
 
   const subscription = await prisma.subscription.findUnique({
     where: { stripeSubscriptionId: subscriptionId },
-    include: { member: true },
+    include: {
+      member: {
+        include: {
+          consumer: true,
+        },
+      },
+      membershipPlan: true,
+    },
   });
 
   if (!subscription) {
@@ -322,6 +394,72 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice, accountId?: s
       status: "PAST_DUE",
     },
   });
+
+  // Send payment failed email
+  const business = await prisma.business.findUnique({
+    where: { id: subscription.member.businessId },
+  });
+
+  if (business && subscription.member.consumer.email) {
+    const publicAppUrl = process.env.PUBLIC_APP_URL || "http://localhost:3000";
+    await sendEmail({
+      to: subscription.member.consumer.email,
+      subject: `Payment Update Required - ${business.name}`,
+      html: paymentFailedEmail({
+        customerName: subscription.member.consumer.name || "Valued Member",
+        planName: subscription.membershipPlan.name,
+        amount: invoice.amount_due,
+        currency: invoice.currency,
+        businessName: business.name,
+        portalUrl: `${publicAppUrl}/${business.slug}/portal`,
+      }),
+    });
+  }
+}
+
+async function handleChargeRefunded(charge: Stripe.Charge, accountId?: string) {
+  // Find the transaction
+  const transaction = await prisma.transaction.findFirst({
+    where: {
+      stripeChargeId: charge.id,
+    },
+    include: {
+      consumer: true,
+      business: true,
+    },
+  });
+
+  if (!transaction) {
+    console.log("Transaction not found for refunded charge:", charge.id);
+    return;
+  }
+
+  // Create refund transaction
+  await prisma.transaction.create({
+    data: {
+      businessId: transaction.businessId,
+      consumerId: transaction.consumerId,
+      subscriptionId: transaction.subscriptionId,
+      amount: charge.amount_refunded,
+      currency: charge.currency,
+      type: "REFUND",
+      stripeChargeId: charge.id,
+    },
+  });
+
+  // Send refund email
+  if (transaction.consumer.email) {
+    await sendEmail({
+      to: transaction.consumer.email,
+      subject: `Refund Processed - ${transaction.business.name}`,
+      html: refundProcessedEmail({
+        customerName: transaction.consumer.name || "Valued Customer",
+        amount: charge.amount_refunded,
+        currency: charge.currency,
+        businessName: transaction.business.name,
+      }),
+    });
+  }
 }
 
 function mapSubscriptionStatusToMemberStatus(status: string): "ACTIVE" | "PAST_DUE" | "CANCELED" {
