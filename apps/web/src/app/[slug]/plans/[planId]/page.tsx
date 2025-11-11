@@ -174,7 +174,7 @@ export default function PlanDetailPage() {
               <div>
                 <h3 className="font-semibold mb-3">Choose Your Plan:</h3>
                 <div className="space-y-2">
-                  {plan.prices.map((price) => (
+                  {plan.prices.map((price: any) => (
                     <label
                       key={price.id}
                       className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition ${

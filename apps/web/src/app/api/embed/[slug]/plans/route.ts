@@ -32,12 +32,12 @@ export async function GET(
         slug: business.slug,
         logoUrl: business.logoUrl,
       },
-      plans: business.membershipPlans.map((plan) => ({
+      plans: business.membershipPlans.map((plan: any) => ({
         id: plan.id,
         name: plan.name,
         description: plan.description,
         benefits: plan.benefits,
-        prices: plan.prices.map((price) => ({
+        prices: plan.prices.map((price: any) => ({
           id: price.id,
           nickname: price.nickname,
           interval: price.interval,

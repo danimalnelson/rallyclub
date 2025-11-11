@@ -115,7 +115,7 @@ export default async function PlansPage({
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {plans.map((plan) => {
+            {plans.map((plan: any) => {
               const benefits = Array.isArray(plan.benefits)
                 ? plan.benefits
                 : (plan.benefits as any)?.items || [];
@@ -146,7 +146,7 @@ export default async function PlansPage({
                         <p className="text-sm text-muted-foreground">No prices set</p>
                       ) : (
                         <div className="space-y-1">
-                          {plan.prices.map((price) => (
+                          {plan.prices.map((price: any) => (
                             <div key={price.id} className="flex justify-between text-sm">
                               <span className="text-muted-foreground">
                                 {price.interval}ly{price.isDefault && " (default)"}
