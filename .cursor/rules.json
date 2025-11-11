@@ -6,6 +6,7 @@
     "pnpm playwright test",
     "cd /Users/dan/Sites/something/apps/web",
     "grep",
+    "git log",
     "head"
   ],
   "allow_scripts": ["scripts/run-full-tests.sh"],
