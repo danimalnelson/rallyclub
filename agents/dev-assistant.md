@@ -49,3 +49,18 @@ When Cursor runs tests or builds:
 When tests pass:
 1. Summarize key improvements.
 2. Suggest the next most valuable task (MVP > UX polish > infra).
+
+---
+
+When all onboarding and authentication tests pass, load `/agents/mission.features.md` to begin autonomous feature development.
+All new features must include comprehensive tests (unit, integration, and E2E).  
+After each code or config change:
+1. Run `bash scripts/run-full-tests.sh`.
+2. If tests fail → analyze logs → patch → re-run until passing.
+3. If all tests pass → commit and push progress → append a summary to `/logs/feature-progress.md`.
+4. Move to the next feature from mission.features.md.
+
+Never push broken code or secrets.  
+Summarize progress clearly before continuing.
+
+Agent recommendation complete. Awaiting next Cursor action.
