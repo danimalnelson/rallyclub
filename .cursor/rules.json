@@ -4,15 +4,13 @@
     "pnpm build",
     "pnpm test",
     "pnpm playwright test",
-    "cd /Users/dan/Sites/something/apps/web",
-    "grep",
-    "git log",
-    "head"
+    "vercel logs",
+    "vercel --prod --confirm",
+    "git log"
   ],
   "allow_scripts": ["scripts/run-full-tests.sh"],
   "default_agents": [
     "/agents/dev-assistant.md",
-    "/agents/mission.features.md",
     "/agents/mission.build-fix.md"
   ],
   "session_timeout": 480

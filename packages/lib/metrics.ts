@@ -1,4 +1,4 @@
-import { prisma } from "@wine-club/db";
+import type { PrismaClient } from "@prisma/client";
 
 export interface BusinessMetrics {
   mrr: number; // Monthly Recurring Revenue in cents
@@ -9,6 +9,7 @@ export interface BusinessMetrics {
 }
 
 export async function calculateMetrics(
+  prisma: PrismaClient,
   businessId: string
 ): Promise<BusinessMetrics> {
   // Get active members count

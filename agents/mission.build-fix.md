@@ -46,3 +46,8 @@ Continuously monitor and repair build failures (local or Vercel) until a success
 - For env var errors, request verification before creating defaults.
 - Prefer minimal file edits.
 - Keep a patch log in `/logs/build-patches.md`.
+
+## Execution Safety
+Do not run commands that pipe or filter long-running output
+(e.g., using `| tail`, `| grep`, or `| head`) during autonomous runs.
+Instead, redirect output to a log file and read it from there.

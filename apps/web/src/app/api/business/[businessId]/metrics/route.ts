@@ -45,7 +45,7 @@ export async function GET(
     }
 
     // Calculate metrics
-    const metrics = await calculateMetrics(businessId);
+    const metrics = await calculateMetrics(prisma, businessId);
 
     // Update cache
     cache.set(cacheKey, {

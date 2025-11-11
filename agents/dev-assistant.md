@@ -67,3 +67,8 @@ Agent recommendation complete. Awaiting next Cursor action.
 
 When a Vercel build or deployment fails, load `/agents/mission.build-fix.md`
 and execute it autonomously until the build completes successfully.
+
+## Execution Safety
+Do not run commands that pipe or filter long-running output
+(e.g., using `| tail`, `| grep`, or `| head`) during autonomous runs.
+Instead, redirect output to a log file and read it from there.

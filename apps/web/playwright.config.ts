@@ -24,16 +24,18 @@ export default defineConfig({
     command: "pnpm dev",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
-    env: {
-      DATABASE_URL: process.env.DATABASE_URL,
-      NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
-      NEXTAUTH_URL: process.env.NEXTAUTH_URL,
-      STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
-      STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY,
-      STRIPE_CONNECT_CLIENT_ID: process.env.STRIPE_CONNECT_CLIENT_ID,
-      RESEND_API_KEY: process.env.RESEND_API_KEY,
-      PUBLIC_APP_URL: process.env.PUBLIC_APP_URL,
-    },
+    env: Object.fromEntries(
+      Object.entries({
+        DATABASE_URL: process.env.DATABASE_URL,
+        NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+        NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+        STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+        STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY,
+        STRIPE_CONNECT_CLIENT_ID: process.env.STRIPE_CONNECT_CLIENT_ID,
+        RESEND_API_KEY: process.env.RESEND_API_KEY,
+        PUBLIC_APP_URL: process.env.PUBLIC_APP_URL,
+      }).filter(([_, value]) => value !== undefined)
+    ) as Record<string, string>,
   },
 });
 
