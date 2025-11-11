@@ -22,13 +22,17 @@ export const authOptions: NextAuthOptions = {
       from: process.env.EMAIL_FROM || "onboarding@resend.dev",
       async sendVerificationRequest({ identifier: email, url }) {
         if (!resend) {
-          console.error("[AUTH] Resend not configured");
+          console.error("[AUTH] Resend not configured - RESEND_API_KEY missing");
           throw new Error("Email service not configured");
         }
         
+        const fromEmail = process.env.EMAIL_FROM || "onboarding@resend.dev";
+        
         try {
-          await resend.emails.send({
-            from: process.env.EMAIL_FROM || "onboarding@resend.dev",
+          console.log(`[AUTH] Attempting to send magic link to: ${email} from: ${fromEmail}`);
+          
+          const result = await resend.emails.send({
+            from: fromEmail,
             to: email,
             subject: "Sign in to Vintigo",
             html: `
@@ -40,8 +44,15 @@ export const authOptions: NextAuthOptions = {
               </div>
             `,
           });
-        } catch (error) {
-          console.error("[AUTH] Error sending email:", error);
+          
+          console.log(`[AUTH] Email sent successfully. ID: ${result.data?.id}`);
+        } catch (error: any) {
+          console.error("[AUTH] Error sending email:", {
+            message: error?.message,
+            statusCode: error?.statusCode,
+            name: error?.name,
+            error: error,
+          });
           throw error;
         }
       },

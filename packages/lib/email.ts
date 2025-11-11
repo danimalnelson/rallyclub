@@ -21,7 +21,12 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     return false;
   }
 
+  // Use EMAIL_FROM env var or default to Resend's test sender
+  const fromEmail = options.from || process.env.EMAIL_FROM || "onboarding@resend.dev";
+
   try {
+    console.log(`[EMAIL] Sending email to: ${options.to}, from: ${fromEmail}, subject: ${options.subject}`);
+    
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -29,7 +34,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: options.from || "Vintigo <noreply@vintigo.com>",
+        from: fromEmail,
         to: options.to,
         subject: options.subject,
         html: options.html,
@@ -37,13 +42,23 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error("[EMAIL] Failed to send:", error);
+      const errorText = await response.text();
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch {
+        errorData = { message: errorText };
+      }
+      console.error("[EMAIL] Failed to send:", {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData,
+      });
       return false;
     }
 
     const data = await response.json();
-    console.log("[EMAIL] Sent successfully:", data.id);
+    console.log("[EMAIL] Sent successfully. ID:", data.id);
     return true;
   } catch (error) {
     console.error("[EMAIL] Error sending email:", error);
