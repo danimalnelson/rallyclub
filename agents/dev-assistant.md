@@ -12,6 +12,8 @@ When encountering email-sending or Resend integration issues, load context from 
 
 When a user signs in with no Business record, trigger the onboarding workflow described in `/agents/mission.onboarding.md` automatically. Execute it step by step until the business dashboard is populated.
 
+When onboarding or Stripe Connect issues are detected, load context from `/agents/mission.onboarding-tests.md`.  
+Execute its autonomous loop until all onboarding tests pass and Stripe Connect functions correctly.
 
 When authentication or sign-in issues occur, switch context to `/agents/mission.auth.md` and execute it autonomously until resolved.
 

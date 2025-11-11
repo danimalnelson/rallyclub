@@ -74,13 +74,25 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ url });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Connect account link error:", error);
+    
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.errors }, { status: 400 });
+      return NextResponse.json({ 
+        error: "Invalid request: " + error.errors.map(e => e.message).join(", ")
+      }, { status: 400 });
     }
+    
+    // Handle Stripe errors
+    if (error?.type === 'StripeInvalidRequestError') {
+      return NextResponse.json(
+        { error: error.message || "Invalid Stripe request" },
+        { status: 400 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: "Failed to create account link" },
+      { error: error?.message || "Failed to create account link" },
       { status: 500 }
     );
   }

@@ -39,13 +39,16 @@ function ConnectContent() {
     setError("");
 
     try {
+      // Build full URLs for Stripe redirect
+      const baseUrl = window.location.origin;
+      
       const res = await fetch("/api/stripe/connect/account-link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           businessId,
-          refreshUrl: `/onboarding/connect?businessId=${businessId}`,
-          returnUrl: `/onboarding/success?businessId=${businessId}`,
+          refreshUrl: `${baseUrl}/onboarding/connect?businessId=${businessId}`,
+          returnUrl: `${baseUrl}/onboarding/success?businessId=${businessId}`,
         }),
       });
 
