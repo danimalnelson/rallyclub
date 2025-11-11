@@ -60,8 +60,9 @@ test-results/
 playwright-report/
 playwright/.cache/
 
-# Cursor
-.cursor/
+# Cursor (allow rules.json for agent configuration)
+.cursor/*
+!.cursor/rules.json
 
 # Sensitive files that should NEVER be committed
 **/secrets.json

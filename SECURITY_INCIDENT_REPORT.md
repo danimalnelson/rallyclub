@@ -50,7 +50,8 @@ ENV_VARIABLES_FOR_VERCEL.txt containing production secrets was accidentally comm
 
 #### 1. **Database URL (PostgreSQL)**
 - **Service:** Neon Database
-- **Format:** `postgresql://neondb_owner:npg_HzbG8vLpdW5m@ep-wild-math-adkf91q7-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require`
+- **Format:** `postgresql://neondb_owner:***REDACTED***@ep-wild-math-***...neon.tech/neondb`
+- **Exposed:** Yes (full connection string with password)
 - **Action Required:**
   1. Go to https://console.neon.tech
   2. Navigate to your project settings
@@ -61,7 +62,8 @@ ENV_VARIABLES_FOR_VERCEL.txt containing production secrets was accidentally comm
 
 #### 2. **Resend API Key**
 - **Service:** Resend (Email delivery)
-- **Format:** `re_BUMq4ERn_66iMKcRjVxsjQUjEbgdV4diN`
+- **Format:** `re_***REDACTED***`
+- **Exposed:** Yes (full API key)
 - **Action Required:**
   1. Go to https://resend.com/api-keys
   2. Delete the exposed API key
