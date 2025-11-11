@@ -68,7 +68,7 @@ export default async function BusinessDashboardPage({
     },
   });
 
-  const mrr = activeSubscriptions.reduce((sum, sub) => {
+  const mrr = activeSubscriptions.reduce((sum: number, sub: any) => {
     const monthlyAmount = sub.price.interval === "year"
       ? sub.price.unitAmount / 12
       : sub.price.unitAmount;
