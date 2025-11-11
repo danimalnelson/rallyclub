@@ -23,22 +23,18 @@ function SignInForm() {
     }
   };
 
-  const handleGoogleSignIn = () => {
-    signIn("google", { callbackUrl });
-  };
-
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Sign In</CardTitle>
-          <CardDescription>Sign in to your account to continue</CardDescription>
+          <CardDescription>Enter your email to receive a secure sign-in link</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent>
           <form onSubmit={handleEmailSignIn} className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium mb-2">
-                Email
+                Email Address
               </label>
               <input
                 id="email"
@@ -51,27 +47,12 @@ function SignInForm() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Sending link..." : "Sign in with Email"}
+              {loading ? "Sending magic link..." : "Send Magic Link"}
             </Button>
+            <p className="text-xs text-center text-muted-foreground">
+              We&apos;ll email you a secure link to sign in
+            </p>
           </form>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-            </div>
-          </div>
-
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={handleGoogleSignIn}
-          >
-            Sign in with Google
-          </Button>
         </CardContent>
       </Card>
     </div>

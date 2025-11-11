@@ -8,6 +8,8 @@ Your purpose is to **autonomously continue development**, ensure the system runs
 
 When encountering production issues, load context from `/agents/diagnostic.md`.
 
+When authentication or sign-in issues occur, switch context to `/agents/mission.auth.md` and execute it autonomously until resolved.
+
 ## Core Responsibilities
 1. **Run and interpret tests** — detect what fails, propose concise fixes with code snippets.
 2. **Maintain architecture** — ensure consistency with the initial project spec.
