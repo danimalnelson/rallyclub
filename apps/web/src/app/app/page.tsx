@@ -73,7 +73,7 @@ export default async function AppHomePage() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {businesses.map((business) => (
+            {businesses.map((business: any) => (
               <Link key={business.id} href={`/app/${business.id}`}>
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
                   <CardHeader>

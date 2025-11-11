@@ -88,7 +88,7 @@ export default async function MembersPage({
           </Card>
         ) : (
           <div className="space-y-4">
-            {members.map((member) => {
+            {members.map((member: any) => {
               const subscription = member.subscriptions[0];
               
               return (

@@ -96,7 +96,7 @@ export default async function TransactionsPage({
                     </tr>
                   </thead>
                   <tbody className="divide-y">
-                    {transactions.map((transaction) => (
+                    {transactions.map((transaction: any) => (
                       <tr key={transaction.id} className="hover:bg-muted/50">
                         <td className="p-4 text-sm">
                           {formatDate(transaction.createdAt)}
