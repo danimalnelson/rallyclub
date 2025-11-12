@@ -23,8 +23,15 @@ if [ -f ".env.local" ]; then
 fi
 
 # Ensure database schema is up to date
-echo "🔄 Running Prisma migrations..."
-pnpm --filter db exec -- prisma migrate deploy
+echo "🔄 Syncing Prisma schema..."
+# Check if migrations exist, otherwise use db push for development
+if [ -d "packages/db/prisma/migrations" ] && [ "$(ls -A packages/db/prisma/migrations)" ]; then
+  echo "  → Running migrations..."
+  pnpm --filter db exec -- prisma migrate deploy
+else
+  echo "  → No migrations found, using db push for development..."
+  pnpm --filter db push --skip-generate
+fi
 
 # Build the entire project to catch type or runtime issues
 echo "🏗️ Building project..."
