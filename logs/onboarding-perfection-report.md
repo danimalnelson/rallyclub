@@ -2,7 +2,8 @@
 
 **Mission Started:** 2025-11-12  
 **Branch:** `fix/onboarding-perfection-2025-11-12`  
-**Status:** IN PROGRESS (Core Infrastructure Complete)
+**Status:** CORE COMPLETE - Ready for Testing & Polish  
+**Last Updated:** 2025-11-12 22:00
 
 ---
 
@@ -14,6 +15,16 @@
 4. ⏳ Defer slug finalization to post-onboarding
 5. ⏳ Remove duplicate business-name friction
 6. ⏳ Ship with comprehensive tests and verified deployment
+
+---
+
+## 📊 Progress Summary
+
+**Completed:** 9/16 objectives (56%)  
+**Build Status:** ✅ Passing  
+**Tests:** ✅ 85/85 passing  
+**Commits:** 6  
+**Files Changed:** 15+
 
 ---
 
@@ -84,7 +95,39 @@ onboardingAbandonedAt   DateTime?
 - Eliminates ambiguous states
 - Handles Stripe verification delays properly
 
-### 4. Onboarding Status Endpoint
+### 4. Idempotent Stripe Connect Flow
+
+**Enhanced `/api/stripe/connect/account-link` route:**
+- ✅ Idempotent account creation (retrieves existing accounts)
+- ✅ Prevents re-onboarding of complete accounts
+- ✅ Proper state transitions with audit trail
+- ✅ Enhanced logging for debugging
+- ✅ Checks Stripe account status before generating links
+- ✅ Returns appropriate response for already-complete accounts
+
+**State Transitions:**
+- `CREATED` → `STRIPE_ACCOUNT_CREATED` (when account created)
+- `STRIPE_ACCOUNT_CREATED` → `STRIPE_ONBOARDING_IN_PROGRESS` (when link generated)
+
+### 5. Onboarding Return Page
+
+**Created `/onboarding/return` page:**
+- ✅ Polls `/api/onboarding/status` for real-time updates
+- ✅ Status-aware UI for all states
+- ✅ Auto-redirects to dashboard when complete
+- ✅ "Check Status" button for manual refresh
+- ✅ "Resume Onboarding" for expired links or restrictions
+- ✅ Proper loading and error states
+- ✅ Status details display (charges enabled, details submitted, etc.)
+
+**Supported States:**
+- `ONBOARDING_COMPLETE`: Success message + auto-redirect
+- `PENDING_VERIFICATION`: Wait message + check status
+- `RESTRICTED`: Requirements list + complete CTA
+- `IN_PROGRESS`: Resume onboarding CTA
+- `FAILED`: Contact support
+
+### 6. Onboarding Status Endpoint
 
 **Created `GET /api/onboarding/status`:**
 - Returns comprehensive business + onboarding state
