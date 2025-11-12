@@ -45,12 +45,32 @@ export default async function BusinessDashboardPage({
     notFound();
   }
 
+  // Handle non-complete onboarding states
   if (business.status !== "ONBOARDING_COMPLETE") {
-    if (!business.stripeAccountId) {
-      redirect(`/onboarding/connect?businessId=${business.id}`);
+    // Redirect to appropriate onboarding step based on status
+    switch (business.status) {
+      case "CREATED":
+      case "DETAILS_COLLECTED":
+        redirect(`/onboarding/details`);
+      case "STRIPE_ACCOUNT_CREATED":
+      case "STRIPE_ONBOARDING_REQUIRED":
+        redirect(`/onboarding/connect?businessId=${business.id}`);
+      case "STRIPE_ONBOARDING_IN_PROGRESS":
+      case "ONBOARDING_PENDING":
+        redirect(`/onboarding/return`);
+      case "PENDING_VERIFICATION":
+      case "RESTRICTED":
+        // Allow limited dashboard access for these states (handled below)
+        break;
+      case "FAILED":
+      case "ABANDONED":
+        redirect(`/onboarding/connect?businessId=${business.id}`);
+      case "SUSPENDED":
+        // Will show suspended banner below
+        break;
+      default:
+        redirect(`/onboarding`);
     }
-
-    redirect(`/onboarding/success?businessId=${business.id}`);
   }
 
   // Get active members
@@ -141,7 +161,87 @@ export default async function BusinessDashboardPage({
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {!business.stripeAccountId && (
+        {/* Status Banners */}
+        {business.status === "PENDING_VERIFICATION" && (
+          <Card className="mb-8 border-blue-500 bg-blue-50 dark:bg-blue-950">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <span className="text-2xl">⏳</span>
+                Account Verification in Progress
+              </CardTitle>
+              <CardDescription>
+                Your Stripe account is being verified. This usually takes a few minutes to 24 hours.
+                You can view your dashboard but cannot process payments yet.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-3">
+                <Link href="/onboarding/return">
+                  <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                    Check Status
+                  </button>
+                </Link>
+                <a 
+                  href={`https://dashboard.stripe.com/${business.stripeAccountId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50"
+                >
+                  Open Stripe Dashboard
+                </a>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {business.status === "RESTRICTED" && (
+          <Card className="mb-8 border-red-500 bg-red-50 dark:bg-red-950">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <span className="text-2xl">⚠️</span>
+                Action Required: Complete Verification
+              </CardTitle>
+              <CardDescription>
+                Your Stripe account requires additional information to process payments.
+                {business.stripeRequirements && JSON.stringify(business.stripeRequirements).includes("currently_due") && (
+                  <span className="block mt-2 font-medium text-red-700">
+                    Please complete the required fields in your Stripe account.
+                  </span>
+                )}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/onboarding/return">
+                <button className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
+                  Complete Requirements
+                </button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
+
+        {business.status === "SUSPENDED" && (
+          <Card className="mb-8 border-red-600 bg-red-100 dark:bg-red-900">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-red-900 dark:text-red-100">
+                <span className="text-2xl">🚫</span>
+                Account Suspended
+              </CardTitle>
+              <CardDescription className="text-red-800 dark:text-red-200">
+                Your account has been suspended. Please contact support for assistance.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/support">
+                <button className="px-4 py-2 bg-red-700 text-white rounded-md hover:bg-red-800">
+                  Contact Support
+                </button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
+
+        {!business.stripeAccountId && business.status === "ONBOARDING_COMPLETE" && (
           <Card className="mb-8 border-yellow-500 bg-yellow-50 dark:bg-yellow-950">
             <CardHeader>
               <CardTitle>Complete Stripe Setup</CardTitle>
