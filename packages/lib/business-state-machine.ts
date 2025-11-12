@@ -12,15 +12,15 @@ export interface StripeAccountState {
   details_submitted: boolean;
   payouts_enabled?: boolean;
   requirements?: {
-    currently_due?: string[];
-    eventually_due?: string[];
-    past_due?: string[];
+    currently_due?: string[] | null;
+    eventually_due?: string[] | null;
+    past_due?: string[] | null;
     disabled_reason?: string | null;
-  };
+  } | null;
   capabilities?: {
     card_payments?: { status: string };
     transfers?: { status: string };
-  };
+  } | null;
 }
 
 export interface StateTransition {

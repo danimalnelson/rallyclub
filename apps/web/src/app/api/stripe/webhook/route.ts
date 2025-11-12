@@ -496,7 +496,7 @@ async function handleAccountUpdated(account: Stripe.Account, eventId?: string) {
   const { determineBusinessState, createStateTransition, appendTransition, isValidTransition } = await import("@wine-club/lib");
 
   // Determine new state based on Stripe account
-  const stripeAccountState = {
+  const stripeAccountState: any = {
     id: account.id,
     charges_enabled: account.charges_enabled,
     details_submitted: account.details_submitted,
@@ -505,7 +505,7 @@ async function handleAccountUpdated(account: Stripe.Account, eventId?: string) {
     capabilities: account.capabilities,
   };
 
-  const newStatus = determineBusinessState(business.status, stripeAccountState);
+  const newStatus = determineBusinessState(business.status, stripeAccountState as any);
   const statusChanged = newStatus !== business.status;
 
   console.log(`[Webhook] account.updated: ${account.id} | status: ${business.status} → ${newStatus} | charges: ${account.charges_enabled} | details: ${account.details_submitted}`);

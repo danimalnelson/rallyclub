@@ -1,1 +1,0 @@
---: prisma: command not found

@@ -40,12 +40,6 @@ export async function GET(req: NextRequest) {
 
     if (!business) {
       return NextResponse.json({
-        hasBusinessPrisma client already generated with the new schema after db push.
-      
-      Now create onboarding status endpoint...
-      **/
-
-      return NextResponse.json({
         hasBusiness: false,
         status: null,
         nextAction: {
@@ -57,7 +51,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Fetch fresh Stripe account state if account exists
-    let stripeAccountState = null;
+    let stripeAccountState: any = null;
     if (business.stripeAccountId) {
       try {
         const account = await stripe.accounts.retrieve(business.stripeAccountId);
@@ -76,14 +70,14 @@ export async function GET(req: NextRequest) {
           id: business.stripeAccountId,
           charges_enabled: business.stripeChargesEnabled,
           details_submitted: business.stripeDetailsSubmitted,
-          requirements: business.stripeRequirements as any,
+          requirements: business.stripeRequirements,
         };
       }
     }
 
     // Determine current state (prefer live Stripe data over cached)
     const currentStatus = stripeAccountState
-      ? determineBusinessState(business.status, stripeAccountState)
+      ? determineBusinessState(business.status, stripeAccountState as any)
       : business.status;
 
     // Get next action guidance
