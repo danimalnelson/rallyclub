@@ -1,5 +1,14 @@
 import { defineConfig, devices } from "@playwright/test";
 
+// Enable mock/test flags by default when running Playwright locally
+if (!process.env.MOCK_STRIPE_CONNECT) {
+  process.env.MOCK_STRIPE_CONNECT = "true";
+}
+
+if (!process.env.ENABLE_TEST_ENDPOINTS) {
+  process.env.ENABLE_TEST_ENDPOINTS = "true";
+}
+
 // Load environment variables for tests - must be set in CI/CD or local .env file
 // For local development, copy ENV_VARIABLES_FOR_VERCEL.txt values to .env.local
 
@@ -34,6 +43,8 @@ export default defineConfig({
         STRIPE_CONNECT_CLIENT_ID: process.env.STRIPE_CONNECT_CLIENT_ID,
         RESEND_API_KEY: process.env.RESEND_API_KEY,
         PUBLIC_APP_URL: process.env.PUBLIC_APP_URL,
+        MOCK_STRIPE_CONNECT: process.env.MOCK_STRIPE_CONNECT,
+        ENABLE_TEST_ENDPOINTS: process.env.ENABLE_TEST_ENDPOINTS,
       }).filter(([_, value]) => value !== undefined)
     ) as Record<string, string>,
   },

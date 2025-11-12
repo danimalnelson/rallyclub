@@ -29,8 +29,8 @@ Use this checklist when authentication breaks unexpectedly and you need rapid tr
 
 ## 6. Remediation Prep
 - Summarize findings: root cause hypothesis, impacted components, suspected fix.
-- Decide whether to escalate to `mission.auth.md`.
-- Update `/logs/auth-progress.md` with collected evidence before making changes.
+- Decide whether to escalate to `mission.build-fix.md` for resolution.
+- Document collected evidence before making changes.
 
 ## Safety
 - Do not paste secrets into logs or summaries.

@@ -1,9 +1,22 @@
 # Cursor Dev Assistant — Orchestrator
 
-## 0. Mission Awareness
-1. Read `/agents/mission.md` for the current product phase.  
-   - If the file is missing or outdated, pause and request a new mission from a human.
-2. Use `/agents/README.md` as the router for all specialized missions.
+## 0. Foundation First
+**ALL operations must follow `/agents/mission.foundation.md`.**
+
+This foundation defines:
+- Branching strategy (always create feature branches)
+- Test-first development (run tests before every commit)
+- Commit standards (conventional commit format)
+- Verification checklist (tests + builds + linters)
+- Deployment workflow (local → commit → push → deploy → verify)
+- Logging standards (document all progress)
+- Security & secrets management (never hardcode secrets)
+- Error handling protocol (capture → categorize → fix → verify)
+
+## 1. Mission Awareness
+1. Use `/agents/README.md` as the router for all specialized missions.
+2. **Always inherit and apply foundation rules from `/agents/mission.foundation.md`.**
+3. If uncertain about what to work on, consult a human or run `/agents/mission.readiness.md` to assess current state.
 
 ## 1. Role & Context
 - Senior staff engineer for the Next.js + Stripe + Prisma monorepo “Vintigo.”
@@ -11,11 +24,12 @@
 - Default posture: autonomous execution with continuous verification.
 
 ## 2. Boot Sequence
-1. Sync architecture context from `/docs/architecture.md`.
-2. Review `/logs/*.md` to understand recent changes or incidents.
-3. Confirm required environment variables are present (never add defaults).
-4. Select the active mission using the router table in `/agents/README.md`.
-5. Load any supporting mission file (e.g., `/agents/diagnostic.md`) before acting.
+1. **Load foundation rules** from `/agents/mission.foundation.md`.
+2. Sync architecture context from `/docs/architecture.md`.
+3. Review `/logs/*.md` to understand recent changes or incidents.
+4. Confirm required environment variables are present (never add defaults).
+5. Select the active mission using the router table in `/agents/README.md`.
+6. Load any supporting mission file (e.g., `/agents/diagnostic.md`) before acting.
 
 ## 3. Operating Loop
 1. Gather signals (test results, build logs, customer reports).
@@ -32,19 +46,28 @@
 ## 4. Mission Router (Quick Reference)
 | Trigger | Mission | Notes |
 | --- | --- | --- |
+| **Foundation required** | `mission.foundation.md` | **Always active.** Global rules for all missions. |
+| Codebase health check needed | `mission.readiness.md` | Audit repository stability and readiness. |
 | Build / deploy failure | `mission.build-fix.md` | Continue until local + Vercel builds succeed. |
-| Empty dashboard for new user | `mission.onboarding.md` | Implements the onboarding UX and data flow. |
-| Onboarding regression or Stripe Connect bug | `mission.onboarding.tests.md` | Keeps Stripe onboarding healthy. |
-| Authentication outage | `mission.auth.md` + `diagnostic.md` | Resolve sign-in loops and env issues. |
-| Email delivery failure | `mission.email.md` | Focus on Resend + transactional emails. |
-| Platform stable, roadmap work next | `mission.features.md` | Begin feature expansion sprint. |
+| General debugging / triage | `diagnostic.md` | Rapid triage for critical failures. |
+| PR creation and review | `mission.pr-automation.md` | Automate PR workflows and merge process. |
+| Routine maintenance tasks | `mission.maintenance.md` | Dependency updates, cleanup, optimization, tests. |
 
 ## 5. Execution Standards
+**Foundation compliance is mandatory.** All missions must:
+1. **Follow `/agents/mission.foundation.md`** for branching, testing, commits, and deployment.
+2. **Create feature branches** before any code changes.
+3. **Run tests before committing** via `bash scripts/run-full-tests.sh`.
+4. **Use conventional commit format** (feat, fix, test, docs, etc.).
+5. **Log all progress** to appropriate files in `/logs/`.
+6. **Never hardcode secrets**; always use `process.env.*`.
+
+Additional standards:
 - Maintain alignment with `/docs/architecture.md`; avoid large refactors unless requested.
 - Prefer minimal, high-signal PRs with comprehensive tests.
 - Search existing code or craft minimal mocks before introducing new patterns.
 - Default to Stripe best practices (Connect, Billing, Tax) and Prisma data integrity.
-- Update mission logs after every loop (`/logs/build-progress.md`, `/logs/build-patches.md`, `/logs/feature-progress.md`, `/logs/onboarding-progress.md`, `/logs/auth-progress.md`, `/logs/email-progress.md`).
+- Update mission logs after every loop (`/logs/build-progress.md`, `/logs/build-patches.md`, `/logs/feature-progress.md`, `/logs/readiness-report.md`).
 - When adding new missions, ensure corresponding logs exist and `.cursor/rules.json` includes required commands.
 
 ## 6. Communication

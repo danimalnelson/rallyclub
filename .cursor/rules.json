@@ -4,8 +4,15 @@
     "pnpm build",
     "pnpm lint",
     "pnpm test",
+    "pnpm vitest",
     "pnpm playwright test",
+    "pnpm --filter web vitest",
+    "pnpm --filter web playwright test",
+    "pnpm --filter web test",
+    "pnpm --dir apps/web playwright test",
     "vercel logs",
+    "vercel ls",
+    "vercel inspect",
     "vercel --prod --confirm",
     "git status",
     "git log",
@@ -13,30 +20,24 @@
     "git diff",
     "git branch",
     "git stash",
-    "git stash list",
-    "git stash pop",
-    "git stash apply",
     "git add",
-    "git commit",
-    "git push",
-    "git pull",
+    "git commit -m",
+    "git push origin",
+    "git pull origin",
     "git fetch",
+    "git checkout -b",
     "git checkout",
     "git merge",
     "git rebase",
-    "git rm",
-    "git mv",
-    "git tag",
-    "git remote",
-    "git reflog",
     "git grep",
-    "git ls-files",
-    "git filter-branch"
+    "git ls-files"
   ],
-  "allow_scripts": ["scripts/run-full-tests.sh"],
+  "allow_scripts": [
+    "scripts/run-full-tests.sh"
+  ],
   "default_agents": [
     "/agents/dev-assistant.md",
-    "/agents/mission.build-fix.md"
+    "/agents/mission.foundation.md"
   ],
   "session_timeout": 480
 }

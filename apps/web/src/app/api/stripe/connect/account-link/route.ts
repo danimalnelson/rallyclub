@@ -43,20 +43,26 @@ export async function POST(req: NextRequest) {
 
     let accountId = business.stripeAccountId;
 
+    const isMockMode = process.env.MOCK_STRIPE_CONNECT === "true";
+
     // Create Stripe Connect account if doesn't exist
     if (!accountId) {
-      const account = await stripe.accounts.create({
-        type: "express",
-        email: session.user.email!,
-        business_profile: {
-          name: business.name,
-        },
-        metadata: {
-          businessId: business.id,
-        },
-      });
+      if (isMockMode) {
+        accountId = `acct_mock_${business.id}`;
+      } else {
+        const account = await stripe.accounts.create({
+          type: "express",
+          email: session.user.email!,
+          business_profile: {
+            name: business.name,
+          },
+          metadata: {
+            businessId: business.id,
+          },
+        });
 
-      accountId = account.id;
+        accountId = account.id;
+      }
 
       const updateData: Prisma.BusinessUpdateInput = {
         stripeAccountId: accountId,
@@ -79,13 +85,18 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Create account link
-    const url = await createAccountLink({
-      accountId,
-      refreshUrl,
-      returnUrl,
-      type: "account_onboarding",
-    });
+    let url: string;
+
+    if (isMockMode) {
+      url = `${returnUrl}&mockStripe=1`;
+    } else {
+      url = await createAccountLink({
+        accountId,
+        refreshUrl,
+        returnUrl,
+        type: "account_onboarding",
+      });
+    }
 
     return NextResponse.json({ url });
   } catch (error: any) {
@@ -98,7 +109,7 @@ export async function POST(req: NextRequest) {
     }
     
     // Handle Stripe errors
-    if (error?.type === 'StripeInvalidRequestError') {
+    if (error?.type === "StripeInvalidRequestError") {
       return NextResponse.json(
         { error: error.message || "Invalid Stripe request" },
         { status: 400 }

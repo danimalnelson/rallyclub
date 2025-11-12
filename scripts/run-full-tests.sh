@@ -9,9 +9,22 @@ set -e  # exit immediately on error
 
 echo "🚀 Starting full test run..."
 
+# Load environment variables if .env or .env.local exist
+if [ -f ".env" ]; then
+  set -a
+  source .env
+  set +a
+fi
+
+if [ -f ".env.local" ]; then
+  set -a
+  source .env.local
+  set +a
+fi
+
 # Ensure database schema is up to date
 echo "🔄 Running Prisma migrations..."
-pnpm prisma migrate deploy
+pnpm --filter db exec -- prisma migrate deploy
 
 # Build the entire project to catch type or runtime issues
 echo "🏗️ Building project..."
