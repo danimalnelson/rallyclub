@@ -8,19 +8,20 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "pnpm --filter web dev & pnpm --filter embed dev",
-    "build": "pnpm --filter web build && pnpm --filter embed build",
-    "db:generate": "pnpm --filter db generate",
-    "db:push": "pnpm --filter db push",
-    "db:migrate": "pnpm --filter db migrate",
-    "db:seed": "pnpm --filter db seed",
-    "db:studio": "pnpm --filter db studio",
+    "dev": "dotenv -e .env.local -- pnpm --filter web dev & pnpm --filter embed dev",
+    "build": "dotenv -e .env.local -- pnpm --filter web build && dotenv -e .env.local -- pnpm --filter embed build",
+    "db:generate": "dotenv -e .env.local -- pnpm --filter db generate",
+    "db:push": "dotenv -e .env.local -- pnpm --filter db push",
+    "db:migrate": "dotenv -e .env.local -- pnpm --filter db migrate",
+    "db:seed": "dotenv -e .env.local -- pnpm --filter db seed",
+    "db:studio": "dotenv -e .env.local -- pnpm --filter db studio",
     "lint": "pnpm --parallel lint",
-    "test": "pnpm --parallel test",
-    "test:e2e": "pnpm --filter web test:e2e"
+    "test": "dotenv -e .env.local -- pnpm --parallel test",
+    "test:e2e": "dotenv -e .env.local -- pnpm --filter web test:e2e"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
+    "dotenv-cli": "^11.0.0",
     "prettier": "^3.1.0",
     "typescript": "^5.3.3"
   },
@@ -29,4 +30,3 @@
     "pnpm": ">=8.0.0"
   }
 }
-
