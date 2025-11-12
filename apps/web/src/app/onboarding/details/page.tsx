@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@wine-club/ui";
 
 export default function OnboardingDetailsPage() {
@@ -181,7 +182,7 @@ export default function OnboardingDetailsPage() {
                 <Button
                   type="button"
                   variant="ghost"
-                  onClick={() => router.push("/auth/signout")}
+                  onClick={() => signOut({ callbackUrl: "/" })}
                 >
                   Sign Out
                 </Button>
