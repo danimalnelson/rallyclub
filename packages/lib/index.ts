@@ -7,6 +7,7 @@ export * from "./constants";
 export * from "./api-errors";
 export * from "./api-auth";
 export * from "./cache";
+export * from "./api-middleware";
 
 // Export metrics separately to avoid pulling in Prisma during tests
 export { calculateMetrics } from "./metrics";
