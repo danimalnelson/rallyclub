@@ -26,18 +26,19 @@ export async function GET(
       return NextResponse.json({ error: "Business not found" }, { status: 404 });
     }
 
+    // TypeScript infers proper types from Prisma's include
     return NextResponse.json({
       business: {
         name: business.name,
         slug: business.slug,
         logoUrl: business.logoUrl,
       },
-      plans: business.membershipPlans.map((plan: any) => ({
+      plans: business.membershipPlans.map((plan) => ({
         id: plan.id,
         name: plan.name,
         description: plan.description,
         benefits: plan.benefits,
-        prices: plan.prices.map((price: any) => ({
+        prices: plan.prices.map((price) => ({
           id: price.id,
           nickname: price.nickname,
           interval: price.interval,
