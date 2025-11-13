@@ -106,6 +106,10 @@ model Business {
   transactions    Transaction[]
   payoutSummaries PayoutSummary[]
   auditLogs       AuditLog[]
+  
+  // New subscription models
+  memberships     Membership[]
+  plans           Plan[]
 
   @@index([slug])
   @@index([status])
@@ -405,5 +409,226 @@ model AuditLog {
   @@index([actorUserId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// =====================================================
+// NEW SUBSCRIPTION MODELS (Phase 1)
+// Per mission.subscription-modeling.md
+// Side-by-side with existing models for safe migration
+// =====================================================
+
+// ===== Membership (Collection of Plans) =====
+model Membership {
+  id                  String              @id @default(cuid())
+  businessId          String
+  
+  // Core
+  name                String
+  description         String?
+  slug                String              @unique
+  
+  // Rules
+  allowMultiplePlans  Boolean             @default(false)  // Can member subscribe to multiple plans?
+  maxMembers          Int?                                // Capacity limit
+  
+  // Billing Settings (MEMBERSHIP LEVEL)
+  billingAnchor       BillingAnchor       @default(IMMEDIATE)
+  cohortBillingDay    Int?                                // 1-31, required if NEXT_INTERVAL
+  
+  // Status
+  status              MembershipStatus    @default(DRAFT)
+  displayOrder        Int                 @default(0)
+  
+  // Features
+  giftEnabled         Boolean             @default(true)
+  waitlistEnabled     Boolean             @default(false)
+  membersOnlyAccess   Boolean             @default(false)
+  
+  // Member Experience
+  pauseEnabled        Boolean             @default(false) // Can members pause?
+  skipEnabled         Boolean             @default(false) // Can members skip?
+  
+  // Metadata
+  benefits            Json?                               // Array of benefit strings
+  images              Json?                               // Array of image URLs
+  
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  
+  business            Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  plans               Plan[]
+  
+  @@index([businessId, status])
+  @@map("memberships")
+}
+
+enum BillingAnchor {
+  IMMEDIATE       // Start immediately, bill on anniversary
+  NEXT_INTERVAL   // Start at next cohort date, bill with cohort
+}
+
+enum MembershipStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+// ===== Plan (Individual Subscription Offering) =====
+model Plan {
+  id                  String              @id @default(cuid())
+  businessId          String
+  membershipId        String              // Required - each plan belongs to ONE membership
+  
+  // Core
+  name                String
+  description         String?
+  images              Json?               // Array of image URLs
+  
+  // Pricing
+  pricingType         PricingType         @default(FIXED)
+  basePrice           Int?                // In cents (for fixed pricing)
+  currency            String              @default("usd")
+  
+  // Subscription Details (PLAN LEVEL - each plan sets its own frequency)
+  interval            PriceInterval       // week, month, year
+  intervalCount       Int                 @default(1)  // every 1, 2, 3, etc.
+  
+  // Product Details
+  quantityPerShipment Int?
+  productType         String?             // "wine", "beer", etc.
+  
+  // Fees & Shipping
+  setupFee            Int?                // In cents
+  shippingType        ShippingType        @default(INCLUDED)
+  shippingCost        Int?                // In cents
+  
+  // Trial & Commitment
+  trialPeriodDays     Int?
+  minimumCommitmentMonths Int?
+  
+  // Inventory
+  stockStatus         StockStatus         @default(AVAILABLE)
+  maxSubscribers      Int?
+  
+  // Status
+  status              PlanStatus          @default(DRAFT)
+  displayOrder        Int                 @default(0)
+  
+  // Stripe
+  stripeProductId     String?             @unique
+  stripePriceId       String?             // Current active price
+  
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  
+  business            Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  membership          Membership          @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  priceQueue          PriceQueueItem[]
+  planSubscriptions   PlanSubscription[]
+  
+  @@index([membershipId, status])
+  @@index([businessId, status])
+  @@map("plans")
+}
+
+enum PricingType {
+  FIXED
+  DYNAMIC
+}
+
+enum PriceInterval {
+  WEEK
+  MONTH
+  YEAR
+}
+
+enum ShippingType {
+  INCLUDED
+  FLAT_RATE
+  CALCULATED
+  FREE_OVER_AMOUNT
+}
+
+enum StockStatus {
+  AVAILABLE
+  SOLD_OUT
+  COMING_SOON
+  WAITLIST
+}
+
+// Note: PlanStatus enum already exists (lines 195-198), reusing it
+
+// ===== PlanSubscription (Member's Subscription to a Plan) =====
+model PlanSubscription {
+  id                  String                    @id @default(cuid())
+  planId              String
+  consumerId          String                    // The member/customer (links to Consumer)
+  
+  // Status (DECISION: Status tracked here, not on Membership)
+  status              PlanSubscriptionStatus    @default(ACTIVE)
+  
+  // Billing dates
+  currentPeriodStart  DateTime
+  currentPeriodEnd    DateTime
+  billingCycleAnchor  Int?                      // Day of month (1-31) for IMMEDIATE billing
+  nextBillingDate     DateTime
+  
+  // Pause/Resume tracking (DECISION: Resume resets billing date)
+  pausedAt            DateTime?
+  resumedAt           DateTime?
+  canceledAt          DateTime?
+  
+  // Stripe
+  stripeSubscriptionId String?                  @unique
+  stripeCustomerId     String?
+  
+  // Pricing
+  currentPrice        Int                       // In cents
+  currency            String                    @default("usd")
+  
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+  
+  plan                Plan                      @relation(fields: [planId], references: [id], onDelete: Cascade)
+  consumer            Consumer                  @relation(fields: [consumerId], references: [id], onDelete: Cascade)
+  
+  @@index([consumerId, status])
+  @@index([planId, status])
+  @@index([nextBillingDate])
+  @@map("plan_subscriptions")
+}
+
+enum PlanSubscriptionStatus {
+  ACTIVE          // Currently active and billing
+  PAUSED          // Member paused (no billing)
+  CANCELED        // Canceled by member
+  PAST_DUE        // Payment failed
+  INCOMPLETE      // Stripe failed to create subscription
+  EXPIRED         // Ended naturally (if not auto-renew)
+}
+
+// ===== PriceQueueItem (For Dynamic Pricing) =====
+model PriceQueueItem {
+  id                  String   @id @default(cuid())
+  planId              String
+  
+  effectiveAt         DateTime // When this price takes effect
+  price               Int      // In cents
+  
+  // Notification tracking (DECISION: Email 7 days + 1 day before)
+  notifiedAt7Days     DateTime?
+  notifiedAt1Day      DateTime?
+  applied             Boolean  @default(false)
+  
+  stripePriceId       String?  // Created price in Stripe
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  plan                Plan     @relation(fields: [planId], references: [id], onDelete: Cascade)
+  
+  @@index([planId, effectiveAt])
+  @@map("price_queue_items")
 }
 
