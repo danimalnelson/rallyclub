@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
 interface CopyButtonProps {
   text: string;
@@ -10,7 +10,7 @@ interface CopyButtonProps {
 export function CopyButton({ text, className = "" }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = async () => {
+  const handleCopy = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -18,7 +18,7 @@ export function CopyButton({ text, className = "" }: CopyButtonProps) {
     } catch (err) {
       console.error("Failed to copy:", err);
     }
-  };
+  }, [text]);
 
   return (
     <button
