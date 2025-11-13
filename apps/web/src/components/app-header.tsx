@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { signOut } from "next-auth/react";
 import { Button } from "@wine-club/ui";
 
@@ -7,7 +8,7 @@ interface AppHeaderProps {
   userEmail?: string;
 }
 
-export function AppHeader({ userEmail }: AppHeaderProps) {
+export const AppHeader = memo(function AppHeader({ userEmail }: AppHeaderProps) {
   const handleSignOut = () => {
     signOut({ callbackUrl: "/" });
   };
@@ -29,5 +30,5 @@ export function AppHeader({ userEmail }: AppHeaderProps) {
       </div>
     </header>
   );
-}
+});
 

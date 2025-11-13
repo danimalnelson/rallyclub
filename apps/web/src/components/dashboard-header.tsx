@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { Button } from "@wine-club/ui";
@@ -14,7 +15,7 @@ interface DashboardHeaderProps {
   userEmail?: string;
 }
 
-export function DashboardHeader({ business, userEmail }: DashboardHeaderProps) {
+export const DashboardHeader = memo(function DashboardHeader({ business, userEmail }: DashboardHeaderProps) {
   const handleSignOut = () => {
     signOut({ callbackUrl: "/" });
   };
@@ -71,5 +72,5 @@ export function DashboardHeader({ business, userEmail }: DashboardHeaderProps) {
       </div>
     </header>
   );
-}
+});
 
