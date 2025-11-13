@@ -4,6 +4,7 @@ import Link from "next/link";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@wine-club/db";
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@wine-club/ui";
+import { AppHeader } from "@/components/app-header";
 
 export default async function AppHomePage() {
   const session = await getServerSession(authOptions);
@@ -59,14 +60,7 @@ export default async function AppHomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Wine Club Dashboard</h1>
-          <div className="text-sm text-muted-foreground">
-            {session.user.email}
-          </div>
-        </div>
-      </header>
+      <AppHeader userEmail={session.user.email || undefined} />
 
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
