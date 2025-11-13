@@ -4,6 +4,7 @@ import Link from "next/link";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@wine-club/db";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, formatCurrency } from "@wine-club/ui";
+import { CopyButton } from "@/components/copy-button";
 
 export default async function BusinessDashboardPage({
   params,
@@ -339,14 +340,10 @@ export default async function BusinessDashboardPage({
                   readOnly
                   className="flex-1 px-3 py-2 border rounded-md bg-muted text-sm"
                 />
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${publicAppUrl}/${business.slug}`);
-                  }}
+                <CopyButton
+                  text={`${publicAppUrl}/${business.slug}`}
                   className="px-4 py-2 border rounded-md hover:bg-accent"
-                >
-                  Copy
-                </button>
+                />
               </div>
               <a
                 href={`${publicAppUrl}/${business.slug}`}

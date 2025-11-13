@@ -11,25 +11,25 @@ export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as Adapter,
   providers: [
     EmailProvider({
-      server: {
-        host: "smtp.resend.com",
-        port: 465,
-        auth: {
-          user: "resend",
-          pass: process.env.RESEND_API_KEY || "",
-        },
-      },
       from: process.env.EMAIL_FROM || "onboarding@resend.dev",
       async sendVerificationRequest({ identifier: email, url }) {
+        const timestamp = new Date().toISOString();
+        console.log(`\n========================================`);
+        console.log(`[AUTH ${timestamp}] sendVerificationRequest CALLED`);
+        console.log(`[AUTH] Target email: ${email}`);
+        console.log(`[AUTH] Magic link URL: ${url}`);
+        console.log(`========================================\n`);
+        
         if (!resend) {
-          console.error("[AUTH] Resend not configured - RESEND_API_KEY missing");
+          console.error("[AUTH] ❌ Resend not configured - RESEND_API_KEY missing");
           throw new Error("Email service not configured");
         }
         
         const fromEmail = process.env.EMAIL_FROM || "onboarding@resend.dev";
         
         try {
-          console.log(`[AUTH] Attempting to send magic link to: ${email} from: ${fromEmail}`);
+          console.log(`[AUTH] ✅ Resend client initialized`);
+          console.log(`[AUTH] Sending from: ${fromEmail}`);
           
           const result = await resend.emails.send({
             from: fromEmail,
@@ -45,14 +45,23 @@ export const authOptions: NextAuthOptions = {
             `,
           });
           
-          console.log(`[AUTH] Email sent successfully. ID: ${result.data?.id}`);
+          if (result.error) {
+            console.error(`\n[AUTH] ❌ Resend API returned error:`);
+            console.error(`[AUTH] Status Code: ${result.error.statusCode}`);
+            console.error(`[AUTH] Message: ${result.error.message}`);
+            console.error(`[AUTH] Error:`, result.error);
+            console.error(`========================================\n`);
+            throw new Error(`Resend error: ${result.error.message}`);
+          }
+          
+          console.log(`\n[AUTH] ✅ Email sent successfully!`);
+          console.log(`[AUTH] Email ID: ${result.data?.id}`);
+          console.log(`========================================\n`);
         } catch (error: any) {
-          console.error("[AUTH] Error sending email:", {
-            message: error?.message,
-            statusCode: error?.statusCode,
-            name: error?.name,
-            error: error,
-          });
+          console.error(`\n[AUTH] ❌ Exception during email send:`);
+          console.error(`[AUTH] Message: ${error?.message}`);
+          console.error(`[AUTH] Stack:`, error?.stack);
+          console.error(`========================================\n`);
           throw error;
         }
       },
