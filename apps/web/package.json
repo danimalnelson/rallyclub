@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "analyze": "ANALYZE=true pnpm build"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
@@ -26,6 +27,7 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^16.0.2",
     "@playwright/test": "^1.40.1",
     "@types/node": "^20.10.0",
     "@types/react": "^18.2.45",
