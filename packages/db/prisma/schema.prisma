@@ -197,6 +197,7 @@ model MembershipPlan {
 }
 
 enum PlanStatus {
+  DRAFT
   ACTIVE
   ARCHIVED
 }
@@ -238,10 +239,11 @@ model Consumer {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user           User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
-  members        Member[]
-  paymentMethods PaymentMethod[]
-  transactions   Transaction[]
+  user              User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  members           Member[]
+  paymentMethods    PaymentMethod[]
+  transactions      Transaction[]
+  planSubscriptions PlanSubscription[]  // New subscription models
 
   @@index([email])
   @@map("consumers")
@@ -560,53 +562,44 @@ enum StockStatus {
 // Note: PlanStatus enum already exists (lines 195-198), reusing it
 
 // ===== PlanSubscription (Member's Subscription to a Plan) =====
+// STRIPE-NATIVE: Minimal model, Stripe is source of truth
 model PlanSubscription {
-  id                  String                    @id @default(cuid())
-  planId              String
-  consumerId          String                    // The member/customer (links to Consumer)
+  id                   String   @id @default(cuid())
+  planId               String
+  consumerId           String   // The member/customer (links to Consumer)
   
-  // Status (DECISION: Status tracked here, not on Membership)
-  status              PlanSubscriptionStatus    @default(ACTIVE)
+  // === STRIPE INTEGRATION (Source of Truth) ===
+  stripeSubscriptionId String   @unique
+  stripeCustomerId     String
   
-  // Billing dates
-  currentPeriodStart  DateTime
-  currentPeriodEnd    DateTime
-  billingCycleAnchor  Int?                      // Day of month (1-31) for IMMEDIATE billing
-  nextBillingDate     DateTime
+  // === CACHED from Stripe (updated via webhooks) ===
+  // Use String to match Stripe exactly: "active", "trialing", "past_due", "canceled", "unpaid", "incomplete", "paused"
+  status               String   // Mirror Stripe's status exactly
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  cancelAtPeriodEnd    Boolean  @default(false)
   
-  // Pause/Resume tracking (DECISION: Resume resets billing date)
-  pausedAt            DateTime?
-  resumedAt           DateTime?
-  canceledAt          DateTime?
+  // === BUSINESS LOGIC (Not in Stripe) ===
+  preferences          Json?    // Member preferences (wine type, allergies, etc.)
+  giftFrom             String?  // If gift subscription
+  giftMessage          String?
   
-  // Stripe
-  stripeSubscriptionId String?                  @unique
-  stripeCustomerId     String?
+  // === METADATA ===
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  lastSyncedAt         DateTime @default(now())
   
-  // Pricing
-  currentPrice        Int                       // In cents
-  currency            String                    @default("usd")
+  plan                 Plan     @relation(fields: [planId], references: [id], onDelete: Cascade)
+  consumer             Consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade)
   
-  createdAt           DateTime                  @default(now())
-  updatedAt           DateTime                  @updatedAt
-  
-  plan                Plan                      @relation(fields: [planId], references: [id], onDelete: Cascade)
-  consumer            Consumer                  @relation(fields: [consumerId], references: [id], onDelete: Cascade)
-  
+  @@index([stripeSubscriptionId])
   @@index([consumerId, status])
   @@index([planId, status])
-  @@index([nextBillingDate])
   @@map("plan_subscriptions")
 }
 
-enum PlanSubscriptionStatus {
-  ACTIVE          // Currently active and billing
-  PAUSED          // Member paused (no billing)
-  CANCELED        // Canceled by member
-  PAST_DUE        // Payment failed
-  INCOMPLETE      // Stripe failed to create subscription
-  EXPIRED         // Ended naturally (if not auto-renew)
-}
+// Note: No enum for PlanSubscriptionStatus - we use String to match Stripe exactly
+// This allows Stripe to add new statuses without breaking our code
 
 // ===== PriceQueueItem (For Dynamic Pricing) =====
 model PriceQueueItem {
