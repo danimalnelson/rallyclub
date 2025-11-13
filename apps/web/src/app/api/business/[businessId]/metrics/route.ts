@@ -2,11 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@wine-club/db";
-import { calculateMetrics } from "@wine-club/lib";
+import { calculateMetrics, createCache, CACHE_TTL, type BusinessMetrics } from "@wine-club/lib";
 
-// Simple in-memory cache
-const cache = new Map<string, { data: any; timestamp: number }>();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+// Type-safe in-memory cache for metrics
+const cache = createCache<BusinessMetrics>();
 
 export async function GET(
   req: NextRequest,
@@ -39,19 +38,16 @@ export async function GET(
 
     // Check cache
     const cacheKey = `metrics:${businessId}`;
-    const cached = cache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      return NextResponse.json(cached.data);
+    const cached = cache.get(cacheKey, CACHE_TTL.MEDIUM);
+    if (cached) {
+      return NextResponse.json(cached);
     }
 
     // Calculate metrics
     const metrics = await calculateMetrics(prisma, businessId);
 
     // Update cache
-    cache.set(cacheKey, {
-      data: metrics,
-      timestamp: Date.now(),
-    });
+    cache.set(cacheKey, metrics);
 
     return NextResponse.json(metrics);
   } catch (error: any) {
