@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@wine-club/db";
 
 export async function POST(req: NextRequest) {
-  if (process.env.ENABLE_TEST_ENDPOINTS !== "true") {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  // Guard: Only allow test endpoints in non-production environments
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Not available in production" }, { status: 404 });
   }
 
   const { businessId, status = "ONBOARDING_COMPLETE", contactEmail, contactPhone } = await req.json();

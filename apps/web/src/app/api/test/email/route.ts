@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 
 export async function GET(req: NextRequest) {
+  // Guard: Only allow test endpoints in non-production environments
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Not available in production" }, { status: 404 });
+  }
+
   const testEmail = req.nextUrl.searchParams.get("to") || "test@example.com";
   
   // Check if RESEND_API_KEY is set
