@@ -4,7 +4,36 @@
 
 **Canonical Example:** Wine Club Subscription Service  
 **Current Status:** Basic `Plan` model exists in Prisma schema  
-**Target:** Production-ready membership + plan system with Stripe integration
+**Target:** Production-ready membership + plan system with **STRIPE-NATIVE** implementation
+
+---
+
+## 🔴 CRITICAL: Stripe-Native Architecture
+
+**Philosophy:** Stripe is the source of truth for ALL billing, subscriptions, and payment logic.
+
+**Our Database:**
+- Stores business logic (memberships, member preferences)
+- Caches Stripe data for performance (via webhooks)
+- **Never** duplicates Stripe's billing logic
+
+**Stripe Handles:**
+- ✅ Subscription creation, updates, cancellation
+- ✅ Billing cycles, dates, anchors
+- ✅ Trials, pauses, resumes
+- ✅ Proration, refunds
+- ✅ Payment collection, retries
+- ✅ Invoices, receipts
+- ✅ Price changes, schedules
+- ✅ Multi-subscription per customer
+- ✅ Webhooks for all events
+
+**We Handle:**
+- Membership business rules (one vs many plans)
+- NEXT_INTERVAL start date calculation
+- Member preferences (wine type, allergies)
+- Gift subscription metadata
+- Business-specific features
 
 ---
 
@@ -202,16 +231,49 @@ Start with **Option 1 (Manual)** for MVP, add **Option 2 (Queue)** for v2.
 
 ---
 
-## 🗄️ Data Model Considerations
+## 🗄️ Stripe-Native Data Model
 
-### Stripe Integration
-- **Stripe Product** = Business + Membership + Plan combination
-- **Stripe Price** = Fixed or dynamic pricing for a plan
-- **Stripe Subscription** = Customer subscribing to a plan
-- **Considerations:**
-  - How to handle price changes in Stripe?
-  - Archive old prices vs update in place?
-  - Multi-currency support?
+### Stripe Object Mapping
+
+**Stripe → Our System:**
+```
+Stripe Customer     → Consumer (stripeCustomerId)
+Stripe Product      → Plan (stripeProductId)
+Stripe Price        → Plan pricing fields (stripePriceId)
+Stripe Subscription → PlanSubscription (stripeSubscriptionId)
+Stripe Invoice      → Tracked via webhooks only
+```
+
+### Our Database = Minimal + Cached
+
+**Store in DB:**
+- Business logic (Membership rules, Plan details)
+- Stripe IDs for all entities
+- **Cached** Stripe data (status, dates) updated via webhooks
+- Preferences and metadata Stripe doesn't handle
+
+**Fetch from Stripe API:**
+- Detailed subscription object (when needed)
+- Upcoming invoice preview
+- Payment method details
+- Billing history
+- Usage/metering data
+
+### Stripe Handles ALL Billing Logic
+
+**❌ DON'T duplicate in DB:**
+- Billing calculations
+- Payment retry logic
+- Invoice generation
+- Proration calculations
+- Trial end dates (beyond caching)
+- Pause collection state (beyond caching)
+
+**✅ DO store in DB:**
+- Member preferences (wine type, allergies)
+- Gift subscription sender info
+- Custom business rules
+- Cached Stripe data for performance
 
 ### Database Schema Needs
 
@@ -368,53 +430,60 @@ enum PlanStatus {
 }
 ```
 
-**Subscription Table (member's subscription to a plan):**
+**PlanSubscription Table (STRIPE-NATIVE):**
 ```prisma
-model Subscription {
-  id                  String   @id @default(cuid())
-  planId              String
-  plan                Plan     @relation(...)
-  userId              String   // The member/customer
-  user                User     @relation(...)
+model PlanSubscription {
+  id                   String   @id @default(cuid())
+  planId               String
+  plan                 Plan     @relation(...)
+  consumerId           String   // The member/customer
+  consumer             Consumer @relation(...)
   
-  // Status (DECISION: Status tracked here, not on Membership)
-  status              SubscriptionStatus @default(ACTIVE)
+  // === STRIPE INTEGRATION (Source of Truth) ===
+  stripeSubscriptionId String   @unique
+  stripeCustomerId     String
   
-  // Billing dates
-  currentPeriodStart  DateTime
-  currentPeriodEnd    DateTime
-  billingCycleAnchor  Int?     // Day of month (1-31) for IMMEDIATE billing
-  nextBillingDate     DateTime
+  // === CACHED from Stripe (updated via webhooks) ===
+  status               String   // Mirror Stripe's status exactly
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  cancelAtPeriodEnd    Boolean  @default(false)
   
-  // Pause/Resume tracking (DECISION: Resume resets billing date)
-  pausedAt            DateTime?
-  resumedAt           DateTime?
-  canceledAt          DateTime?
+  // === BUSINESS LOGIC (Not in Stripe) ===
+  preferences          Json?    // Member preferences (wine type, etc.)
+  giftFrom             String?  // If gift subscription
+  giftMessage          String?
   
-  // Stripe
-  stripeSubscriptionId String? @unique
-  stripeCustomerId     String?
+  // === METADATA ===
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  lastSyncedAt         DateTime @default(now())
   
-  // Pricing
-  currentPrice        Int      // In cents
-  currency            String   @default("usd")
-  
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-  
-  @@index([userId, status])
+  @@index([stripeSubscriptionId])
+  @@index([consumerId, status])
   @@index([planId, status])
-  @@index([nextBillingDate])
 }
 
-enum SubscriptionStatus {
-  ACTIVE          // Currently active and billing
-  PAUSED          // Member paused (no billing)
-  CANCELED        // Canceled by member
-  PAST_DUE        // Payment failed
-  INCOMPLETE      // Stripe failed to create subscription
-  EXPIRED         // Ended naturally (if not auto-renew)
-}
+// Note: Status is STRING to match Stripe exactly:
+// "active", "trialing", "past_due", "canceled", "unpaid", "incomplete", "paused"
+// We don't define enum - use Stripe's values directly
+```
+
+**How to get more details:**
+```typescript
+// Fetch full subscription from Stripe when needed
+const subscription = await stripe.subscriptions.retrieve(
+  planSubscription.stripeSubscriptionId,
+  { expand: ['latest_invoice', 'default_payment_method'] }
+);
+
+// Stripe provides:
+// - subscription.billing_cycle_anchor
+// - subscription.pause_collection
+// - subscription.items.data[0].price
+// - subscription.trial_end
+// - subscription.latest_invoice
+// - subscription.next_pending_invoice_item_invoice
 ```
 
 **Price Queue (for dynamic pricing):**
@@ -445,41 +514,288 @@ model PriceQueueItem {
 
 ## 🔧 Technical Implementation Tasks
 
-### Phase 1: Data Model
+### Phase 0: Stripe Code Audit (NEW - CRITICAL)
+**Objective:** Ensure ALL existing payment/subscription code is Stripe-native
+
+1. [ ] **Audit existing Stripe integration**
+   - Review all files using Stripe API
+   - Document current architecture
+   - Identify anti-patterns (duplicating Stripe logic)
+
+2. [ ] **Review existing subscription code**
+   - `apps/web/src/app/api/checkout/*`
+   - `apps/web/src/app/api/stripe/*`
+   - `packages/lib/stripe.ts`
+   - Current `Subscription` model usage
+
+3. [ ] **Audit webhook handling**
+   - `apps/web/src/app/api/stripe/webhook/route.ts`
+   - Are we syncing Stripe → DB correctly?
+   - Missing webhook events?
+
+4. [ ] **Identify refactoring needs**
+   - What code duplicates Stripe logic?
+   - What should be removed?
+   - What needs webhook sync?
+
+5. [ ] **Document findings**
+   - Create `logs/stripe-audit-YYYY-MM-DD.md`
+   - List all changes needed
+   - Prioritize fixes
+
+**Output:** Comprehensive audit report + refactoring plan
+
+---
+
+### Phase 1: Data Model (Stripe-Native)
 1. ✅ Review current Plan schema
 2. [ ] Design Membership model
-3. [ ] Design enhanced Plan model
-4. [ ] Design PriceQueueItem model
-5. [ ] Create Prisma migration
-6. [ ] Seed test data
+3. [ ] Design enhanced Plan model (Stripe-native)
+4. [ ] Design PlanSubscription model (minimal, cached)
+5. [ ] Design PriceQueueItem model
+6. [ ] Create Prisma migration
+7. [ ] Seed test data
 
-### Phase 2: Stripe Integration
+**Key Change:** PlanSubscription is minimal, just Stripe ID + cached data
+
+---
+
+### Phase 2: Stripe Integration (Pure Stripe)
 1. [ ] Create Stripe Products for plans
 2. [ ] Create Stripe Prices (fixed vs dynamic)
-3. [ ] Handle price updates
-4. [ ] Webhook for subscription events
-5. [ ] Handle plan changes/upgrades
+3. [ ] Use Stripe Subscriptions API (not custom logic)
+4. [ ] Implement webhook sync (subscription.*)
+5. [ ] Handle pause via `stripe.subscriptions.update({ pause_collection })`
+6. [ ] Handle trial via Stripe `trial_period_days`
+7. [ ] Use Stripe's billing_cycle_anchor for NEXT_INTERVAL
+8. [ ] Test dynamic pricing with Stripe Price API
+
+**Key Change:** Let Stripe do ALL the work, we just orchestrate
+
+---
 
 ### Phase 3: Business UI
 1. [ ] Membership creation form
-2. [ ] Plan creation form (enhanced)
-3. [ ] Dynamic pricing management
+2. [ ] Plan creation form (creates Stripe Product + Price)
+3. [ ] Dynamic pricing management (creates new Stripe Price)
 4. [ ] Price queue interface
 5. [ ] Member management dashboard
+
+**Key Change:** UI creates Stripe objects, not just DB records
+
+---
 
 ### Phase 4: Consumer UI
 1. [ ] Public membership browse page
 2. [ ] Plan selection and comparison
-3. [ ] Checkout flow (handle memberships)
-4. [ ] Member portal (pause, skip, upgrade)
-5. [ ] Subscription management
+3. [ ] Checkout flow (Stripe Checkout or Payment Element)
+4. [ ] Member portal (fetch from Stripe API)
+5. [ ] Subscription management (Stripe API calls)
+
+**Key Change:** Portal fetches real-time data from Stripe
+
+---
 
 ### Phase 5: Automation
 1. [ ] Email reminders for dynamic pricing
-2. [ ] Renewal notifications
-3. [ ] Shipment tracking integration
-4. [ ] Inventory sync
-5. [ ] Analytics and reporting
+2. [ ] Renewal notifications (via Stripe webhooks)
+3. [ ] Invoice.paid webhook → send thank you
+4. [ ] Invoice.payment_failed → dunning emails
+5. [ ] Analytics (from Stripe data)
+
+---
+
+## 💻 Stripe-Native Implementation Examples
+
+### Creating a Subscription (Stripe-First)
+
+```typescript
+// ❌ BAD: Custom billing logic
+const nextBillingDate = calculateNextBilling(plan.interval, membership.cohortDay);
+await db.subscription.create({
+  nextBillingDate,
+  amount: plan.price,
+  // ... custom logic
+});
+
+// ✅ GOOD: Let Stripe handle it
+const subscription = await stripe.subscriptions.create({
+  customer: consumer.stripeCustomerId,
+  items: [{ price: plan.stripePriceId }],
+  
+  // NEXT_INTERVAL: Use billing_cycle_anchor
+  billing_cycle_anchor: membership.billingAnchor === 'NEXT_INTERVAL' 
+    ? calculateNextCohortDate(membership.cohortBillingDay)
+    : undefined,
+  
+  // IMMEDIATE: Stripe uses subscription start as anchor
+  // (default behavior)
+  
+  // Trial
+  trial_period_days: plan.trialPeriodDays,
+  
+  // Metadata for our tracking
+  metadata: {
+    planId: plan.id,
+    membershipId: membership.id,
+    preferences: JSON.stringify(preferences),
+  },
+});
+
+// Store minimal data
+await db.planSubscription.create({
+  stripeSubscriptionId: subscription.id,
+  stripeCustomerId: subscription.customer,
+  planId: plan.id,
+  consumerId: consumer.id,
+  status: subscription.status,
+  currentPeriodStart: new Date(subscription.current_period_start * 1000),
+  currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+  preferences,
+});
+```
+
+### Pausing a Subscription
+
+```typescript
+// ❌ BAD: Custom pause logic
+await db.subscription.update({
+  where: { id },
+  data: { 
+    status: 'PAUSED',
+    pausedAt: new Date(),
+    nextBillingDate: null, // Stop billing
+  },
+});
+
+// ✅ GOOD: Use Stripe's pause_collection
+await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+  pause_collection: {
+    behavior: 'void', // Don't charge at all
+  },
+});
+
+// Webhook will update our DB automatically
+```
+
+### Resuming a Subscription
+
+```typescript
+// ❌ BAD: Calculate new billing date
+const newBillingDate = addMonths(new Date(), plan.intervalCount);
+await db.subscription.update({
+  data: {
+    status: 'ACTIVE',
+    resumedAt: new Date(),
+    nextBillingDate: newBillingDate,
+  },
+});
+
+// ✅ GOOD: Let Stripe handle it
+await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+  pause_collection: '', // Remove pause
+});
+
+// Stripe automatically calculates next billing
+// Webhook updates our DB
+```
+
+### Dynamic Pricing
+
+```typescript
+// ❌ BAD: Store price in our DB, try to sync to Stripe
+await db.plan.update({
+  data: { basePrice: newPrice },
+});
+await updateStripePrice(plan.stripePriceId, newPrice); // ❌ Stripe Prices are immutable!
+
+// ✅ GOOD: Create new Stripe Price, update subscription
+const newPrice = await stripe.prices.create({
+  product: plan.stripeProductId,
+  unit_amount: newPriceInCents,
+  currency: 'usd',
+  recurring: {
+    interval: plan.interval.toLowerCase(),
+    interval_count: plan.intervalCount,
+  },
+});
+
+// Update subscription to use new price (takes effect next billing)
+await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+  items: [{
+    id: subscription.items.data[0].id,
+    price: newPrice.id,
+  }],
+  proration_behavior: 'none', // No proration per our decision
+});
+
+// Store new price ID
+await db.plan.update({
+  where: { id: plan.id },
+  data: { stripePriceId: newPrice.id },
+});
+```
+
+### Webhook Sync (Keep DB Updated)
+
+```typescript
+// Handle subscription.updated webhook
+async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+  await db.planSubscription.update({
+    where: { stripeSubscriptionId: subscription.id },
+    data: {
+      status: subscription.status,
+      currentPeriodStart: new Date(subscription.current_period_start * 1000),
+      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+      cancelAtPeriodEnd: subscription.cancel_at_period_end,
+      lastSyncedAt: new Date(),
+    },
+  });
+}
+
+// Handle all subscription events:
+// - subscription.created
+// - subscription.updated
+// - subscription.deleted
+// - subscription.paused
+// - subscription.resumed
+```
+
+### Fetching Subscription Details
+
+```typescript
+// ❌ BAD: Store everything in DB
+const subscription = await db.planSubscription.findUnique({
+  include: { 
+    nextInvoice: true,  // ❌ Don't duplicate Stripe's invoice
+    paymentMethod: true, // ❌ Fetch from Stripe
+  },
+});
+
+// ✅ GOOD: Fetch from Stripe when needed
+const dbSubscription = await db.planSubscription.findUnique({
+  where: { id },
+  include: { plan: true, consumer: true },
+});
+
+// Get live data from Stripe
+const stripeSubscription = await stripe.subscriptions.retrieve(
+  dbSubscription.stripeSubscriptionId,
+  {
+    expand: [
+      'latest_invoice',
+      'default_payment_method',
+      'schedule',
+    ],
+  }
+);
+
+// Now you have:
+// - stripeSubscription.latest_invoice (current invoice)
+// - stripeSubscription.default_payment_method (card details)
+// - stripeSubscription.schedule (planned changes)
+// - stripeSubscription.pause_collection (pause state)
+```
 
 ---
 
