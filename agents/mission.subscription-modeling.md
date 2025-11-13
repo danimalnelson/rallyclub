@@ -169,6 +169,10 @@ The challenge: Dynamic pricing requires business input each interval.
 ### **Recommendation:**
 Start with **Option 1 (Manual)** for MVP, add **Option 2 (Queue)** for v2.
 
+### **Decision Made:**
+- **Dynamic Pricing:** Start with Manual (Option 1), add Queue (Option 2) in V2
+- **Fixed Pricing:** When price changes, give business option to notify active subscribers
+
 ---
 
 ## 🗄️ Data Model Considerations
@@ -398,14 +402,14 @@ model PriceQueueItem {
 
 ### Membership Rules
 1. Can a membership have zero plans (placeholder)?
-2. Can a plan belong to multiple memberships?
+2. ✅ **DECIDED:** Can a plan belong to multiple memberships? **NO** - Each plan belongs to exactly one membership
 3. How to handle changing exclusivity rules with active subscribers?
 
 ### Pricing
-4. Should we support multiple currencies per plan?
-5. How far in advance can dynamic prices be set?
-6. What happens if business forgets to set dynamic price?
-7. Should customers be notified of ALL price changes or just increases?
+4. ✅ **DECIDED:** Should we support multiple currencies per plan? **NO** - USD only for now
+5. How far in advance can dynamic prices be set? (Depends on Manual vs Queue approach)
+6. What happens if business forgets to set dynamic price? (Block billing? Use last price? Email reminder?)
+7. ✅ **DECIDED:** Should customers be notified of ALL price changes or just increases? **For fixed plans, give business the option to notify subscribers when changing price**
 8. Can customers lock in a price for X months?
 
 ### Member Experience
@@ -415,9 +419,9 @@ model PriceQueueItem {
 12. Should skipped months extend the subscription or just not charge?
 
 ### Inventory
-13. Do we need physical inventory tracking integration?
-14. Overselling protection (charge card but no inventory)?
-15. Allocation strategy if demand > supply?
+13. ✅ **DECIDED:** Do we need physical inventory tracking integration? **NO** - Not needed for MVP
+14. Overselling protection (charge card but no inventory)? (Not needed if no inventory tracking)
+15. Allocation strategy if demand > supply? (Can use maxSubscribers limit on Plan)
 
 ### Business Operations
 16. Multi-user access (owner + staff)?
