@@ -57,6 +57,9 @@ export async function ensureCustomerOnConnectedAccount(
 
 /**
  * Create a Checkout Session on a connected account
+ * 
+ * @param billingCycleAnchor - Unix timestamp for cohort billing (NEXT_INTERVAL memberships)
+ * @param trialPeriodDays - Number of days for trial period
  */
 export async function createConnectedCheckoutSession(params: {
   accountId: string;
@@ -68,6 +71,8 @@ export async function createConnectedCheckoutSession(params: {
   allowPromotionCodes?: boolean;
   automaticTax?: boolean;
   metadata?: Record<string, string>;
+  billingCycleAnchor?: number; // NEW: Unix timestamp for cohort billing
+  trialPeriodDays?: number; // NEW: Trial period
 }): Promise<Stripe.Checkout.Session> {
   const client = getStripeClient(params.accountId);
 
@@ -91,12 +96,27 @@ export async function createConnectedCheckoutSession(params: {
     sessionParams.customer_creation = "always";
   }
 
+  // Configure subscription data
+  sessionParams.subscription_data = {
+    ...(params.applicationFeeAmount && {
+      application_fee_percent: undefined, // Use fixed fee instead
+    }),
+  };
+
+  // NEW: Add billing cycle anchor for cohort billing (NEXT_INTERVAL)
+  if (params.billingCycleAnchor) {
+    sessionParams.subscription_data.billing_cycle_anchor = params.billingCycleAnchor;
+    sessionParams.subscription_data.proration_behavior = "none"; // Don't prorate for cohort billing
+  }
+
+  // NEW: Add trial period
+  if (params.trialPeriodDays) {
+    sessionParams.subscription_data.trial_period_days = params.trialPeriodDays;
+  }
+
   if (params.applicationFeeAmount) {
     sessionParams.payment_intent_data = {
       application_fee_amount: params.applicationFeeAmount,
-    };
-    sessionParams.subscription_data = {
-      application_fee_percent: undefined, // Use fixed fee instead
     };
   }
 
@@ -198,5 +218,80 @@ export function verifyWebhookSignature(
   secret: string
 ): Stripe.Event {
   return stripe.webhooks.constructEvent(payload, signature, secret);
+}
+
+/**
+ * Pause a subscription (stop billing, keep access)
+ * 
+ * @param accountId - Connected account ID
+ * @param subscriptionId - Stripe subscription ID
+ * @returns Updated subscription
+ */
+export async function pauseSubscription(
+  accountId: string,
+  subscriptionId: string
+): Promise<Stripe.Subscription> {
+  const client = getStripeClient(accountId);
+  
+  return client.subscriptions.update(subscriptionId, {
+    pause_collection: {
+      behavior: "void", // Don't charge, keep subscription active
+    },
+  });
+}
+
+/**
+ * Resume a paused subscription
+ * 
+ * @param accountId - Connected account ID
+ * @param subscriptionId - Stripe subscription ID
+ * @returns Updated subscription
+ */
+export async function resumeSubscription(
+  accountId: string,
+  subscriptionId: string
+): Promise<Stripe.Subscription> {
+  const client = getStripeClient(accountId);
+  
+  return client.subscriptions.update(subscriptionId, {
+    pause_collection: "", // Remove pause (empty string required by Stripe)
+  });
+}
+
+/**
+ * Calculate next cohort billing date for NEXT_INTERVAL memberships
+ * 
+ * @param cohortDay - Day of month (1-31)
+ * @param signupDate - Date of signup (defaults to now)
+ * @returns Unix timestamp for next billing cycle
+ */
+export function calculateNextCohortDate(
+  cohortDay: number,
+  signupDate: Date = new Date()
+): number {
+  const now = signupDate;
+  const currentDay = now.getDate();
+  
+  // Determine next month to start billing
+  let targetMonth = now.getMonth();
+  let targetYear = now.getFullYear();
+  
+  // If signup is ON the billing day, start NEXT interval
+  // If signup is AFTER billing day, start next month
+  if (currentDay >= cohortDay) {
+    targetMonth += 1;
+    if (targetMonth > 11) {
+      targetMonth = 0;
+      targetYear += 1;
+    }
+  }
+  
+  // Create date for target month
+  const targetDate = new Date(targetYear, targetMonth, cohortDay, 0, 0, 0, 0);
+  
+  // Handle edge case: if cohortDay > days in target month (e.g., Feb 31)
+  // JavaScript Date will overflow to next month, which is correct behavior
+  
+  return Math.floor(targetDate.getTime() / 1000);
 }
 
