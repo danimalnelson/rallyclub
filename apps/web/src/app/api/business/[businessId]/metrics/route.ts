@@ -6,13 +6,12 @@ import {
   CACHE_TTL,
   requireBusinessAuth,
   withMiddleware,
-  getCache,
-  cacheKey,
+  createCache,
   type BusinessMetrics,
 } from "@wine-club/lib";
 
-// Redis-backed cache with in-memory fallback
-const metricsCache = getCache<BusinessMetrics>("metrics");
+// Simple in-memory cache for metrics
+const metricsCache = createCache<BusinessMetrics>();
 
 export const GET = withMiddleware(async (req: NextRequest, context) => {
   const { businessId } = await (
@@ -30,14 +29,17 @@ export const GET = withMiddleware(async (req: NextRequest, context) => {
     return authResult.error;
   }
 
-  // Get or compute metrics with automatic caching
-  const metrics = await metricsCache.getOrCompute(
-    cacheKey("metrics", businessId),
-    CACHE_TTL.MEDIUM,
-    async () => {
-      return calculateMetrics(prisma, businessId);
-    }
-  );
+  const key = `metrics:${businessId}`;
+
+  // Check cache first
+  const cached = metricsCache.get(key, CACHE_TTL.MEDIUM);
+  if (cached) {
+    return NextResponse.json(cached);
+  }
+
+  // Compute and cache metrics
+  const metrics = await calculateMetrics(prisma, businessId);
+  metricsCache.set(key, metrics);
 
   return NextResponse.json(metrics);
 });

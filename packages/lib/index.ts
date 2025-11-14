@@ -8,8 +8,6 @@ export * from "./api-errors";
 export * from "./api-auth";
 export * from "./cache";
 export * from "./api-middleware";
-export * from "./rate-limit";
-export * from "./redis-cache";
 export * from "./webhook-handlers";
 
 // Export metrics separately to avoid pulling in Prisma during tests
