@@ -19,6 +19,7 @@
     "@wine-club/emails": "workspace:*",
     "@wine-club/lib": "workspace:*",
     "@wine-club/ui": "workspace:*",
+    "lucide-react": "^0.553.0",
     "next": "^15.0.2",
     "next-auth": "^4.24.5",
     "react": "^18.2.0",
