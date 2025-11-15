@@ -160,9 +160,15 @@ export default async function MemberDetailPage({
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-3">
                           <h3 className="text-lg font-semibold">{sub.plan.name}</h3>
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300">
-                            {sub.status}
-                          </span>
+                          {sub.pausedAt ? (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300">
+                              ⏸ Paused
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300">
+                              {sub.status}
+                            </span>
+                          )}
                         </div>
                         
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
@@ -214,6 +220,7 @@ export default async function MemberDetailPage({
                         stripeSubscriptionId={sub.stripeSubscriptionId}
                         status={sub.status}
                         cancelAtPeriodEnd={sub.cancelAtPeriodEnd}
+                        pausedAt={sub.pausedAt}
                       />
                     </div>
                   </CardContent>

@@ -65,6 +65,7 @@ export async function POST(
       where: { id: subscriptionId },
       data: {
         status: updated.status,
+        pausedAt: new Date(),
         lastSyncedAt: new Date(),
       },
     });

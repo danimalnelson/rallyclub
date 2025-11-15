@@ -10,6 +10,7 @@ interface SubscriptionActionsProps {
   stripeSubscriptionId: string;
   status: string;
   cancelAtPeriodEnd: boolean;
+  pausedAt: Date | null;
 }
 
 export function SubscriptionActions({
@@ -17,15 +18,17 @@ export function SubscriptionActions({
   stripeSubscriptionId,
   status,
   cancelAtPeriodEnd,
+  pausedAt,
 }: SubscriptionActionsProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
 
-  const canPause = status === "active" && !cancelAtPeriodEnd;
-  const canResume = status === "paused";
-  const canCancel = (status === "active" || status === "trialing") && !cancelAtPeriodEnd;
+  const isPaused = pausedAt !== null;
+  const canPause = status === "active" && !cancelAtPeriodEnd && !isPaused;
+  const canResume = isPaused;
+  const canCancel = (status === "active" || status === "trialing") && !cancelAtPeriodEnd && !isPaused;
 
   const handlePause = async () => {
     if (!confirm("Pause this subscription? The member won't be charged until resumed.")) {
@@ -39,12 +42,16 @@ export function SubscriptionActions({
       });
 
       if (!response.ok) {
-        throw new Error("Failed to pause subscription");
+        const error = await response.json();
+        console.error("Pause error:", error);
+        throw new Error(error.details || "Failed to pause subscription");
       }
 
+      alert("✅ Subscription paused successfully!");
       router.refresh();
-    } catch (error) {
-      alert("Failed to pause subscription. Please try again.");
+    } catch (error: any) {
+      console.error("Pause error:", error);
+      alert(`Failed to pause subscription: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -106,7 +113,7 @@ export function SubscriptionActions({
           className="gap-2"
         >
           <Pause className="h-4 w-4" />
-          Pause
+          {loading ? "Pausing..." : "Pause"}
         </Button>
       )}
 
@@ -119,7 +126,7 @@ export function SubscriptionActions({
           className="gap-2"
         >
           <Play className="h-4 w-4" />
-          Resume
+          {loading ? "Resuming..." : "Resume"}
         </Button>
       )}
 

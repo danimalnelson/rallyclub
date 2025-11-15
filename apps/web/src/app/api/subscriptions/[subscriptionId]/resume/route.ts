@@ -63,6 +63,7 @@ export async function POST(
       where: { id: subscriptionId },
       data: {
         status: updated.status,
+        pausedAt: null,
         lastSyncedAt: new Date(),
       },
     });
