@@ -30,20 +30,35 @@ export async function POST(req: NextRequest) {
   }
 
   let event: Stripe.Event;
+  
+  // Get account ID if this is a Connect webhook
+  const accountId = headersList.get("stripe-account") || undefined;
 
+  // Try to verify with appropriate secret
+  // Connected account events use STRIPE_CONNECT_WEBHOOK_SECRET
+  // Platform events use STRIPE_WEBHOOK_SECRET
   try {
-    event = verifyWebhookSignature(
-      body,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
-    );
+    if (accountId && process.env.STRIPE_CONNECT_WEBHOOK_SECRET) {
+      // This is a connected account event, use connect webhook secret
+      console.log("[Webhook] Verifying connected account event with connect secret");
+      event = verifyWebhookSignature(
+        body,
+        signature,
+        process.env.STRIPE_CONNECT_WEBHOOK_SECRET
+      );
+    } else {
+      // This is a platform event, use platform webhook secret
+      console.log("[Webhook] Verifying platform event with platform secret");
+      event = verifyWebhookSignature(
+        body,
+        signature,
+        process.env.STRIPE_WEBHOOK_SECRET!
+      );
+    }
   } catch (err) {
     console.error("Webhook signature verification failed:", err);
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
-
-  // Get account ID if this is a Connect webhook
-  const accountId = headersList.get("stripe-account") || undefined;
 
   // Log webhook event
   await prisma.webhookEvent.create({
