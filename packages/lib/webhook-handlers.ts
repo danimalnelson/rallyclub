@@ -101,10 +101,13 @@ export async function createPlanSubscriptionFromSubscription(
     return;
   }
 
+  // Use business's Stripe account ID if accountId not provided in header
+  const effectiveAccountId = accountId || plan.business.stripeAccountId;
+
   // Get customer email from Stripe
   const stripeClient = new (require('stripe'))(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: "2023-10-16",
-    ...(accountId && { stripeAccount: accountId }),
+    ...(effectiveAccountId && { stripeAccount: effectiveAccountId }),
   });
 
   const customer = await stripeClient.customers.retrieve(subscription.customer as string);
