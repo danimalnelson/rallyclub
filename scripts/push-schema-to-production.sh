@@ -8,8 +8,8 @@ set -e
 echo "🚨 WARNING: This will modify the PRODUCTION database schema!"
 echo ""
 echo "This script will:"
-echo "  1. Drop columns: quantityPerShipment, productType, shippingType, shippingCost, trialPeriodDays, minimumCommitmentMonths"
-echo "  2. Add columns: recurringFee, recurringFeeName, shippingFee"
+echo "  1. Add new table: MemberNote (for internal business notes about customers)"
+echo "  2. Add relations: Consumer.memberNotes, User.memberNotes"
 echo ""
 read -p "Are you sure you want to continue? (yes/no): " confirm
 
