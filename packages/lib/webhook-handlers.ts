@@ -133,6 +133,14 @@ export async function createPlanSubscriptionFromSubscription(
   }
 
   // Create PlanSubscription
+  // Note: current_period_start/end may be null for incomplete subscriptions
+  const periodStart = subscription.current_period_start 
+    ? new Date(subscription.current_period_start * 1000)
+    : new Date();
+  const periodEnd = subscription.current_period_end
+    ? new Date(subscription.current_period_end * 1000)
+    : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // Default to 30 days from now
+
   await prisma.planSubscription.create({
     data: {
       planId: plan.id,
@@ -140,8 +148,8 @@ export async function createPlanSubscriptionFromSubscription(
       stripeSubscriptionId: subscription.id,
       stripeCustomerId: subscription.customer as string,
       status: subscription.status,
-      currentPeriodStart: new Date(subscription.current_period_start * 1000),
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+      currentPeriodStart: periodStart,
+      currentPeriodEnd: periodEnd,
       cancelAtPeriodEnd: subscription.cancel_at_period_end,
       lastSyncedAt: new Date(),
     },
