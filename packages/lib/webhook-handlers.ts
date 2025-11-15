@@ -27,8 +27,23 @@ export async function syncPlanSubscription(
   });
 
   if (!existing) {
-    // New subscription - will be created by checkout.session.completed handler
-    console.log(`[Webhook] New subscription ${subscription.id}, waiting for checkout handler`);
+    // New subscription - try to create it from subscription metadata
+    const metadata = subscription.metadata || {};
+    const planId = metadata.planId;
+    
+    if (!planId) {
+      console.log(`[Webhook] New subscription ${subscription.id}, but no planId in metadata. Waiting for checkout handler.`);
+      return;
+    }
+    
+    console.log(`[Webhook] Creating PlanSubscription from subscription.created event for plan ${planId}`);
+    try {
+      await createPlanSubscriptionFromSubscription(prisma, subscription, accountId);
+      console.log(`[Webhook] ✅ Created PlanSubscription from subscription ${subscription.id}`);
+    } catch (error) {
+      console.error(`[Webhook] ❌ Failed to create PlanSubscription from subscription:`, error);
+      throw error;
+    }
     return;
   }
 
@@ -50,6 +65,86 @@ export async function syncPlanSubscription(
   });
 
   console.log(`[Webhook] Synced PlanSubscription ${existing.id}: ${subscription.status}`);
+}
+
+/**
+ * Create PlanSubscription from Stripe Subscription
+ * 
+ * Called from customer.subscription.created webhook when checkout.session.completed isn't received
+ * 
+ * @param prisma - Prisma client instance
+ * @param subscription - Stripe subscription object
+ * @param accountId - Stripe connected account ID
+ */
+export async function createPlanSubscriptionFromSubscription(
+  prisma: any,
+  subscription: Stripe.Subscription,
+  accountId?: string
+): Promise<void> {
+  // Get metadata from subscription
+  const metadata = subscription.metadata || {};
+  const planId = metadata.planId;
+
+  if (!planId) {
+    console.error(`[Webhook] No planId in subscription ${subscription.id} metadata`);
+    return;
+  }
+
+  // Find plan
+  const plan = await prisma.plan.findUnique({
+    where: { id: planId },
+    include: { business: true },
+  });
+
+  if (!plan) {
+    console.error(`[Webhook] Plan ${planId} not found`);
+    return;
+  }
+
+  // Get customer email from Stripe
+  const stripeClient = new (require('stripe'))(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: "2023-10-16",
+    ...(accountId && { stripeAccount: accountId }),
+  });
+
+  const customer = await stripeClient.customers.retrieve(subscription.customer as string);
+  const customerEmail = 'email' in customer ? customer.email : null;
+
+  if (!customerEmail) {
+    console.error(`[Webhook] No email for customer ${subscription.customer}`);
+    return;
+  }
+
+  // Get or create consumer
+  let consumer = await prisma.consumer.findUnique({
+    where: { email: customerEmail },
+  });
+
+  if (!consumer) {
+    consumer = await prisma.consumer.create({
+      data: {
+        email: customerEmail,
+        name: 'name' in customer ? customer.name : null,
+      },
+    });
+  }
+
+  // Create PlanSubscription
+  await prisma.planSubscription.create({
+    data: {
+      planId: plan.id,
+      consumerId: consumer.id,
+      stripeSubscriptionId: subscription.id,
+      stripeCustomerId: subscription.customer as string,
+      status: subscription.status,
+      currentPeriodStart: new Date(subscription.current_period_start * 1000),
+      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+      cancelAtPeriodEnd: subscription.cancel_at_period_end,
+      lastSyncedAt: new Date(),
+    },
+  });
+
+  console.log(`[Webhook] Created PlanSubscription for plan ${planId}, consumer ${consumer.email}`);
 }
 
 /**
