@@ -3,7 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@wine-club/db";
-import { Card, CardContent, formatDate } from "@wine-club/ui";
+import { Card, CardContent, formatDate, formatCurrency } from "@wine-club/ui";
 
 export default async function MembersPage({
   params,
@@ -32,27 +32,43 @@ export default async function MembersPage({
     notFound();
   }
 
-  const members = await prisma.member.findMany({
+  // Get all consumers who have subscriptions to this business's plans
+  const planSubscriptions = await prisma.planSubscription.findMany({
     where: {
-      businessId: business.id,
+      plan: {
+        businessId: business.id,
+      },
     },
     include: {
       consumer: true,
-      subscriptions: {
+      plan: {
         include: {
-          membershipPlan: true,
-          price: true,
+          membership: true,
         },
-        orderBy: {
-          createdAt: "desc",
-        },
-        take: 1,
       },
     },
     orderBy: {
       createdAt: "desc",
     },
   });
+
+  // Group subscriptions by consumer
+  const consumersMap = new Map<string, {
+    consumer: any;
+    subscriptions: any[];
+  }>();
+
+  planSubscriptions.forEach((sub) => {
+    if (!consumersMap.has(sub.consumer.id)) {
+      consumersMap.set(sub.consumer.id, {
+        consumer: sub.consumer,
+        subscriptions: [],
+      });
+    }
+    consumersMap.get(sub.consumer.id)!.subscriptions.push(sub);
+  });
+
+  const members = Array.from(consumersMap.values());
 
   return (
     <div className="min-h-screen bg-background">
@@ -82,17 +98,20 @@ export default async function MembersPage({
             <CardContent className="py-12 text-center">
               <p className="text-muted-foreground mb-4">No members yet</p>
               <p className="text-sm text-muted-foreground">
-                Members will appear here when they join your club
+                Members will appear here when they subscribe to your plans
               </p>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-4">
-            {members.map((member: any) => {
-              const subscription = member.subscriptions[0];
+            {members.map((member) => {
+              const activeSubscriptions = member.subscriptions.filter(
+                (sub: any) => sub.status === "active" || sub.status === "trialing"
+              );
+              const latestSubscription = member.subscriptions[0];
               
               return (
-                <Card key={member.id}>
+                <Card key={member.consumer.id}>
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
@@ -107,43 +126,57 @@ export default async function MembersPage({
                           </div>
                           <span
                             className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
-                              member.status === "ACTIVE"
-                                ? "bg-green-100 text-green-700"
-                                : member.status === "PAST_DUE"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-gray-100 text-gray-700"
+                              activeSubscriptions.length > 0
+                                ? "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300"
+                                : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
                             }`}
                           >
-                            {member.status}
+                            {activeSubscriptions.length > 0 ? "ACTIVE" : "INACTIVE"}
                           </span>
                         </div>
 
-                        {subscription && (
-                          <div className="mt-4 grid grid-cols-3 gap-4 text-sm">
-                            <div>
-                              <div className="text-muted-foreground">Plan</div>
-                              <div className="font-medium">{subscription.membershipPlan.name}</div>
-                            </div>
-                            <div>
-                              <div className="text-muted-foreground">Billing</div>
-                              <div className="font-medium capitalize">{subscription.price.interval}ly</div>
-                            </div>
-                            <div>
-                              <div className="text-muted-foreground">Next Billing</div>
-                              <div className="font-medium">
-                                {formatDate(subscription.currentPeriodEnd)}
+                        {/* Active Subscriptions */}
+                        {activeSubscriptions.length > 0 && (
+                          <div className="mt-4 space-y-2">
+                            {activeSubscriptions.map((sub: any) => (
+                              <div key={sub.id} className="grid grid-cols-4 gap-4 text-sm p-3 bg-muted/50 rounded-lg">
+                                <div>
+                                  <div className="text-muted-foreground">Plan</div>
+                                  <div className="font-medium">{sub.plan.name}</div>
+                                </div>
+                                <div>
+                                  <div className="text-muted-foreground">Membership</div>
+                                  <div className="font-medium">{sub.plan.membership.name}</div>
+                                </div>
+                                <div>
+                                  <div className="text-muted-foreground">Status</div>
+                                  <div className="font-medium capitalize">{sub.status}</div>
+                                </div>
+                                <div>
+                                  <div className="text-muted-foreground">Next Billing</div>
+                                  <div className="font-medium">
+                                    {formatDate(sub.currentPeriodEnd)}
+                                  </div>
+                                </div>
                               </div>
-                            </div>
+                            ))}
                           </div>
                         )}
 
-                        <div className="mt-2 text-xs text-muted-foreground">
-                          Member since {formatDate(member.createdAt)}
+                        {/* Subscription Count */}
+                        <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
+                          <span>
+                            Total subscriptions: {member.subscriptions.length}
+                          </span>
+                          <span>•</span>
+                          <span>
+                            Member since {formatDate(member.consumer.createdAt)}
+                          </span>
                         </div>
                       </div>
 
                       <div>
-                        <Link href={`/app/${business.id}/members/${member.id}`}>
+                        <Link href={`/app/${business.id}/members/${member.consumer.id}`}>
                           <button className="px-4 py-2 text-sm border rounded-md hover:bg-accent">
                             View Details
                           </button>
@@ -160,4 +193,3 @@ export default async function MembersPage({
     </div>
   );
 }
-
