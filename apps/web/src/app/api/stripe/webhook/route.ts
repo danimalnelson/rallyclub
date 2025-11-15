@@ -10,6 +10,11 @@ import {
   refundProcessedEmail,
   subscriptionCancelledEmail,
 } from "@wine-club/lib/email";
+import {
+  createPlanSubscriptionFromCheckout,
+  syncPlanSubscription,
+  handlePlanSubscriptionDeleted,
+} from "@wine-club/lib";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2023-10-16",
@@ -124,6 +129,26 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, account
     return;
   }
 
+  // Check if this is a NEW model checkout (has planId in metadata)
+  const metadata = session.metadata || {};
+  const planId = metadata.planId;
+
+  if (planId) {
+    // NEW MODEL: Use PlanSubscription
+    console.log(`[Webhook] New model checkout for plan ${planId}`);
+    try {
+      await createPlanSubscriptionFromCheckout(prisma, session, accountId);
+      console.log(`[Webhook] ✅ Created PlanSubscription from checkout ${session.id}`);
+    } catch (error) {
+      console.error(`[Webhook] ❌ Failed to create PlanSubscription:`, error);
+      throw error;
+    }
+    return;
+  }
+
+  // OLD MODEL: Legacy handling (backward compatibility)
+  console.log(`[Webhook] Old model checkout (no planId in metadata)`);
+
   const subscriptionId = typeof session.subscription === "string" 
     ? session.subscription 
     : session.subscription.id;
@@ -222,14 +247,35 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, account
 }
 
 async function handleSubscriptionUpdate(subscription: Stripe.Subscription, accountId?: string) {
+  // Try NEW model first
+  const planSubscription = await prisma.planSubscription.findUnique({
+    where: { stripeSubscriptionId: subscription.id },
+  });
+
+  if (planSubscription) {
+    // NEW MODEL: Sync PlanSubscription
+    console.log(`[Webhook] Syncing new model PlanSubscription ${planSubscription.id}`);
+    try {
+      await syncPlanSubscription(prisma, subscription, accountId);
+      console.log(`[Webhook] ✅ Synced PlanSubscription ${planSubscription.id}`);
+    } catch (error) {
+      console.error(`[Webhook] ❌ Failed to sync PlanSubscription:`, error);
+      throw error;
+    }
+    return;
+  }
+
+  // OLD MODEL: Legacy handling
   const existingSub = await prisma.subscription.findUnique({
     where: { stripeSubscriptionId: subscription.id },
   });
 
   if (!existingSub) {
-    console.log("Subscription not found in DB, skipping update");
+    console.log("[Webhook] Subscription not found in DB, skipping update");
     return;
   }
+
+  console.log(`[Webhook] Updating old model Subscription ${existingSub.id}`);
 
   await prisma.subscription.update({
     where: { stripeSubscriptionId: subscription.id },
@@ -255,6 +301,49 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription, accou
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription, accountId?: string) {
+  // Try NEW model first
+  const planSubscription = await prisma.planSubscription.findUnique({
+    where: { stripeSubscriptionId: subscription.id },
+    include: {
+      plan: {
+        include: {
+          membership: true,
+          business: true,
+        },
+      },
+      consumer: true,
+    },
+  });
+
+  if (planSubscription) {
+    // NEW MODEL: Handle PlanSubscription deletion
+    console.log(`[Webhook] Deleting new model PlanSubscription ${planSubscription.id}`);
+    try {
+      await handlePlanSubscriptionDeleted(prisma, subscription);
+      console.log(`[Webhook] ✅ Deleted PlanSubscription ${planSubscription.id}`);
+
+      // Send cancellation email
+      if (planSubscription.consumer.email) {
+        const cancellationDate = new Date(subscription.current_period_end * 1000);
+        await sendEmail({
+          to: planSubscription.consumer.email,
+          subject: `Subscription Cancelled - ${planSubscription.plan.business.name}`,
+          html: subscriptionCancelledEmail({
+            customerName: planSubscription.consumer.name || "Valued Member",
+            planName: planSubscription.plan.name,
+            cancellationDate: cancellationDate.toLocaleDateString(),
+            businessName: planSubscription.plan.business.name,
+          }),
+        });
+      }
+    } catch (error) {
+      console.error(`[Webhook] ❌ Failed to delete PlanSubscription:`, error);
+      throw error;
+    }
+    return;
+  }
+
+  // OLD MODEL: Legacy handling
   const existingSub = await prisma.subscription.findUnique({
     where: { stripeSubscriptionId: subscription.id },
     include: {
@@ -269,8 +358,11 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription, acco
   });
 
   if (!existingSub) {
+    console.log("[Webhook] Subscription not found in DB, skipping deletion");
     return;
   }
+
+  console.log(`[Webhook] Deleting old model Subscription ${existingSub.id}`);
 
   await prisma.subscription.update({
     where: { stripeSubscriptionId: subscription.id },
