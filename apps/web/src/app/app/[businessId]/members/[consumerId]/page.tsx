@@ -1,0 +1,240 @@
+import { getServerSession } from "next-auth";
+import { redirect, notFound } from "next/navigation";
+import Link from "next/link";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@wine-club/db";
+import { Card, CardContent, CardHeader, CardTitle, formatDate, formatCurrency } from "@wine-club/ui";
+import { ArrowLeft } from "lucide-react";
+
+export default async function MemberDetailPage({
+  params,
+}: {
+  params: Promise<{ businessId: string; consumerId: string }>;
+}) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user) {
+    redirect("/auth/signin");
+  }
+
+  const { businessId, consumerId } = await params;
+
+  // Verify business access
+  const business = await prisma.business.findFirst({
+    where: {
+      id: businessId,
+      users: {
+        some: {
+          userId: session.user.id,
+        },
+      },
+    },
+  });
+
+  if (!business) {
+    notFound();
+  }
+
+  // Get consumer details
+  const consumer = await prisma.consumer.findUnique({
+    where: { id: consumerId },
+  });
+
+  if (!consumer) {
+    notFound();
+  }
+
+  // Get all subscriptions for this consumer in this business
+  const subscriptions = await prisma.planSubscription.findMany({
+    where: {
+      consumerId: consumer.id,
+      plan: {
+        businessId: business.id,
+      },
+    },
+    include: {
+      plan: {
+        include: {
+          membership: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  const activeSubscriptions = subscriptions.filter(
+    (sub) => sub.status === "active" || sub.status === "trialing"
+  );
+  const inactiveSubscriptions = subscriptions.filter(
+    (sub) => sub.status !== "active" && sub.status !== "trialing"
+  );
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="border-b">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center gap-4">
+            <Link href={`/app/${business.id}/members`}>
+              <button className="text-muted-foreground hover:text-foreground">
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold">
+                {consumer.name || consumer.email.split('@')[0]}
+              </h1>
+              <p className="text-sm text-muted-foreground">{consumer.email}</p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8 max-w-5xl">
+        {/* Member Info Card */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Member Information</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <div className="text-sm text-muted-foreground">Email</div>
+                <div className="font-medium">{consumer.email}</div>
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">Phone</div>
+                <div className="font-medium">{consumer.phone || "—"}</div>
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">Member Since</div>
+                <div className="font-medium">{formatDate(consumer.createdAt)}</div>
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">Total Subscriptions</div>
+                <div className="font-medium">{subscriptions.length}</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Active Subscriptions */}
+        {activeSubscriptions.length > 0 && (
+          <div className="mb-6">
+            <h2 className="text-xl font-bold mb-4">Active Subscriptions</h2>
+            <div className="space-y-4">
+              {activeSubscriptions.map((sub) => (
+                <Card key={sub.id}>
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-3">
+                          <h3 className="text-lg font-semibold">{sub.plan.name}</h3>
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300">
+                            {sub.status}
+                          </span>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div>
+                            <div className="text-muted-foreground">Membership</div>
+                            <div className="font-medium">{sub.plan.membership.name}</div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">Price</div>
+                            <div className="font-medium">
+                              {sub.plan.basePrice ? formatCurrency(sub.plan.basePrice, sub.plan.currency) : "Variable"}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">Current Period</div>
+                            <div className="font-medium">
+                              {formatDate(sub.currentPeriodStart)} - {formatDate(sub.currentPeriodEnd)}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">Next Billing</div>
+                            <div className="font-medium">{formatDate(sub.currentPeriodEnd)}</div>
+                          </div>
+                        </div>
+
+                        {sub.cancelAtPeriodEnd && (
+                          <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-950/50 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                            <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                              ⚠️ Cancels at end of period
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t text-xs text-muted-foreground">
+                      Stripe Subscription ID: {sub.stripeSubscriptionId} • 
+                      Created {formatDate(sub.createdAt)} •
+                      Last synced {formatDate(sub.lastSyncedAt)}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Inactive Subscriptions */}
+        {inactiveSubscriptions.length > 0 && (
+          <div>
+            <h2 className="text-xl font-bold mb-4">Past Subscriptions</h2>
+            <div className="space-y-4">
+              {inactiveSubscriptions.map((sub) => (
+                <Card key={sub.id} className="opacity-75">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-3">
+                          <h3 className="text-lg font-semibold">{sub.plan.name}</h3>
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                            {sub.status}
+                          </span>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <div className="text-muted-foreground">Membership</div>
+                            <div className="font-medium">{sub.plan.membership.name}</div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">Ended</div>
+                            <div className="font-medium">{formatDate(sub.currentPeriodEnd)}</div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">Duration</div>
+                            <div className="font-medium">
+                              {formatDate(sub.createdAt)} - {formatDate(sub.updatedAt)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* No subscriptions */}
+        {subscriptions.length === 0 && (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="text-muted-foreground">
+                This member has no subscriptions in this business.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </main>
+    </div>
+  );
+}
+
