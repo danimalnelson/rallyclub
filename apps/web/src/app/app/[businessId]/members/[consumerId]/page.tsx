@@ -77,14 +77,14 @@ export default async function MemberDetailPage({
   // Get member notes
   const notes = await prisma.memberNote.findMany({
     where: { consumerId: consumer.id },
-    include: {
-      createdBy: {
-        select: {
-          name: true,
-          email: true,
-        },
-      },
-    },
+    // include: {
+    //   createdBy: {
+    //     select: {
+    //       name: true,
+    //       email: true,
+    //     },
+    //   },
+    // },
     orderBy: { createdAt: "desc" },
   });
 

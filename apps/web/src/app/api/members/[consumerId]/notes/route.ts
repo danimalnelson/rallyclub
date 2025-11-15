@@ -63,14 +63,14 @@ export async function POST(
         content: data.content,
         createdById: session.user.id,
       },
-      include: {
-        createdBy: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
-      },
+      // include: {
+      //   createdBy: {
+      //     select: {
+      //       name: true,
+      //       email: true,
+      //     },
+      //   },
+      // },
     });
 
     return NextResponse.json(note);
