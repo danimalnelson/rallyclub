@@ -166,7 +166,10 @@ export default async function MembersPage({
                         {/* Subscription Count */}
                         <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
                           <span>
-                            Total subscriptions: {member.subscriptions.length}
+                            {activeSubscriptions.length} active subscription{activeSubscriptions.length !== 1 ? 's' : ''}
+                            {member.subscriptions.length > activeSubscriptions.length && 
+                              ` • ${member.subscriptions.length - activeSubscriptions.length} inactive`
+                            }
                           </span>
                           <span>•</span>
                           <span>

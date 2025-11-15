@@ -112,8 +112,8 @@ export default async function MemberDetailPage({
                 <div className="font-medium">{formatDate(consumer.createdAt)}</div>
               </div>
               <div>
-                <div className="text-sm text-muted-foreground">Total Subscriptions</div>
-                <div className="font-medium">{subscriptions.length}</div>
+                <div className="text-sm text-muted-foreground">Active Subscriptions</div>
+                <div className="font-medium">{activeSubscriptions.length}</div>
               </div>
             </div>
           </CardContent>
