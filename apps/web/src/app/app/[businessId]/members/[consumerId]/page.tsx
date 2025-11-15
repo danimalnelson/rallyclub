@@ -70,19 +70,26 @@ export default async function MemberDetailPage({
     (sub) => sub.status !== "active" && sub.status !== "trialing"
   );
 
-  // Get member notes
-  const notes = await prisma.memberNote.findMany({
-    where: { consumerId: consumer.id },
-    include: {
-      createdBy: {
-        select: {
-          name: true,
-          email: true,
+  // Get member notes (safely handle if table doesn't exist yet)
+  let notes: any[] = [];
+  try {
+    if (prisma.memberNote) {
+      notes = await prisma.memberNote.findMany({
+        where: { consumerId: consumer.id },
+        include: {
+          createdBy: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
         },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+        orderBy: { createdAt: "desc" },
+      });
+    }
+  } catch (error) {
+    console.log("MemberNote table not yet available in production");
+  }
 
   return (
     <div className="min-h-screen bg-background">
