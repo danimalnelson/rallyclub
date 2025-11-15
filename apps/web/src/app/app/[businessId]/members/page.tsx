@@ -118,7 +118,7 @@ export default async function MembersPage({
                         <div className="flex items-center gap-4">
                           <div>
                             <div className="font-medium text-lg">
-                              {member.consumer.name || "No name"}
+                              {member.consumer.name || member.consumer.email.split('@')[0]}
                             </div>
                             <div className="text-sm text-muted-foreground">
                               {member.consumer.email}

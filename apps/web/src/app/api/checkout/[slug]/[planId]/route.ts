@@ -84,6 +84,11 @@ export async function POST(
       ],
       success_url: successUrl,
       cancel_url: cancelUrl,
+      // Collect customer name and billing address
+      billing_address_collection: "required",
+      phone_number_collection: {
+        enabled: true,
+      },
       metadata: {
         planId: plan.id,
         planName: plan.name,
