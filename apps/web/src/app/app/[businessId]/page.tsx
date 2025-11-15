@@ -34,12 +34,6 @@ export default async function BusinessDashboardPage({
           userId: session.user.id,
         },
       },
-      _count: {
-        select: {
-          members: true,
-          membershipPlans: true,
-        },
-      },
     },
   });
 
@@ -75,18 +69,10 @@ export default async function BusinessDashboardPage({
     }
   }
 
-  // Get active members
-  const activeMembers = await prisma.member.count({
+  // Get active subscriptions using new PlanSubscription model
+  const activeSubscriptions = await prisma.planSubscription.findMany({
     where: {
-      businessId: business.id,
-      status: "ACTIVE",
-    },
-  });
-
-  // Get active subscriptions and calculate MRR
-  const activeSubscriptions = await prisma.subscription.findMany({
-    where: {
-      member: {
+      plan: {
         businessId: business.id,
       },
       status: {
@@ -94,28 +80,60 @@ export default async function BusinessDashboardPage({
       },
     },
     include: {
-      price: true,
+      plan: true,
+      consumer: true,
     },
   });
 
+  // Count unique active members (consumers with active subscriptions)
+  const activeMembers = new Set(activeSubscriptions.map(sub => sub.consumerId)).size;
+
+  // Calculate MRR from active subscriptions
   const mrr = activeSubscriptions.reduce((sum: number, sub: any) => {
-    const monthlyAmount = sub.price.interval === "year"
-      ? sub.price.unitAmount / 12
-      : sub.price.unitAmount;
+    if (!sub.plan.basePrice) return sum;
+    
+    const monthlyAmount = sub.plan.interval === "YEAR"
+      ? sub.plan.basePrice / 12
+      : sub.plan.interval === "WEEK"
+      ? sub.plan.basePrice * 4
+      : sub.plan.basePrice;
+    
     return sum + monthlyAmount;
   }, 0);
 
-  // Get failed invoices in last 7 days
+  // Get past due subscriptions in last 7 days
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
   
-  const pastDueMembers = await prisma.member.count({
+  const pastDueMembers = await prisma.planSubscription.count({
     where: {
-      businessId: business.id,
-      status: "PAST_DUE",
+      plan: {
+        businessId: business.id,
+      },
+      status: "past_due",
       updatedAt: {
         gte: sevenDaysAgo,
       },
+    },
+  });
+
+  // Get total member count (unique consumers who have ever subscribed)
+  const allSubscriptions = await prisma.planSubscription.findMany({
+    where: {
+      plan: {
+        businessId: business.id,
+      },
+    },
+    select: {
+      consumerId: true,
+    },
+  });
+  const totalMembers = new Set(allSubscriptions.map(sub => sub.consumerId)).size;
+
+  // Get total plans count
+  const totalPlans = await prisma.plan.count({
+    where: {
+      businessId: business.id,
     },
   });
 
@@ -249,7 +267,7 @@ export default async function BusinessDashboardPage({
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Total members: {business._count.members}
+                Total members: {totalMembers}
               </p>
             </CardContent>
           </Card>
@@ -277,7 +295,7 @@ export default async function BusinessDashboardPage({
                 <button className="w-full text-left px-4 py-3 border rounded-md hover:bg-accent">
                   <div className="font-medium">Manage Plans</div>
                   <div className="text-sm text-muted-foreground">
-                    {business._count.membershipPlans} plans created
+                    {totalPlans} plans created
                   </div>
                 </button>
               </Link>
@@ -285,7 +303,7 @@ export default async function BusinessDashboardPage({
                 <button className="w-full text-left px-4 py-3 border rounded-md hover:bg-accent">
                   <div className="font-medium">View Members</div>
                   <div className="text-sm text-muted-foreground">
-                    {business._count.members} total members
+                    {totalMembers} total members
                   </div>
                 </button>
               </Link>
