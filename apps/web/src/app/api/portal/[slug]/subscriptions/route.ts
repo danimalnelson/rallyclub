@@ -42,12 +42,15 @@ export async function GET(
       return NextResponse.json({ error: "Business not found" }, { status: 404 });
     }
 
-    // Find all plan subscriptions for this consumer
+    // Find all plan subscriptions for this consumer (exclude canceled)
     const planSubscriptions = await prisma.planSubscription.findMany({
       where: {
         consumerId: consumer.id,
         plan: {
           businessId: business.id,
+        },
+        status: {
+          notIn: ["canceled", "incomplete_expired"],
         },
       },
       include: {
