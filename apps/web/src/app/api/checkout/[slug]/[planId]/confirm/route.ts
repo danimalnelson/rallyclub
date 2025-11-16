@@ -87,7 +87,6 @@ export async function POST(
         data: {
           email: consumerEmail,
           name: consumerName || null,
-          businessId: business.id,
         },
       });
     } else if (consumerName && !consumer.name) {
