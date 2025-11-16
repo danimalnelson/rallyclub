@@ -61,7 +61,7 @@ export function MembershipListing({
       <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8">
       {/* Business info section */}
       {businessDescription && (
-        <div className="pb-8 md:pb-10 border-b border-border mb-8 md:mb-10">
+        <div className="pb-8 md:pb-10">
           <h2 className="text-xl md:text-2xl font-semibold mb-3 md:mb-4 text-balance">
             About {businessName}
           </h2>
@@ -72,22 +72,23 @@ export function MembershipListing({
       )}
 
       {/* Memberships section */}
-      <div className="space-y-10 md:space-y-12">
-        {memberships.map((membership) => (
-          <div
-            key={membership.id}
-            className="pb-10 md:pb-12 border-b border-border last:border-0"
-          >
-            <div className="mb-6 md:mb-8">
-              <h3 className="text-lg md:text-xl font-semibold mb-2 text-balance">
-                {membership.name}
-              </h3>
-              {membership.description && (
-                <p className="text-sm text-muted-foreground text-pretty">
-                  {membership.description}
-                </p>
-              )}
-            </div>
+      <div className="bg-gray-50 py-12 md:py-16">
+        <div className="space-y-10 md:space-y-12">
+          {memberships.map((membership) => (
+            <div
+              key={membership.id}
+              className="pb-10 md:pb-12 last:pb-0"
+            >
+              <div className="mb-6 md:mb-8">
+                <h3 className="text-lg md:text-xl font-semibold mb-2 text-balance">
+                  {membership.name}
+                </h3>
+                {membership.description && (
+                  <p className="text-sm text-muted-foreground text-pretty">
+                    {membership.description}
+                  </p>
+                )}
+              </div>
 
             {/* Plans grid */}
             {membership.plans.length === 0 ? (
@@ -199,25 +200,26 @@ export function MembershipListing({
                 ))}
               </div>
             )}
-          </div>
-        ))}
+            </div>
+          ))}
+        </div>
       </div>
 
-        {/* Footer info */}
-        <div className="pt-8 md:pt-10 text-sm text-muted-foreground max-w-2xl">
-          <p className="mb-4 text-pretty">
-            All memberships can be canceled anytime. No long-term commitment required.
-          </p>
-          <p className="text-pretty">
-            Questions? Contact us at{" "}
-            <a
-              href={`mailto:support@${businessSlug}.com`}
-              className="underline hover:text-foreground transition-colors"
-            >
-              support@{businessSlug}.com
-            </a>
-          </p>
-        </div>
+      {/* Footer info */}
+      <div className="pt-8 md:pt-10 text-sm text-muted-foreground max-w-2xl">
+        <p className="mb-4 text-pretty">
+          All memberships can be canceled anytime. No long-term commitment required.
+        </p>
+        <p className="text-pretty">
+          Questions? Contact us at{" "}
+          <a
+            href={`mailto:support@${businessSlug}.com`}
+            className="underline hover:text-foreground transition-colors"
+          >
+            support@{businessSlug}.com
+          </a>
+        </p>
+      </div>
       </div>
 
       {/* Modal component */}

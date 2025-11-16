@@ -11,7 +11,7 @@ export function BusinessHeader({
   businessSlug,
 }: BusinessHeaderProps) {
   return (
-    <header className="border-b border-border bg-background/80 backdrop-blur-md sticky top-0 z-50">
+    <header className="border-b border-border bg-background/80 backdrop-blur-md">
       <div className="max-w-6xl mx-auto px-4 md:px-6 py-3 md:py-4 flex items-center justify-between gap-4">
         <h1 className="text-base md:text-lg font-semibold tracking-tight truncate">
           {businessName}
