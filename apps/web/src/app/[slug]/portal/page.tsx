@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, formatCurrency } from "@wine-club/ui";
 import Link from "next/link";
+import { Pause, Play, X as XIcon } from "lucide-react";
 
 interface StripeDetails {
   status: string;
@@ -39,6 +40,8 @@ export default function MemberPortalPage() {
   const [authenticated, setAuthenticated] = useState(false);
   const [memberData, setMemberData] = useState<any>(null);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [showCancelDialog, setShowCancelDialog] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if consumer is authenticated and fetch subscriptions
@@ -67,6 +70,87 @@ export default function MemberPortalPage() {
   const handleSignOut = () => {
     document.cookie = "consumer_session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
     router.push(`/${params.slug}`);
+  };
+
+  const handlePauseSubscription = async (subscriptionId: string) => {
+    if (!confirm("Pause this subscription? You won't be charged until you resume it.")) {
+      return;
+    }
+
+    setActionLoading(subscriptionId);
+    try {
+      const res = await fetch(`/api/portal/${params.slug}/subscriptions/${subscriptionId}/pause`, {
+        method: "POST",
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to pause subscription");
+      }
+
+      alert("✅ Subscription paused successfully!");
+      router.refresh();
+      // Refresh subscriptions list
+      const subsRes = await fetch(`/api/portal/${params.slug}/subscriptions`);
+      const subsData = await subsRes.json();
+      setSubscriptions(subsData.subscriptions || []);
+    } catch (error) {
+      alert("Failed to pause subscription. Please try again.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleResumeSubscription = async (subscriptionId: string) => {
+    if (!confirm("Resume this subscription? You'll be charged on your next billing date.")) {
+      return;
+    }
+
+    setActionLoading(subscriptionId);
+    try {
+      const res = await fetch(`/api/portal/${params.slug}/subscriptions/${subscriptionId}/resume`, {
+        method: "POST",
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to resume subscription");
+      }
+
+      alert("✅ Subscription resumed successfully!");
+      router.refresh();
+      // Refresh subscriptions list
+      const subsRes = await fetch(`/api/portal/${params.slug}/subscriptions`);
+      const subsData = await subsRes.json();
+      setSubscriptions(subsData.subscriptions || []);
+    } catch (error) {
+      alert("Failed to resume subscription. Please try again.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleCancelSubscription = async (subscriptionId: string) => {
+    setActionLoading(subscriptionId);
+    try {
+      const res = await fetch(`/api/portal/${params.slug}/subscriptions/${subscriptionId}/cancel`, {
+        method: "POST",
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to cancel subscription");
+      }
+
+      alert("✅ Subscription will be canceled at the end of your billing period.");
+      setShowCancelDialog(null);
+      router.refresh();
+      // Refresh subscriptions list
+      const subsRes = await fetch(`/api/portal/${params.slug}/subscriptions`);
+      const subsData = await subsRes.json();
+      setSubscriptions(subsData.subscriptions || []);
+    } catch (error) {
+      alert("Failed to cancel subscription. Please try again.");
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   if (loading) {
@@ -188,7 +272,49 @@ export default function MemberPortalPage() {
                       )}
                     </div>
                   )}
-                  <div className="flex gap-2 pt-4 border-t">
+                  <div className="flex gap-2 pt-4 border-t flex-wrap">
+                    {/* Pause/Resume Button */}
+                    {subscription.stripeDetails && !subscription.stripeDetails.cancelAtPeriodEnd && (
+                      subscription.status === "active" ? (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handlePauseSubscription(subscription.id)}
+                          disabled={actionLoading === subscription.id}
+                          className="gap-1"
+                        >
+                          <Pause className="h-3 w-3" />
+                          {actionLoading === subscription.id ? "Pausing..." : "Pause"}
+                        </Button>
+                      ) : subscription.status === "paused" ? (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleResumeSubscription(subscription.id)}
+                          disabled={actionLoading === subscription.id}
+                          className="gap-1"
+                        >
+                          <Play className="h-3 w-3" />
+                          {actionLoading === subscription.id ? "Resuming..." : "Resume"}
+                        </Button>
+                      ) : null
+                    )}
+
+                    {/* Cancel Button */}
+                    {subscription.stripeDetails && !subscription.stripeDetails.cancelAtPeriodEnd && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setShowCancelDialog(subscription.id)}
+                        disabled={actionLoading === subscription.id}
+                        className="gap-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                      >
+                        <XIcon className="h-3 w-3" />
+                        Cancel
+                      </Button>
+                    )}
+
+                    {/* Manage Payment Methods */}
                     <Button 
                       variant="outline" 
                       size="sm"
@@ -213,7 +339,7 @@ export default function MemberPortalPage() {
                         }
                       }}
                     >
-                      Manage Subscription
+                      Update Payment
                     </Button>
                   </div>
                 </CardContent>
@@ -255,6 +381,47 @@ export default function MemberPortalPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Cancel Confirmation Dialog */}
+      {showCancelDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background rounded-lg shadow-lg max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold">Cancel Subscription</h2>
+              <button
+                onClick={() => setShowCancelDialog(null)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <XIcon className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Your subscription will be canceled at the end of your current billing period.
+                You'll retain access until then.
+              </p>
+
+              <div className="flex gap-3 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCancelDialog(null)}
+                  disabled={actionLoading === showCancelDialog}
+                >
+                  Keep Subscription
+                </Button>
+                <Button
+                  onClick={() => handleCancelSubscription(showCancelDialog)}
+                  disabled={actionLoading === showCancelDialog}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  {actionLoading === showCancelDialog ? "Canceling..." : "Cancel Subscription"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
