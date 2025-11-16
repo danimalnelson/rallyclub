@@ -75,7 +75,9 @@ export async function POST(
       include: {
         planSubscriptions: {
           where: {
-            stripeCustomerId: { not: null },
+            NOT: {
+              stripeCustomerId: null,
+            },
           },
           take: 1,
           select: { stripeCustomerId: true },
