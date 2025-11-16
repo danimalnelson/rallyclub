@@ -219,7 +219,15 @@ function CheckoutForm({
       {/* Payment Details */}
       <div>
         <h3 className="text-lg font-semibold mb-3">Payment Details</h3>
-        <PaymentElement />
+        <PaymentElement 
+          options={{
+            defaultValues: {
+              billingDetails: {
+                email: email,
+              },
+            },
+          }}
+        />
       </div>
 
       {/* Billing Address */}

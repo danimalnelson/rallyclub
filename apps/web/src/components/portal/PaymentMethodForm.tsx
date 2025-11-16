@@ -61,7 +61,15 @@ export function PaymentMethodForm({ slug, email, onSuccess }: PaymentMethodFormP
 
   return (
     <form onSubmit={handleSubmit}>
-      <PaymentElement />
+      <PaymentElement 
+        options={{
+          defaultValues: {
+            billingDetails: {
+              email: email,
+            },
+          },
+        }}
+      />
       
       {error && (
         <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3">
