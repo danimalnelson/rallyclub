@@ -192,13 +192,18 @@ function CheckoutForm({
         <h3 className="text-lg font-semibold mb-3">Customer Information</h3>
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
+            <label className="block text-sm font-medium mb-1">
+              Email <span className="text-destructive">*</span>
+            </label>
             <input
               type="email"
               value={email}
               disabled
               className="w-full px-4 py-2 rounded-lg border border-input bg-muted text-muted-foreground cursor-not-allowed"
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              Using Express Checkout? We'll use the email from your payment method.
+            </p>
           </div>
           <div>
             <label htmlFor="name" className="block text-sm font-medium mb-1">
