@@ -64,24 +64,24 @@ export async function POST(
       );
     }
 
-    // Find or create consumer and get Stripe customer ID
+    // Find existing consumer and Stripe customer ID (don't create yet)
     let stripeCustomerId: string | undefined;
     if (consumerEmail) {
-      let consumer = await prisma.consumer.findUnique({
+      const consumer = await prisma.consumer.findUnique({
         where: { email: consumerEmail },
       });
 
-      if (!consumer) {
-        consumer = await prisma.consumer.create({
-          data: { email: consumerEmail },
-        });
+      // Only use existing customer if found, otherwise let Stripe create one
+      if (consumer) {
+        stripeCustomerId = await ensureCustomerOnConnectedAccount(
+          consumer,
+          business.stripeAccountId
+        );
+      } else {
+        // Don't create Consumer here - webhook will create it when checkout completes
+        // Just pass email to Stripe to prefill the form
+        console.log(`[Checkout] New email ${consumerEmail} - will create Consumer via webhook`);
       }
-
-      // Get or create customer on connected account
-      stripeCustomerId = await ensureCustomerOnConnectedAccount(
-        consumer,
-        business.stripeAccountId
-      );
     }
 
     // Create Stripe Checkout Session
@@ -93,8 +93,13 @@ export async function POST(
 
     const sessionParams: any = {
       mode: "subscription",
-      // Use existing customer if found, otherwise Stripe will create one
-      ...(stripeCustomerId && { customer: stripeCustomerId }),
+      // Use existing customer if found, otherwise prefill email for Stripe
+      ...(stripeCustomerId 
+        ? { customer: stripeCustomerId }
+        : consumerEmail 
+          ? { customer_email: consumerEmail, customer_creation: "always" }
+          : { customer_creation: "always" }
+      ),
       line_items: [
         {
           price: plan.stripePriceId,
