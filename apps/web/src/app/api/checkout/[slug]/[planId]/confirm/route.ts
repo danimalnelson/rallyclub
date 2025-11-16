@@ -157,7 +157,6 @@ export async function POST(
       data: {
         consumerId: consumer.id,
         planId: plan.id,
-        businessId: business.id,
         stripeSubscriptionId: subscription.id,
         stripeCustomerId: customerId,
         status: subscription.status.toUpperCase(),
