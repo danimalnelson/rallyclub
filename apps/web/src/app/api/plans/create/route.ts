@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
 
     // Create Stripe Price based on pricing type
     let stripePriceId: string | undefined;
-    let currentMonthPrice: typeof data.monthlyPrices[0] | undefined;
+    let currentMonthPrice: z.infer<typeof monthlyPriceSchema> | undefined;
 
     if (data.pricingType === "FIXED" && data.basePrice) {
       // Fixed pricing: Create one Stripe Price
