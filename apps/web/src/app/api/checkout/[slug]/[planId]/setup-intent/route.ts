@@ -71,10 +71,18 @@ export async function POST(
     
     const existingConsumer = await prisma.consumer.findUnique({
       where: { email: consumerEmail },
+      include: {
+        planSubscriptions: {
+          where: { stripeCustomerId: { not: null } },
+          take: 1,
+          select: { stripeCustomerId: true },
+        },
+      },
     });
 
-    if (existingConsumer?.stripeCustomerId) {
-      stripeCustomerId = existingConsumer.stripeCustomerId;
+    // Check if consumer already has a Stripe customer ID from a previous subscription
+    if (existingConsumer?.planSubscriptions[0]?.stripeCustomerId) {
+      stripeCustomerId = existingConsumer.planSubscriptions[0].stripeCustomerId;
     } else {
       // Create new Stripe customer
       const customer = await stripe.customers.create({
