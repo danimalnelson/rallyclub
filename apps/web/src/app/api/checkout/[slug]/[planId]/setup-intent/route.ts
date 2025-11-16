@@ -73,9 +73,9 @@ export async function POST(
       where: { email: consumerEmail },
       include: {
         planSubscriptions: {
-          where: { stripeCustomerId: { not: null } },
           take: 1,
           select: { stripeCustomerId: true },
+          orderBy: { createdAt: 'desc' },
         },
       },
     });
