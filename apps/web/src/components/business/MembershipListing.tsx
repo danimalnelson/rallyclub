@@ -58,22 +58,24 @@ export function MembershipListing({
 
   return (
     <>
-      <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8">
       {/* Business info section */}
-      {businessDescription && (
-        <div className="pb-8 md:pb-10">
-          <h2 className="text-xl md:text-2xl font-semibold mb-3 md:mb-4 text-balance">
-            About {businessName}
-          </h2>
-          <p className="text-sm md:text-base text-muted-foreground leading-relaxed max-w-3xl text-pretty">
-            {businessDescription}
-          </p>
-        </div>
-      )}
+      <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8">
+        {businessDescription && (
+          <div className="pb-8 md:pb-10">
+            <h2 className="text-xl md:text-2xl font-semibold mb-3 md:mb-4 text-balance">
+              About {businessName}
+            </h2>
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed max-w-3xl text-pretty">
+              {businessDescription}
+            </p>
+          </div>
+        )}
+      </div>
 
-      {/* Memberships section */}
+      {/* Memberships section - full width gray background */}
       <div className="bg-gray-50 py-12 md:py-16">
-        <div className="space-y-10 md:space-y-12">
+        <div className="max-w-6xl mx-auto px-4 md:px-6">
+          <div className="space-y-10 md:space-y-12">
           {memberships.map((membership) => (
             <div
               key={membership.id}
@@ -100,7 +102,7 @@ export function MembershipListing({
                 {membership.plans.map((plan) => (
                   <Card
                     key={plan.id}
-                    className="p-5 md:p-6 hover:shadow-md transition-shadow duration-300"
+                    className="relative bg-white border-0 shadow-none rounded-2xl p-5 md:p-6 pb-20 hover:scale-[1.01] transition-transform duration-300 ease-out"
                   >
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1 min-w-0">
@@ -180,8 +182,7 @@ export function MembershipListing({
                     </ul>
 
                     <Button
-                      className="w-full hover:bg-primary/90 transition-colors h-11 md:h-10"
-                      variant="outline"
+                      className="absolute bottom-5 right-5 rounded-full h-10 px-6"
                       onClick={() => setSelectedPlan({ plan, membership })}
                       disabled={
                         plan.stockStatus === "SOLD_OUT" ||
@@ -194,7 +195,7 @@ export function MembershipListing({
                         ? "Coming Soon"
                         : plan.stockStatus === "WAITLIST"
                         ? "Join Waitlist"
-                        : "Select plan"}
+                        : "Subscribe"}
                     </Button>
                   </Card>
                 ))}
@@ -202,24 +203,26 @@ export function MembershipListing({
             )}
             </div>
           ))}
+          </div>
         </div>
       </div>
 
       {/* Footer info */}
-      <div className="pt-8 md:pt-10 text-sm text-muted-foreground max-w-2xl">
-        <p className="mb-4 text-pretty">
-          All memberships can be canceled anytime. No long-term commitment required.
-        </p>
-        <p className="text-pretty">
-          Questions? Contact us at{" "}
-          <a
-            href={`mailto:support@${businessSlug}.com`}
-            className="underline hover:text-foreground transition-colors"
-          >
-            support@{businessSlug}.com
-          </a>
-        </p>
-      </div>
+      <div className="max-w-6xl mx-auto px-4 md:px-6">
+        <div className="pt-8 md:pt-10 text-sm text-muted-foreground max-w-2xl">
+          <p className="mb-4 text-pretty">
+            All memberships can be canceled anytime. No long-term commitment required.
+          </p>
+          <p className="text-pretty">
+            Questions? Contact us at{" "}
+            <a
+              href={`mailto:support@${businessSlug}.com`}
+              className="underline hover:text-foreground transition-colors"
+            >
+              support@{businessSlug}.com
+            </a>
+          </p>
+        </div>
       </div>
 
       {/* Modal component */}
