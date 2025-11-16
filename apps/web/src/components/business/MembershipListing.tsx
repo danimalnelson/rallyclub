@@ -3,7 +3,9 @@
 import { Button, Card, formatCurrency } from "@wine-club/ui";
 import { Check } from "lucide-react";
 import { useState } from "react";
-import { PlanModal } from "./PlanModal";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements } from "@stripe/react-stripe-js";
+import { CheckoutModal } from "./CheckoutModal";
 
 interface Plan {
   id: string;
@@ -43,6 +45,11 @@ export function MembershipListing({
     plan: Plan;
     membership: Membership;
   } | null>(null);
+  
+  const [confirmedEmail, setConfirmedEmail] = useState<string>("");
+  const [stripePromise, setStripePromise] = useState<any>(null);
+  const [clientSecret, setClientSecret] = useState<string>("");
+  const [isInitializingCheckout, setIsInitializingCheckout] = useState(false);
 
   if (memberships.length === 0) {
     return (
@@ -225,14 +232,100 @@ export function MembershipListing({
         </div>
       </div>
 
-      {/* Modal component */}
-      <PlanModal
-        plan={selectedPlan?.plan || null}
-        membership={selectedPlan?.membership || null}
-        businessSlug={businessSlug}
-        isOpen={!!selectedPlan}
-        onClose={() => setSelectedPlan(null)}
-      />
+      {/* Combined Checkout Modal */}
+      {selectedPlan && !clientSecret && (
+        <CheckoutModal
+          plan={selectedPlan.plan}
+          membership={selectedPlan.membership}
+          businessSlug={businessSlug}
+          isOpen={true}
+          onClose={() => {
+            setSelectedPlan(null);
+            setConfirmedEmail("");
+            setStripePromise(null);
+            setClientSecret("");
+          }}
+          onSuccess={() => {
+            setSelectedPlan(null);
+            setConfirmedEmail("");
+            setStripePromise(null);
+            setClientSecret("");
+          }}
+          onEmailConfirm={async (email) => {
+            // Store confirmed email
+            setConfirmedEmail(email);
+            
+            // Initialize SetupIntent with email to ensure customer consolidation
+            const [configRes, setupRes] = await Promise.all([
+              fetch(`/api/portal/${businessSlug}/stripe-config`),
+              fetch(`/api/checkout/${businessSlug}/${selectedPlan.plan.id}/setup-intent`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ consumerEmail: email }),
+              }),
+            ]);
+
+            if (!configRes.ok || !setupRes.ok) {
+              throw new Error("Failed to initialize checkout");
+            }
+
+            const config = await configRes.json();
+            const setup = await setupRes.json();
+
+            // Initialize Stripe
+            const stripe = await loadStripe(config.publishableKey, {
+              stripeAccount: config.stripeAccount,
+            });
+
+            setStripePromise(Promise.resolve(stripe));
+            setClientSecret(setup.clientSecret);
+          }}
+        />
+      )}
+
+      {/* Checkout Modal with Payment Elements */}
+      {selectedPlan && clientSecret && stripePromise && (
+        <Elements
+          stripe={stripePromise}
+          options={{
+            clientSecret,
+            appearance: {
+              theme: "stripe",
+              variables: {
+                colorPrimary: "rgb(38 38 38)",
+                borderRadius: "0.75rem",
+              },
+            },
+          }}
+        >
+          <CheckoutModal
+            plan={selectedPlan.plan}
+            membership={selectedPlan.membership}
+            businessSlug={businessSlug}
+            isOpen={true}
+            skipEmailStep={true}
+            initialEmail={confirmedEmail}
+            onClose={() => {
+              setSelectedPlan(null);
+              setConfirmedEmail("");
+              setStripePromise(null);
+              setClientSecret("");
+            }}
+            onSuccess={() => {
+              setSelectedPlan(null);
+              setConfirmedEmail("");
+              setStripePromise(null);
+              setClientSecret("");
+            }}
+            onEditEmail={() => {
+              // Reset to email step
+              setConfirmedEmail("");
+              setStripePromise(null);
+              setClientSecret("");
+            }}
+          />
+        </Elements>
+      )}
     </>
   );
 }

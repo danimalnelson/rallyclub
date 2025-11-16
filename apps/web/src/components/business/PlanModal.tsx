@@ -30,6 +30,7 @@ interface PlanModalProps {
   businessSlug: string;
   isOpen: boolean;
   onClose: () => void;
+  onEmailSubmit: (email: string) => void;
 }
 
 export function PlanModal({
@@ -38,6 +39,7 @@ export function PlanModal({
   businessSlug,
   isOpen,
   onClose,
+  onEmailSubmit,
 }: PlanModalProps) {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -64,33 +66,9 @@ export function PlanModal({
     
     if (!email || isSubmitting) return;
     
-    setIsSubmitting(true);
-    
-    try {
-      // Create checkout session
-      const response = await fetch(`/api/checkout/${businessSlug}/${plan.id}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          consumerEmail: email,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to create checkout session");
-      }
-
-      const { url } = await response.json();
-      
-      // Redirect to Stripe Checkout
-      window.location.href = url;
-    } catch (error) {
-      console.error("Checkout error:", error);
-      alert("Failed to start checkout. Please try again.");
-      setIsSubmitting(false);
-    }
+    // Pass email to parent and close this modal
+    // Parent will open CheckoutModal
+    onEmailSubmit(email);
   };
 
   const isDisabled =
@@ -260,11 +238,9 @@ export function PlanModal({
               type="submit"
               className="w-full h-12 text-base hover:bg-primary/90 transition-colors"
               size="lg"
-              disabled={isDisabled || isSubmitting || !email}
+              disabled={isDisabled || !email}
             >
-              {isSubmitting
-                ? "Loading..."
-                : plan.stockStatus === "SOLD_OUT"
+              {plan.stockStatus === "SOLD_OUT"
                 ? "Sold Out"
                 : plan.stockStatus === "COMING_SOON"
                 ? "Coming Soon"
