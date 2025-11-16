@@ -354,6 +354,8 @@ export async function PUT(
     }
 
     // Handle dynamic pricing updates
+    let currentPriceChanged = false; // Track if current price changed (for resume logic)
+    
     if (existingPlan.pricingType === "DYNAMIC" && data.monthlyPrices) {
       const currentMonthPrice = data.monthlyPrices.find(mp => mp.isCurrent);
       
@@ -373,7 +375,7 @@ export async function PUT(
         });
 
         // Check if current month price changed
-        const currentPriceChanged = !currentQueueItem || currentQueueItem.price !== currentMonthPrice.price;
+        currentPriceChanged = !currentQueueItem || currentQueueItem.price !== currentMonthPrice.price;
 
         if (currentPriceChanged && existingPlan.stripeProductId) {
           // Create new Stripe Price for current month
