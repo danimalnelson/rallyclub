@@ -52,8 +52,12 @@ export async function GET(req: NextRequest) {
         name: true,
         status: true,
         basePrice: true,
-        interval: true,
         membershipId: true,
+        membership: {
+          select: {
+            billingInterval: true,
+          },
+        },
       },
     });
 

@@ -11,6 +11,7 @@ interface MembershipFormProps {
     name: string;
     description: string | null;
     slug: string;
+    billingInterval: string;
     billingAnchor: string;
     cohortBillingDay: number | null;
     chargeImmediately: boolean;
@@ -38,12 +39,13 @@ export const MembershipForm = React.memo(
       membership?.description || ""
     );
     const [slug, setSlug] = useState(membership?.slug || "");
+    const [billingInterval, setBillingInterval] = useState(
+      membership?.billingInterval || "MONTH"
+    );
     const [billingAnchor, setBillingAnchor] = useState(
       membership?.billingAnchor || "IMMEDIATE"
     );
-    const [cohortBillingDay, setCohortBillingDay] = useState(
-      membership?.cohortBillingDay?.toString() || "1"
-    );
+    const [cohortBillingDay] = useState("1");  // Hardcoded to 1 for MVP
     const [chargeImmediately, setChargeImmediately] = useState(
       membership?.chargeImmediately ?? true
     );
@@ -120,11 +122,10 @@ export const MembershipForm = React.memo(
             name,
             description: description || null,
             slug,
+            billingInterval,
             billingAnchor,
             cohortBillingDay:
-              billingAnchor === "NEXT_INTERVAL"
-                ? parseInt(cohortBillingDay, 10)
-                : null,
+              billingAnchor === "NEXT_INTERVAL" ? 1 : null,  // Hardcoded to 1
             chargeImmediately: billingAnchor === "NEXT_INTERVAL" ? chargeImmediately : true,
             allowMultiplePlans,
             maxMembers: maxMembers ? parseInt(maxMembers, 10) : null,
@@ -302,6 +303,25 @@ export const MembershipForm = React.memo(
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Billing Frequency */}
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Billing Frequency <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={billingInterval}
+                  onChange={(e) => setBillingInterval(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-md"
+                >
+                  <option value="MONTH">Monthly</option>
+                  {/* Future: <option value="QUARTER">Quarterly (every 3 months)</option> */}
+                  {/* Future: <option value="YEAR">Annually</option> */}
+                </select>
+                <p className="text-sm text-muted-foreground mt-1">
+                  All plans in this membership will bill at this frequency
+                </p>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium mb-3">
                   How should members start and be billed? <span className="text-red-500">*</span>
@@ -345,31 +365,11 @@ export const MembershipForm = React.memo(
                     <div className="flex-1">
                       <div className="font-semibold mb-1">Cohort Membership (Immediate Access)</div>
                       <div className="text-sm text-muted-foreground">
-                        Members start and are charged immediately. All members are then billed together on the same day each month.
+                        Members start and are charged immediately. All members are then billed together on the 1st of each month.
                       </div>
                       <div className="text-sm text-muted-foreground mt-2 italic">
-                        Example: April 15 signup → Charged $20 → Next bill June 1
+                        Example: April 15 signup → Charged $20 → Next bill May 1
                       </div>
-                      {billingAnchor === "NEXT_INTERVAL" && chargeImmediately && (
-                        <div className="mt-3">
-                          <label className="block text-xs font-medium mb-1">
-                            Bill on day: <span className="text-red-500">*</span>
-                          </label>
-                          <select
-                            value={cohortBillingDay}
-                            onChange={(e) => setCohortBillingDay(e.target.value)}
-                            className="w-32 px-2 py-1 text-sm border rounded-md"
-                            required
-                          >
-                            {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => (
-                              <option key={day} value={day}>
-                                {day}
-                              </option>
-                            ))}
-                          </select>
-                          <span className="text-xs text-muted-foreground ml-2">of each month</span>
-                        </div>
-                      )}
                     </div>
                   </label>
 
@@ -388,31 +388,11 @@ export const MembershipForm = React.memo(
                     <div className="flex-1">
                       <div className="font-semibold mb-1">Cohort Membership (Deferred Start)</div>
                       <div className="text-sm text-muted-foreground">
-                        Members wait until the next billing date. Payment and access both begin on the billing day.
+                        Members wait until the next billing date. Payment and access both begin on the 1st of the month.
                       </div>
                       <div className="text-sm text-muted-foreground mt-2 italic">
                         Example: April 15 signup → Starts May 1 → Charged $20
                       </div>
-                      {billingAnchor === "NEXT_INTERVAL" && !chargeImmediately && (
-                        <div className="mt-3">
-                          <label className="block text-xs font-medium mb-1">
-                            Bill on day: <span className="text-red-500">*</span>
-                          </label>
-                          <select
-                            value={cohortBillingDay}
-                            onChange={(e) => setCohortBillingDay(e.target.value)}
-                            className="w-32 px-2 py-1 text-sm border rounded-md"
-                            required
-                          >
-                            {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => (
-                              <option key={day} value={day}>
-                                {day}
-                              </option>
-                            ))}
-                          </select>
-                          <span className="text-xs text-muted-foreground ml-2">of each month</span>
-                        </div>
-                      )}
                     </div>
                   </label>
                 </div>

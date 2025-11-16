@@ -182,9 +182,7 @@ export default async function PlansPage({
                                 Frequency:
                               </span>
                               <span className="font-medium">
-                                Every {plan.intervalCount}{" "}
-                                {plan.interval.toLowerCase()}
-                                {plan.intervalCount > 1 ? "s" : ""}
+                                Billed {membership.billingInterval.toLowerCase()}ly
                               </span>
                             </div>
 

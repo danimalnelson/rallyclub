@@ -11,8 +11,6 @@ interface Plan {
   description: string | null;
   basePrice: number | null;
   currency: string;
-  interval: string;
-  intervalCount: number;
   pricingType: string;
   shippingFee: number | null;
   setupFee: number | null;
@@ -22,6 +20,7 @@ interface Plan {
 interface Membership {
   name: string;
   description: string | null;
+  billingInterval: string;
 }
 
 interface PlanModalProps {
@@ -120,22 +119,9 @@ export function PlanModal({
                   {formatCurrency(plan.basePrice, plan.currency)}
                 </span>
                 <span className="text-lg text-muted-foreground">
-                  /{plan.intervalCount > 1 && `${plan.intervalCount} `}
-                  {plan.interval.toLowerCase()}
-                  {plan.intervalCount > 1 && "s"}
+                  /{membership.billingInterval.toLowerCase()}
                 </span>
               </div>
-              {plan.interval === "MONTH" &&
-                plan.intervalCount === 12 &&
-                plan.basePrice && (
-                  <p className="text-sm text-muted-foreground">
-                    {formatCurrency(
-                      Math.round(plan.basePrice / 12),
-                      plan.currency
-                    )}
-                    /month billed annually
-                  </p>
-                )}
             </div>
           ) : (
             <div className="bg-accent/50 rounded-lg p-6 mb-8">
@@ -163,9 +149,7 @@ export function PlanModal({
               <li className="flex gap-3">
                 <Check className="w-5 h-5 shrink-0 mt-0.5" />
                 <span className="leading-relaxed">
-                  Billed every {plan.intervalCount > 1 && `${plan.intervalCount} `}
-                  {plan.interval.toLowerCase()}
-                  {plan.intervalCount > 1 && "s"}
+                  Billed {membership.billingInterval.toLowerCase()}ly
                 </span>
               </li>
               {plan.shippingFee && plan.shippingFee > 0 && (

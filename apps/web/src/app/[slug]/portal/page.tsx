@@ -32,10 +32,9 @@ interface Subscription {
     name: string;
     basePrice: number | null;
     currency: string;
-    interval: string;
-    intervalCount: number;
     membership: {
       name: string;
+      billingInterval: string;
     };
   };
   stripeDetails: StripeDetails | null;
@@ -409,9 +408,7 @@ export default function MemberPortalPage() {
                       </CardTitle>
                       <CardDescription>
                         {subscription.plan.basePrice && formatCurrency(subscription.plan.basePrice, subscription.plan.currency)} per{" "}
-                        {subscription.plan.intervalCount > 1 && `${subscription.plan.intervalCount} `}
-                        {subscription.plan.interval.toLowerCase()}
-                        {subscription.plan.intervalCount > 1 && "s"}
+                        {subscription.plan.membership.billingInterval.toLowerCase()}ly
                       </CardDescription>
                     </div>
                     {getStatusBadge(subscription.status, subscription.stripeDetails)}

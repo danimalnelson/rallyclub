@@ -28,6 +28,13 @@ export async function GET(req: NextRequest) {
               where: {
                 status: "ACTIVE",
               },
+              include: {
+                membership: {
+                  select: {
+                    billingInterval: true,
+                  },
+                },
+              },
             },
           },
         },
@@ -74,7 +81,7 @@ export async function GET(req: NextRequest) {
             planId: plan.id,
             status: plan.status,
             basePrice: plan.basePrice,
-            interval: plan.interval,
+            interval: plan.membership.billingInterval,
             stripeProductId: plan.stripeProductId,
             stripePriceId: plan.stripePriceId,
             stripeProductExists: false,

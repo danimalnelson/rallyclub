@@ -127,9 +127,7 @@ export default async function PlanDetailsPage({
                   <div>
                     <p className="font-medium">Recurring Subscription</p>
                     <p className="text-sm text-muted-foreground">
-                      Billed every {plan.intervalCount > 1 && `${plan.intervalCount} `}
-                      {plan.interval.toLowerCase()}
-                      {plan.intervalCount > 1 && 's'}
+                      Billed {plan.membership.billingInterval.toLowerCase()}ly
                     </p>
                   </div>
                 </div>
@@ -207,9 +205,7 @@ export default async function PlanDetailsPage({
                         {formatCurrency(plan.basePrice, plan.currency)}
                       </div>
                       <div className="text-muted-foreground">
-                        per {plan.intervalCount > 1 && `${plan.intervalCount} `}
-                        {plan.interval.toLowerCase()}
-                        {plan.intervalCount > 1 && 's'}
+                        per {plan.membership.billingInterval.toLowerCase()}
                       </div>
                       {plan.setupFee && plan.setupFee > 0 && (
                         <div className="text-sm text-muted-foreground mt-2 pt-2 border-t">
@@ -234,9 +230,7 @@ export default async function PlanDetailsPage({
                   <div className="flex justify-between py-2 border-b">
                     <span className="text-muted-foreground">Billing Frequency</span>
                     <span className="font-medium capitalize">
-                      {plan.intervalCount > 1 && `Every ${plan.intervalCount} `}
-                      {plan.interval.toLowerCase()}
-                      {plan.intervalCount > 1 && 's'}
+                      Billed {plan.membership.billingInterval.toLowerCase()}ly
                     </span>
                   </div>
                   {plan.membership.billingAnchor === "NEXT_INTERVAL" && plan.membership.cohortBillingDay && (

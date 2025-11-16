@@ -453,8 +453,9 @@ model Membership {
   maxMembers          Int?                                // Capacity limit
   
   // Billing Settings (MEMBERSHIP LEVEL)
+  billingInterval     PriceInterval       @default(MONTH)  // How often to bill (all plans inherit this)
   billingAnchor       BillingAnchor       @default(IMMEDIATE)
-  cohortBillingDay    Int?                                // 1-28, required if NEXT_INTERVAL
+  cohortBillingDay    Int?                                // 1-28, required if NEXT_INTERVAL (hardcoded to 1 for MVP)
   chargeImmediately   Boolean             @default(true)  // For NEXT_INTERVAL: charge on signup (true) or on start date (false)
   
   // Status
@@ -512,9 +513,7 @@ model Plan {
   basePrice           Int?                // In cents (for fixed pricing)
   currency            String              @default("usd")
   
-  // Subscription Details (PLAN LEVEL - each plan sets its own frequency)
-  interval            PriceInterval       // week, month, year
-  intervalCount       Int                 @default(1)  // every 1, 2, 3, etc.
+  // Note: Billing interval inherited from membership.billingInterval
   
   // Fees & Shipping
   setupFee            Int?                // One-time setup fee in cents

@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
         plan: {
           name: ps.plan.name,
           basePrice: ps.plan.basePrice,
-          interval: ps.plan.interval,
+          interval: ps.plan.membership.billingInterval,
         },
         membership: {
           name: ps.plan.membership.name,

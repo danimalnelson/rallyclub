@@ -138,27 +138,25 @@ export async function PUT(
     let newStripePriceId: string | undefined;
     const priceChanged =
       data.basePrice !== undefined && data.basePrice !== existingPlan.basePrice;
-    const intervalChanged =
-      (data.interval && data.interval !== existingPlan.interval) ||
-      (data.intervalCount && data.intervalCount !== existingPlan.intervalCount);
 
     if (
       existingPlan.pricingType === "FIXED" &&
       existingPlan.stripeProductId &&
-      (priceChanged || intervalChanged)
+      priceChanged
     ) {
       // Create new Stripe Price (Stripe doesn't allow price updates)
+      // Use interval from membership (not from plan)
       const newPrice = await createConnectedPrice(
         existingPlan.business.stripeAccountId,
         {
           productId: existingPlan.stripeProductId,
           unitAmount: data.basePrice || existingPlan.basePrice || 0,
           currency: data.currency || existingPlan.currency,
-          interval: (data.interval || existingPlan.interval).toLowerCase() as
+          interval: existingPlan.membership.billingInterval.toLowerCase() as
             | "week"
             | "month"
             | "year",
-          intervalCount: data.intervalCount || existingPlan.intervalCount,
+          intervalCount: 1,  // Always 1
           nickname: `${data.name || existingPlan.name} - Updated`,
           metadata: {
             planName: data.name || existingPlan.name,

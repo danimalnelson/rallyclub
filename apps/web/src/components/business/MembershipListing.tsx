@@ -13,8 +13,6 @@ interface Plan {
   description: string | null;
   basePrice: number | null;
   currency: string;
-  interval: string;
-  intervalCount: number;
   pricingType: string;
   shippingFee: number | null;
   setupFee: number | null;
@@ -25,6 +23,7 @@ interface Membership {
   id: string;
   name: string;
   description: string | null;
+  billingInterval: string;
   plans: Plan[];
 }
 
@@ -120,9 +119,7 @@ export function MembershipListing({
                               {formatCurrency(plan.basePrice, plan.currency)}
                             </span>
                             <span className="text-sm text-muted-foreground">
-                              /{plan.intervalCount > 1 && `${plan.intervalCount} `}
-                              {plan.interval.toLowerCase()}
-                              {plan.intervalCount > 1 && "s"}
+                              /{membership.billingInterval.toLowerCase()}
                             </span>
                           </div>
                         ) : (
@@ -165,9 +162,7 @@ export function MembershipListing({
                       <li className="flex gap-3 text-sm">
                         <Check className="w-4 h-4 shrink-0 mt-0.5" />
                         <span className="leading-relaxed">
-                          Billed every {plan.intervalCount > 1 && `${plan.intervalCount} `}
-                          {plan.interval.toLowerCase()}
-                          {plan.intervalCount > 1 && "s"}
+                          Billed {membership.billingInterval.toLowerCase()}ly
                         </span>
                       </li>
                       {plan.shippingFee && plan.shippingFee > 0 && (

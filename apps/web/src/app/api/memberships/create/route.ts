@@ -61,6 +61,7 @@ export const POST = withMiddleware(async (req: NextRequest) => {
         name: membershipData.name,
         description: membershipData.description,
         slug: membershipData.slug,
+        billingInterval: membershipData.billingInterval || "MONTH",
         billingAnchor: membershipData.billingAnchor || "IMMEDIATE",
         cohortBillingDay: membershipData.cohortBillingDay,
         chargeImmediately: membershipData.chargeImmediately ?? true,

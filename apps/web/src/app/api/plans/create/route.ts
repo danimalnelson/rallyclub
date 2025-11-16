@@ -108,9 +108,9 @@ export async function POST(req: NextRequest) {
           productId: stripeProduct.id,
           unitAmount: data.basePrice,
           currency: data.currency,
-          interval: data.interval.toLowerCase() as "week" | "month" | "year",
-          intervalCount: data.intervalCount,
-          nickname: `${data.name} - ${data.intervalCount} ${data.interval.toLowerCase()}${data.intervalCount > 1 ? "s" : ""}`,
+          interval: membership.billingInterval.toLowerCase() as "week" | "month" | "year",
+          intervalCount: 1,  // Always 1 (monthly = 1 month, etc.)
+          nickname: `${data.name} - ${membership.billingInterval.toLowerCase()}ly`,
           metadata: {
             planName: data.name,
             membershipId: membership.id,
@@ -130,8 +130,7 @@ export async function POST(req: NextRequest) {
         pricingType: data.pricingType,
         basePrice: data.basePrice,
         currency: data.currency,
-        interval: data.interval,
-        intervalCount: data.intervalCount,
+        // interval and intervalCount removed - inherited from membership
         setupFee: data.setupFee,
         recurringFee: data.recurringFee,
         recurringFeeName: data.recurringFeeName,

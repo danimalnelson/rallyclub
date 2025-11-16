@@ -92,9 +92,9 @@ export default async function BusinessDashboardPage({
   const mrr = activeSubscriptions.reduce((sum: number, sub: any) => {
     if (!sub.plan.basePrice) return sum;
     
-    const monthlyAmount = sub.plan.interval === "YEAR"
+    const monthlyAmount = sub.plan.membership.billingInterval === "YEAR"
       ? sub.plan.basePrice / 12
-      : sub.plan.interval === "WEEK"
+      : sub.plan.membership.billingInterval === "WEEK"
       ? sub.plan.basePrice * 4
       : sub.plan.basePrice;
     
