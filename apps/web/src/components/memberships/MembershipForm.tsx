@@ -13,6 +13,7 @@ interface MembershipFormProps {
     slug: string;
     billingAnchor: string;
     cohortBillingDay: number | null;
+    chargeImmediately: boolean;
     allowMultiplePlans: boolean;
     maxMembers: number | null;
     status: string;
@@ -42,6 +43,9 @@ export const MembershipForm = React.memo(
     );
     const [cohortBillingDay, setCohortBillingDay] = useState(
       membership?.cohortBillingDay?.toString() || "1"
+    );
+    const [chargeImmediately, setChargeImmediately] = useState(
+      membership?.chargeImmediately ?? true
     );
     const [allowMultiplePlans, setAllowMultiplePlans] = useState(
       membership?.allowMultiplePlans || false
@@ -121,6 +125,7 @@ export const MembershipForm = React.memo(
               billingAnchor === "NEXT_INTERVAL"
                 ? parseInt(cohortBillingDay, 10)
                 : null,
+            chargeImmediately: billingAnchor === "NEXT_INTERVAL" ? chargeImmediately : true,
             allowMultiplePlans,
             maxMembers: maxMembers ? parseInt(maxMembers, 10) : null,
             status,
@@ -288,75 +293,130 @@ export const MembershipForm = React.memo(
             </CardContent>
           </Card>
 
-          {/* Billing Settings */}
+          {/* Billing Configuration */}
           <Card>
             <CardHeader>
-              <CardTitle>Billing Settings</CardTitle>
+              <CardTitle>Billing Configuration</CardTitle>
               <CardDescription>
-                Configure how and when members are billed
+                Configure how and when members start and are billed
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <div>
-                <label className="block text-sm font-medium mb-2">
-                  Billing Anchor <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium mb-3">
+                  How should members start and be billed? <span className="text-red-500">*</span>
                 </label>
-                <div className="space-y-3">
-                  <label className="flex items-start space-x-3 cursor-pointer">
+                <div className="space-y-4">
+                  {/* Option 1: Rolling Membership */}
+                  <label className="flex items-start space-x-3 cursor-pointer p-4 border rounded-lg hover:bg-accent/50 transition-colors">
                     <input
                       type="radio"
-                      value="IMMEDIATE"
+                      name="billingModel"
                       checked={billingAnchor === "IMMEDIATE"}
-                      onChange={(e) => setBillingAnchor(e.target.value)}
-                      className="mt-1"
+                      onChange={() => {
+                        setBillingAnchor("IMMEDIATE");
+                        setChargeImmediately(true);
+                      }}
+                      className="mt-1 shrink-0"
                     />
-                    <div>
-                      <div className="font-medium">Rolling (Immediate)</div>
+                    <div className="flex-1">
+                      <div className="font-semibold mb-1">Rolling Membership</div>
                       <div className="text-sm text-muted-foreground">
-                        Members start immediately and are billed on their signup
-                        anniversary (e.g., sign up Jan 15 → bill every month on
-                        the 15th)
+                        Members start and are charged immediately. Each member is billed monthly on their signup date.
+                      </div>
+                      <div className="text-sm text-muted-foreground mt-2 italic">
+                        Example: April 15 signup → Charged $20 → Billed every 15th
                       </div>
                     </div>
                   </label>
-                  <label className="flex items-start space-x-3 cursor-pointer">
+
+                  {/* Option 2: Cohort (Immediate Access) */}
+                  <label className="flex items-start space-x-3 cursor-pointer p-4 border rounded-lg hover:bg-accent/50 transition-colors">
                     <input
                       type="radio"
-                      value="NEXT_INTERVAL"
-                      checked={billingAnchor === "NEXT_INTERVAL"}
-                      onChange={(e) => setBillingAnchor(e.target.value)}
-                      className="mt-1"
+                      name="billingModel"
+                      checked={billingAnchor === "NEXT_INTERVAL" && chargeImmediately}
+                      onChange={() => {
+                        setBillingAnchor("NEXT_INTERVAL");
+                        setChargeImmediately(true);
+                      }}
+                      className="mt-1 shrink-0"
                     />
-                    <div>
-                      <div className="font-medium">Cohort (Next Interval)</div>
+                    <div className="flex-1">
+                      <div className="font-semibold mb-1">Cohort Membership (Immediate Access)</div>
                       <div className="text-sm text-muted-foreground">
-                        All members start on the same day each month and are
-                        billed together (e.g., everyone billed on the 1st)
+                        Members start and are charged immediately. All members are then billed together on the same day each month.
                       </div>
+                      <div className="text-sm text-muted-foreground mt-2 italic">
+                        Example: April 15 signup → Charged $20 → Next bill June 1
+                      </div>
+                      {billingAnchor === "NEXT_INTERVAL" && chargeImmediately && (
+                        <div className="mt-3">
+                          <label className="block text-xs font-medium mb-1">
+                            Bill on day: <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            value={cohortBillingDay}
+                            onChange={(e) => setCohortBillingDay(e.target.value)}
+                            className="w-32 px-2 py-1 text-sm border rounded-md"
+                            required
+                          >
+                            {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => (
+                              <option key={day} value={day}>
+                                {day}
+                              </option>
+                            ))}
+                          </select>
+                          <span className="text-xs text-muted-foreground ml-2">of each month</span>
+                        </div>
+                      )}
+                    </div>
+                  </label>
+
+                  {/* Option 3: Cohort (Deferred Start) */}
+                  <label className="flex items-start space-x-3 cursor-pointer p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                    <input
+                      type="radio"
+                      name="billingModel"
+                      checked={billingAnchor === "NEXT_INTERVAL" && !chargeImmediately}
+                      onChange={() => {
+                        setBillingAnchor("NEXT_INTERVAL");
+                        setChargeImmediately(false);
+                      }}
+                      className="mt-1 shrink-0"
+                    />
+                    <div className="flex-1">
+                      <div className="font-semibold mb-1">Cohort Membership (Deferred Start)</div>
+                      <div className="text-sm text-muted-foreground">
+                        Members wait until the next billing date. Payment and access both begin on the billing day.
+                      </div>
+                      <div className="text-sm text-muted-foreground mt-2 italic">
+                        Example: April 15 signup → Starts May 1 → Charged $20
+                      </div>
+                      {billingAnchor === "NEXT_INTERVAL" && !chargeImmediately && (
+                        <div className="mt-3">
+                          <label className="block text-xs font-medium mb-1">
+                            Bill on day: <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            value={cohortBillingDay}
+                            onChange={(e) => setCohortBillingDay(e.target.value)}
+                            className="w-32 px-2 py-1 text-sm border rounded-md"
+                            required
+                          >
+                            {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => (
+                              <option key={day} value={day}>
+                                {day}
+                              </option>
+                            ))}
+                          </select>
+                          <span className="text-xs text-muted-foreground ml-2">of each month</span>
+                        </div>
+                      )}
                     </div>
                   </label>
                 </div>
               </div>
-
-              {billingAnchor === "NEXT_INTERVAL" && (
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Cohort Billing Day <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="31"
-                    value={cohortBillingDay}
-                    onChange={(e) => setCohortBillingDay(e.target.value)}
-                    required
-                    className="w-full px-3 py-2 border rounded-md"
-                  />
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Day of the month (1-31) when all members are billed
-                  </p>
-                </div>
-              )}
             </CardContent>
           </Card>
 

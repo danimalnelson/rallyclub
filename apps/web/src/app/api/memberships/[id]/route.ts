@@ -100,6 +100,7 @@ export const PUT = withMiddleware(async (req: NextRequest, context) => {
         description: updateData.description,
         billingAnchor: updateData.billingAnchor,
         cohortBillingDay: updateData.cohortBillingDay,
+        chargeImmediately: updateData.chargeImmediately,
         allowMultiplePlans: updateData.allowMultiplePlans,
         maxMembers: updateData.maxMembers,
         status: updateData.status,

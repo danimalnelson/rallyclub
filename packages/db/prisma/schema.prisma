@@ -454,7 +454,8 @@ model Membership {
   
   // Billing Settings (MEMBERSHIP LEVEL)
   billingAnchor       BillingAnchor       @default(IMMEDIATE)
-  cohortBillingDay    Int?                                // 1-31, required if NEXT_INTERVAL
+  cohortBillingDay    Int?                                // 1-28, required if NEXT_INTERVAL
+  chargeImmediately   Boolean             @default(true)  // For NEXT_INTERVAL: charge on signup (true) or on start date (false)
   
   // Status
   status              MembershipStatus    @default(DRAFT)
@@ -484,8 +485,8 @@ model Membership {
 }
 
 enum BillingAnchor {
-  IMMEDIATE       // Start immediately, bill on anniversary
-  NEXT_INTERVAL   // Start at next cohort date, bill with cohort
+  IMMEDIATE       // Rolling: Start immediately, bill on signup anniversary
+  NEXT_INTERVAL   // Cohort: Bill on same day each month (use chargeImmediately for timing)
 }
 
 enum MembershipStatus {

@@ -65,8 +65,8 @@ export default async function EditPlanPage({
     pricingType: plan.pricingType,
     basePrice: plan.basePrice ? (plan.basePrice / 100).toString() : "",
     currency: plan.currency,
-    interval: plan.interval,
-    intervalCount: plan.intervalCount,
+    interval: "MONTH" as const,  // All plans are monthly now
+    intervalCount: 1,  // Always 1 for monthly
     setupFee: plan.setupFee ? (plan.setupFee / 100).toString() : "",
     recurringFee: plan.recurringFee ? (plan.recurringFee / 100).toString() : "",
     recurringFeeName: plan.recurringFeeName || "",

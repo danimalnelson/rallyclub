@@ -63,6 +63,7 @@ export const POST = withMiddleware(async (req: NextRequest) => {
         slug: membershipData.slug,
         billingAnchor: membershipData.billingAnchor || "IMMEDIATE",
         cohortBillingDay: membershipData.cohortBillingDay,
+        chargeImmediately: membershipData.chargeImmediately ?? true,
         allowMultiplePlans: membershipData.allowMultiplePlans || false,
         maxMembers: membershipData.maxMembers,
         status: membershipData.status || "DRAFT",

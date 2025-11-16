@@ -136,13 +136,41 @@ export async function POST(
       expand: ["latest_invoice.payment_intent"],
     };
 
-    // Handle billing anchor
+    // Handle three billing models
     if (plan.membership.billingAnchor === "NEXT_INTERVAL" && plan.membership.cohortBillingDay) {
+      // Cohort billing (options 2 & 3)
       subscriptionParams.billing_cycle_anchor_config = {
         day_of_month: plan.membership.cohortBillingDay,
       };
       subscriptionParams.proration_behavior = "none";
+
+      // Option 3: Deferred Start - Use trial period until start date
+      if (!plan.membership.chargeImmediately) {
+        // Calculate next cohort date
+        const now = new Date();
+        const currentDay = now.getDate();
+        const billingDay = plan.membership.cohortBillingDay;
+        
+        let nextCohortDate = new Date(now);
+        
+        if (currentDay >= billingDay) {
+          // Move to next month
+          nextCohortDate.setMonth(nextCohortDate.getMonth() + 1);
+        }
+        
+        nextCohortDate.setDate(billingDay);
+        nextCohortDate.setHours(0, 0, 0, 0);
+        
+        // Set trial end to the next cohort date (member starts on that date)
+        subscriptionParams.trial_end = Math.floor(nextCohortDate.getTime() / 1000);
+        
+        console.log("[Subscription] Deferred start - trial until:", nextCohortDate.toISOString());
+      }
+      // Option 2: Immediate Access - Charge now, next bill on cohort day
+      // (default behavior with billing_cycle_anchor_config, no trial needed)
     }
+    // Option 1: Rolling - Charge immediately, bill on anniversary
+    // (default Stripe behavior, no additional config needed)
 
     console.log("[Subscription] Creating with params:", {
       customer: customerId,

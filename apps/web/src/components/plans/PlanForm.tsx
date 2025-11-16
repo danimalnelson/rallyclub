@@ -26,7 +26,7 @@ interface PlanFormData {
   pricingType: "FIXED" | "DYNAMIC";
   basePrice: string; // In dollars for form
   currency: string;
-  interval: "WEEK" | "MONTH" | "YEAR";
+  interval: "MONTH";
   intervalCount: number;
   setupFee: string;
   recurringFee: string;
@@ -309,35 +309,9 @@ export function PlanForm({
             </div>
           )}
 
-          <div>
-            <label
-              htmlFor="intervalCount"
-              className="block text-sm font-medium mb-2"
-            >
-              Billing Frequency
-            </label>
-            <div className="flex items-center gap-2">
-              <span className="text-sm">Every</span>
-              <input
-                type="number"
-                id="intervalCount"
-                value={formData.intervalCount}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    interval: "MONTH",
-                    intervalCount: parseInt(e.target.value) || 1,
-                  })
-                }
-                min="1"
-                className="w-20 px-3 py-2 border rounded-md"
-              />
-              <span className="text-sm">
-                {formData.intervalCount === 1 ? "month" : "months"}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              e.g., "1" for monthly, "3" for quarterly
+          <div className="p-3 bg-muted/50 rounded-md">
+            <p className="text-sm text-muted-foreground">
+              <strong>Billing Frequency:</strong> All plans are billed <strong>monthly</strong>
             </p>
           </div>
         </CardContent>
