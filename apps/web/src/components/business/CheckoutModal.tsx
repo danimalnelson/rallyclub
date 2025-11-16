@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import {
   PaymentElement,
   AddressElement,
+  ExpressCheckoutElement,
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
@@ -212,6 +213,84 @@ function CheckoutForm({
               className="w-full px-4 py-2 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
               disabled={isProcessing}
             />
+          </div>
+        </div>
+      </div>
+
+      {/* Express Checkout (Apple Pay, Link, etc) */}
+      <div>
+        <ExpressCheckoutElement
+          onConfirm={async (event) => {
+            if (!stripe || !elements) return;
+
+            setIsProcessing(true);
+            setErrorMessage("");
+
+            try {
+              // Submit the elements
+              const { error: submitError } = await elements.submit();
+              if (submitError) {
+                setErrorMessage(submitError.message || "Failed to process payment");
+                setIsProcessing(false);
+                return;
+              }
+
+              // Confirm the payment with the express checkout payment method
+              const result = await fetch(`/api/checkout/${businessSlug}/${plan.id}/confirm`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                  email,
+                  name: name || email.split("@")[0],
+                }),
+              });
+
+              const data = await result.json();
+
+              if (!result.ok) {
+                throw new Error(data.error || "Failed to create subscription");
+              }
+
+              if (data.clientSecret) {
+                const { error } = await stripe.confirmPayment({
+                  elements,
+                  clientSecret: data.clientSecret,
+                  confirmParams: {
+                    return_url: `${window.location.origin}/${businessSlug}/success`,
+                  },
+                  redirect: "if_required",
+                });
+
+                if (error) {
+                  setErrorMessage(error.message || "Payment failed");
+                  setIsProcessing(false);
+                } else {
+                  onSuccess();
+                }
+              } else {
+                onSuccess();
+              }
+            } catch (error) {
+              console.error("Express checkout error:", error);
+              setErrorMessage(error instanceof Error ? error.message : "Payment failed");
+              setIsProcessing(false);
+            }
+          }}
+          options={{
+            buttonType: {
+              applePay: "buy",
+              googlePay: "buy",
+            },
+          }}
+        />
+        
+        {/* Divider */}
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-border"></div>
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">Or pay with card</span>
           </div>
         </div>
       </div>
