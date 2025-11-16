@@ -316,9 +316,9 @@ function CheckoutForm({
         />
       </div>
 
-      {/* Billing Address */}
+      {/* Billing Location (Country + Zip for tax/verification) */}
       <div>
-        <h3 className="text-lg font-semibold mb-3">Billing Address</h3>
+        <h3 className="text-lg font-semibold mb-3">Billing Location</h3>
         <AddressElement 
           key={`address-${name}`} // Force re-render when name changes
           options={{ 
@@ -327,7 +327,15 @@ function CheckoutForm({
               name: name || "",
             },
             fields: {
-              name: "never", // Always hide - we collect name at top of form
+              name: "never", // Already collected at top
+              address: {
+                line1: "never",
+                line2: "never",
+                city: "never",
+                state: "never",
+                postalCode: "auto",
+                country: "auto",
+              },
             },
           }} 
         />
