@@ -233,7 +233,14 @@ function CheckoutForm({
       {/* Billing Address */}
       <div>
         <h3 className="text-lg font-semibold mb-3">Billing Address</h3>
-        <AddressElement options={{ mode: "billing" }} />
+        <AddressElement 
+          options={{ 
+            mode: "billing",
+            fields: {
+              name: "never", // Don't collect name, we already have it
+            },
+          }} 
+        />
       </div>
 
       {/* Terms & Conditions */}
