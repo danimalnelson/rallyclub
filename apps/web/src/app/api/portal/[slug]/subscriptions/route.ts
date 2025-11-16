@@ -50,7 +50,7 @@ export async function GET(
           businessId: business.id,
         },
         status: {
-          notIn: ["canceled", "incomplete_expired"],
+          notIn: ["canceled", "incomplete", "incomplete_expired"],
         },
       },
       include: {
