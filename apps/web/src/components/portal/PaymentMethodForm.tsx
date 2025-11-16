@@ -68,6 +68,11 @@ export function PaymentMethodForm({ slug, email, onSuccess }: PaymentMethodFormP
               email: email,
             },
           },
+          fields: {
+            billingDetails: {
+              email: "never", // Hide email field, we already have it
+            },
+          },
         }}
       />
       

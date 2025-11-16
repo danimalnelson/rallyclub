@@ -226,6 +226,11 @@ function CheckoutForm({
                 email: email,
               },
             },
+            fields: {
+              billingDetails: {
+                email: "never", // Hide email field, we already have it
+              },
+            },
           }}
         />
       </div>
