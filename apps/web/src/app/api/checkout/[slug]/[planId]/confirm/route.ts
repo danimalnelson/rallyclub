@@ -87,15 +87,15 @@ export async function POST(
         data: {
           email: consumerEmail,
           name: consumerName || null,
-          stripeCustomerId: customerId,
+          businessId: business.id,
         },
       });
-    } else if (!consumer.stripeCustomerId) {
+    } else if (consumerName && !consumer.name) {
+      // Update consumer name if provided and not already set
       consumer = await prisma.consumer.update({
         where: { id: consumer.id },
         data: {
-          stripeCustomerId: customerId,
-          name: consumerName || consumer.name,
+          name: consumerName,
         },
       });
     }
@@ -158,8 +158,10 @@ export async function POST(
       data: {
         consumerId: consumer.id,
         planId: plan.id,
+        businessId: business.id,
         stripeSubscriptionId: subscription.id,
-        status: subscription.status,
+        stripeCustomerId: customerId,
+        status: subscription.status.toUpperCase(),
         currentPeriodStart: new Date(subscription.current_period_start * 1000),
         currentPeriodEnd: new Date(subscription.current_period_end * 1000),
         cancelAtPeriodEnd: subscription.cancel_at_period_end,
