@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@wine-club/db";
-import { getStripeClient } from "@wine-club/lib";
+import { getStripeClient, getCurrentPriceForDate } from "@wine-club/lib";
 
 export async function POST(
   req: NextRequest,
@@ -46,7 +46,25 @@ export async function POST(
       );
     }
 
-    if (!plan.stripePriceId) {
+    // For dynamic pricing, get the current month's price
+    let priceIdToUse = plan.stripePriceId;
+    
+    if (plan.pricingType === "DYNAMIC") {
+      const currentPriceId = await getCurrentPriceForDate(plan.id, new Date());
+      
+      if (!currentPriceId) {
+        return NextResponse.json(
+          { 
+            error: "This plan is temporarily unavailable. The business owner needs to set pricing for the current month.",
+            code: "DYNAMIC_PRICE_NOT_SET",
+          },
+          { status: 503 } // Service Unavailable
+        );
+      }
+      
+      priceIdToUse = currentPriceId;
+    } else if (!plan.stripePriceId) {
+      // Fixed pricing but no price set
       return NextResponse.json(
         { error: "Plan price not configured" },
         { status: 500 }
@@ -122,7 +140,7 @@ export async function POST(
       customer: customerId,
       items: [
         {
-          price: plan.stripePriceId,
+          price: priceIdToUse,
         },
       ],
       default_payment_method: paymentMethodId,
@@ -176,7 +194,8 @@ export async function POST(
 
     console.log("[Subscription] Creating with params:", {
       customer: customerId,
-      priceId: plan.stripePriceId,
+      priceId: priceIdToUse,
+      pricingType: plan.pricingType,
       metadata: subscriptionParams.metadata,
     });
 

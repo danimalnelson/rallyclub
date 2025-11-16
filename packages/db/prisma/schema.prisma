@@ -107,6 +107,7 @@ model Business {
   transactions    Transaction[]
   payoutSummaries PayoutSummary[]
   auditLogs       AuditLog[]
+  alerts          BusinessAlert[]
   
   // New subscription models
   memberships     Membership[]
@@ -607,6 +608,42 @@ model PlanSubscription {
 // Note: No enum for PlanSubscriptionStatus - we use String to match Stripe exactly
 // This allows Stripe to add new statuses without breaking our code
 
+// ===== Business Alert System =====
+model BusinessAlert {
+  id          String       @id @default(cuid())
+  businessId  String
+  type        AlertType
+  severity    AlertSeverity @default(WARNING)
+  title       String
+  message     String
+  metadata    Json?        // Additional context (planId, subscriptionId, etc.)
+  resolved    Boolean      @default(false)
+  resolvedAt  DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  
+  business    Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  
+  @@index([businessId, resolved])
+  @@index([type, resolved])
+  @@map("business_alerts")
+}
+
+enum AlertType {
+  MISSING_DYNAMIC_PRICE
+  FAILED_PAYMENT
+  SUBSCRIPTION_PAUSED
+  SUBSCRIPTION_CANCELLED
+  SUBSCRIPTION_PAST_DUE
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  URGENT
+  CRITICAL
+}
+
 // ===== PriceQueueItem (For Dynamic Pricing) =====
 model PriceQueueItem {
   id                  String   @id @default(cuid())
@@ -615,8 +652,9 @@ model PriceQueueItem {
   effectiveAt         DateTime // When this price takes effect
   price               Int      // In cents
   
-  // Notification tracking (DECISION: Email 7 days + 1 day before)
+  // Notification tracking for MISSING prices (email business owner)
   notifiedAt7Days     DateTime?
+  notifiedAt3Days     DateTime?
   notifiedAt1Day      DateTime?
   applied             Boolean  @default(false)
   

@@ -14,6 +14,8 @@ import {
   createPlanSubscriptionFromCheckout,
   syncPlanSubscription,
   handlePlanSubscriptionDeleted,
+  getCurrentPriceForDate,
+  getStripeClient,
 } from "@wine-club/lib";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -148,6 +150,10 @@ async function handleWebhookEvent(event: Stripe.Event, accountId?: string) {
 
     case "customer.subscription.deleted":
       await handleSubscriptionDeleted(event.data.object as Stripe.Subscription, accountId);
+      break;
+
+    case "invoice.created":
+      await handleInvoiceCreated(event.data.object as Stripe.Invoice, accountId);
       break;
 
     case "invoice.paid":
@@ -460,6 +466,174 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription, acco
       }),
     });
   }
+}
+
+/**
+ * Handle invoice.created event for dynamic pricing
+ * 
+ * When Stripe creates an invoice for a subscription, we check if:
+ * 1. The plan is dynamic pricing
+ * 2. The invoice has the correct price for the current month
+ * 
+ * If the price is wrong or missing, we:
+ * - Void the invoice
+ * - Pause the subscription (if no price available)
+ * - OR update the subscription to the correct price and let Stripe recreate the invoice
+ */
+async function handleInvoiceCreated(invoice: Stripe.Invoice, accountId?: string) {
+  console.log(`[Webhook] invoice.created: ${invoice.id}`);
+
+  // Only handle subscription invoices for regular billing cycles
+  if (!invoice.subscription || invoice.billing_reason !== "subscription_cycle") {
+    console.log(`[Webhook] Skipping: not a subscription cycle invoice`);
+    return;
+  }
+
+  if (!accountId) {
+    console.log(`[Webhook] Skipping: no account ID (platform invoice)`);
+    return;
+  }
+
+  const subscriptionId =
+    typeof invoice.subscription === "string"
+      ? invoice.subscription
+      : invoice.subscription.id;
+
+  const stripe = getStripeClient(accountId);
+
+  // Get Stripe subscription to access metadata
+  const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
+  const planId = stripeSubscription.metadata.planId;
+
+  if (!planId) {
+    console.log(`[Webhook] No planId in subscription metadata`);
+    return;
+  }
+
+  // Get plan from database
+  const plan = await prisma.plan.findUnique({
+    where: { id: planId },
+    include: {
+      business: true,
+      membership: true,
+    },
+  });
+
+  if (!plan) {
+    console.error(`[Webhook] Plan not found: ${planId}`);
+    return;
+  }
+
+  // Only check dynamic pricing plans
+  if (plan.pricingType !== "DYNAMIC") {
+    console.log(`[Webhook] Plan ${plan.name} is fixed pricing, skipping check`);
+    return;
+  }
+
+  console.log(`[Webhook] Checking dynamic pricing for plan: ${plan.name}`);
+
+  // Get the correct price for today
+  const correctPriceId = await getCurrentPriceForDate(planId, new Date());
+
+  if (!correctPriceId) {
+    console.log(`[Webhook] ❌ No price available for current month - pausing subscription`);
+
+    // Void the invoice
+    if (invoice.status === "open") {
+      await stripe.invoices.voidInvoice(invoice.id);
+      console.log(`[Webhook] Voided invoice ${invoice.id}`);
+    }
+
+    // Pause the subscription
+    await stripe.subscriptions.update(subscriptionId, {
+      pause_collection: {
+        behavior: "void",
+      },
+      metadata: {
+        ...stripeSubscription.metadata,
+        pausedReason: "MISSING_DYNAMIC_PRICE",
+        pausedAt: new Date().toISOString(),
+        pausedBySystem: "true",
+      },
+    });
+
+    console.log(`[Webhook] Paused subscription ${subscriptionId}`);
+
+    // Update PlanSubscription in database
+    const planSub = await prisma.planSubscription.findUnique({
+      where: { stripeSubscriptionId: subscriptionId },
+      include: { consumer: true },
+    });
+
+    if (planSub) {
+      await prisma.planSubscription.update({
+        where: { id: planSub.id },
+        data: { pausedAt: new Date() },
+      });
+
+      // Create alert
+      await prisma.businessAlert.create({
+        data: {
+          businessId: plan.businessId,
+          type: "SUBSCRIPTION_PAUSED",
+          severity: "URGENT",
+          title: `Subscription Paused: ${planSub.consumer.name || planSub.consumer.email}`,
+          message: `Subscription paused due to missing price for ${plan.name}. Set the current month's price to resume billing.`,
+          metadata: {
+            planId: plan.id,
+            planName: plan.name,
+            subscriptionId: planSub.id,
+            stripeSubscriptionId: subscriptionId,
+            consumerId: planSub.consumerId,
+            consumerEmail: planSub.consumer.email,
+            consumerName: planSub.consumer.name,
+            voidedInvoiceId: invoice.id,
+            pauseReason: "MISSING_DYNAMIC_PRICE",
+            billingDate: new Date().toISOString(),
+          },
+        },
+      });
+
+      console.log(`[Webhook] Created alert for paused subscription`);
+    }
+
+    return;
+  }
+
+  // Check if invoice has the correct price
+  const invoicePriceId = invoice.lines.data[0]?.price?.id;
+
+  if (invoicePriceId === correctPriceId) {
+    console.log(`[Webhook] ✅ Invoice has correct price: ${correctPriceId}`);
+    return; // All good, let invoice process normally
+  }
+
+  console.log(`[Webhook] ⚠️  Price mismatch! Invoice: ${invoicePriceId}, Should be: ${correctPriceId}`);
+
+  // Void the invoice
+  if (invoice.status === "open") {
+    await stripe.invoices.voidInvoice(invoice.id);
+    console.log(`[Webhook] Voided invoice ${invoice.id}`);
+  }
+
+  // Update subscription to correct price
+  await stripe.subscriptions.update(subscriptionId, {
+    items: [
+      {
+        id: stripeSubscription.items.data[0].id,
+        price: correctPriceId,
+      },
+    ],
+    proration_behavior: "none",
+    metadata: {
+      ...stripeSubscription.metadata,
+      lastPriceUpdate: new Date().toISOString(),
+      updatedByWebhook: "true",
+    },
+  });
+
+  console.log(`[Webhook] ✅ Updated subscription to correct price: ${correctPriceId}`);
+  console.log(`[Webhook] Stripe will automatically create new invoice with correct price`);
 }
 
 async function handleInvoicePaid(invoice: Stripe.Invoice, accountId?: string) {

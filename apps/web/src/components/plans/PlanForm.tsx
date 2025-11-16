@@ -19,12 +19,20 @@ interface Membership {
   status: string;
 }
 
+interface MonthlyPrice {
+  month: string; // "2025-11" format
+  monthLabel: string; // "Nov 2025" display
+  price: string; // In dollars
+  isCurrent: boolean;
+}
+
 interface PlanFormData {
   membershipId: string;
   name: string;
   description: string;
   pricingType: "FIXED" | "DYNAMIC";
-  basePrice: string; // In dollars for form
+  basePrice: string; // In dollars for form (used for FIXED)
+  monthlyPrices: MonthlyPrice[]; // Used for DYNAMIC
   currency: string;
   interval: "MONTH";
   intervalCount: number;
@@ -44,6 +52,30 @@ interface PlanFormProps {
   planId?: string; // If editing
 }
 
+// Generate next N months starting from current month
+function generateMonthlyPrices(count: number = 6): MonthlyPrice[] {
+  const prices: MonthlyPrice[] = [];
+  const now = new Date();
+  
+  for (let i = 0; i < count; i++) {
+    const date = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const month = date.toISOString().slice(0, 7); // "2025-11"
+    const monthLabel = date.toLocaleDateString("en-US", {
+      month: "short",
+      year: "numeric",
+    }); // "Nov 2025"
+    
+    prices.push({
+      month,
+      monthLabel,
+      price: "",
+      isCurrent: i === 0, // First month is current
+    });
+  }
+  
+  return prices;
+}
+
 export function PlanForm({
   businessId,
   memberships,
@@ -59,6 +91,7 @@ export function PlanForm({
     description: initialData?.description || "",
     pricingType: initialData?.pricingType || "FIXED",
     basePrice: initialData?.basePrice || "",
+    monthlyPrices: initialData?.monthlyPrices || generateMonthlyPrices(6),
     currency: initialData?.currency || "usd",
     interval: initialData?.interval || "MONTH",
     intervalCount: initialData?.intervalCount || 1,
@@ -71,14 +104,37 @@ export function PlanForm({
     status: initialData?.status || "DRAFT",
   });
 
+  const handlePricingTypeChange = (newType: "FIXED" | "DYNAMIC") => {
+    setFormData({
+      ...formData,
+      pricingType: newType,
+      // If switching to dynamic, regenerate monthly prices
+      monthlyPrices: newType === "DYNAMIC" ? generateMonthlyPrices(6) : formData.monthlyPrices,
+    });
+  };
+
+  const handleMonthlyPriceChange = (index: number, value: string) => {
+    const newPrices = [...formData.monthlyPrices];
+    newPrices[index].price = value;
+    setFormData({ ...formData, monthlyPrices: newPrices });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
+      // Validate dynamic pricing has current month price
+      if (formData.pricingType === "DYNAMIC") {
+        const currentMonthPrice = formData.monthlyPrices[0];
+        if (!currentMonthPrice.price || parseFloat(currentMonthPrice.price) <= 0) {
+          throw new Error("Current month price is required for dynamic pricing");
+        }
+      }
+
       // Convert dollar amounts to cents
-      const payload = {
+      const payload: any = {
         ...formData,
         basePrice: formData.basePrice
           ? Math.round(parseFloat(formData.basePrice) * 100)
@@ -99,6 +155,17 @@ export function PlanForm({
           ? parseInt(formData.maxSubscribers)
           : null,
       };
+
+      // Add monthly prices for dynamic pricing (convert to cents)
+      if (formData.pricingType === "DYNAMIC") {
+        payload.monthlyPrices = formData.monthlyPrices
+          .filter((mp) => mp.price && parseFloat(mp.price) > 0)
+          .map((mp) => ({
+            month: mp.month,
+            price: Math.round(parseFloat(mp.price) * 100), // Convert to cents
+            isCurrent: mp.isCurrent,
+          }));
+      }
 
       const url = planId
         ? `/api/plans/${planId}`
@@ -268,10 +335,7 @@ export function PlanForm({
               id="pricingType"
               value={formData.pricingType}
               onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  pricingType: e.target.value as "FIXED" | "DYNAMIC",
-                })
+                handlePricingTypeChange(e.target.value as "FIXED" | "DYNAMIC")
               }
               className="w-full px-3 py-2 border rounded-md"
             >
@@ -306,6 +370,94 @@ export function PlanForm({
                   required
                 />
               </div>
+            </div>
+          )}
+
+          {formData.pricingType === "DYNAMIC" && (
+            <div>
+              <label className="block text-sm font-medium mb-3">
+                Monthly Price Schedule *
+              </label>
+              <p className="text-sm text-muted-foreground mb-4">
+                Set your monthly pricing. The current month is required. If a month is blank, 
+                the last set price will continue. Members will be notified 7 days before price changes.
+              </p>
+
+              <div className="border rounded-lg overflow-hidden">
+                <table className="w-full">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-sm font-medium">Month</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium">Price</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {formData.monthlyPrices.map((monthPrice, index) => (
+                      <tr key={monthPrice.month} className="hover:bg-muted/30">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{monthPrice.monthLabel}</span>
+                            {monthPrice.isCurrent && (
+                              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                                Current
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="relative w-32">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                              $
+                            </span>
+                            <input
+                              type="number"
+                              value={monthPrice.price}
+                              onChange={(e) => handleMonthlyPriceChange(index, e.target.value)}
+                              placeholder="0.00"
+                              step="0.01"
+                              min="0"
+                              className={`w-full pl-7 pr-3 py-1.5 border rounded-md text-sm ${
+                                monthPrice.isCurrent && !monthPrice.price
+                                  ? "border-red-300 focus:border-red-500"
+                                  : ""
+                              }`}
+                              required={monthPrice.isCurrent}
+                            />
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-sm text-muted-foreground">
+                            {monthPrice.price ? (
+                              monthPrice.isCurrent ? (
+                                <span className="text-green-600 dark:text-green-400 font-medium">
+                                  Active (required)
+                                </span>
+                              ) : (
+                                "Scheduled"
+                              )
+                            ) : monthPrice.isCurrent ? (
+                              <span className="text-red-600 dark:text-red-400 font-medium">
+                                Not set (plan unavailable)
+                              </span>
+                            ) : (
+                              <span className="text-amber-600 dark:text-amber-400">
+                                Not set (required)
+                              </span>
+                            )}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {!formData.monthlyPrices[0].price && (
+                <p className="text-sm text-red-600 dark:text-red-400 mt-2">
+                  ⚠️ Current month price is required to activate this plan
+                </p>
+              )}
             </div>
           )}
 

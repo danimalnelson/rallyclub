@@ -1,8 +1,11 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@wine-club/ui";
+import useSWR from "swr";
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 interface MembershipFormProps {
   businessId: string;
@@ -81,6 +84,36 @@ export const MembershipForm = React.memo(
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState("");
+
+    // Fetch subscription count for edit mode
+    const { data: subscriptionData, error: swrError } = useSWR(
+      isEdit && membership?.id
+        ? `/api/memberships/${membership.id}/subscription-count`
+        : null,
+      fetcher
+    );
+
+    // Debug logging
+    React.useEffect(() => {
+      if (isEdit) {
+        console.log("[MembershipForm] Edit mode:", {
+          membershipId: membership?.id,
+          subscriptionData,
+          swrError,
+        });
+      }
+    }, [isEdit, membership?.id, subscriptionData, swrError]);
+
+    const activeSubscriptionCount = subscriptionData?.count || 0;
+    const hasBillingRestriction = isEdit && activeSubscriptionCount > 0;
+
+    // More debug logging
+    console.log("[MembershipForm] Restriction check:", {
+      isEdit,
+      activeSubscriptionCount,
+      hasBillingRestriction,
+      subscriptionData,
+    });
 
     // Auto-generate slug from name
     const handleNameChange = useCallback(
@@ -304,6 +337,49 @@ export const MembershipForm = React.memo(
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Debug info - remove after testing */}
+              {isEdit && (
+                <div className="border border-blue-300 bg-blue-50 text-blue-900 rounded-lg p-3 text-xs mb-4">
+                  <strong>Debug:</strong> isEdit={String(isEdit)}, count={activeSubscriptionCount}, 
+                  hasBillingRestriction={String(hasBillingRestriction)}, 
+                  data={JSON.stringify(subscriptionData)}
+                </div>
+              )}
+
+              {/* Warning: Active subscriptions exist */}
+              {hasBillingRestriction && (
+                <div className="border border-amber-300 bg-amber-50 text-amber-900 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <svg
+                      className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-sm mb-1">
+                        Billing Settings Locked
+                      </h4>
+                      <p className="text-sm">
+                        You have{" "}
+                        <span className="font-semibold">
+                          {activeSubscriptionCount} active subscription
+                          {activeSubscriptionCount !== 1 ? "s" : ""}
+                        </span>
+                        . Billing settings cannot be changed while subscriptions
+                        are active. Cancel or wait for subscriptions to expire
+                        before modifying billing settings.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Billing Frequency */}
               <div>
                 <label className="block text-sm font-medium mb-2">
@@ -312,7 +388,12 @@ export const MembershipForm = React.memo(
                 <select
                   value={billingInterval}
                   onChange={(e) => setBillingInterval(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md"
+                  disabled={hasBillingRestriction}
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    hasBillingRestriction
+                      ? "bg-gray-100 cursor-not-allowed opacity-60"
+                      : ""
+                  }`}
                 >
                   <option value="MONTH">Monthly</option>
                   {/* Future: <option value="QUARTER">Quarterly (every 3 months)</option> */}
@@ -329,7 +410,13 @@ export const MembershipForm = React.memo(
                 </label>
                 <div className="space-y-4">
                   {/* Option 1: Rolling Membership */}
-                  <label className="flex items-start space-x-3 cursor-pointer p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                  <label
+                    className={`flex items-start space-x-3 p-4 border rounded-lg transition-colors ${
+                      hasBillingRestriction
+                        ? "opacity-60 cursor-not-allowed"
+                        : "cursor-pointer hover:bg-accent/50"
+                    }`}
+                  >
                     <input
                       type="radio"
                       name="billingModel"
@@ -338,6 +425,7 @@ export const MembershipForm = React.memo(
                         setBillingAnchor("IMMEDIATE");
                         setChargeImmediately(true);
                       }}
+                      disabled={hasBillingRestriction}
                       className="mt-1 shrink-0"
                     />
                     <div className="flex-1">
@@ -352,7 +440,13 @@ export const MembershipForm = React.memo(
                   </label>
 
                   {/* Option 2: Cohort (Immediate Access) */}
-                  <label className="flex items-start space-x-3 cursor-pointer p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                  <label
+                    className={`flex items-start space-x-3 p-4 border rounded-lg transition-colors ${
+                      hasBillingRestriction
+                        ? "opacity-60 cursor-not-allowed"
+                        : "cursor-pointer hover:bg-accent/50"
+                    }`}
+                  >
                     <input
                       type="radio"
                       name="billingModel"
@@ -361,6 +455,7 @@ export const MembershipForm = React.memo(
                         setBillingAnchor("NEXT_INTERVAL");
                         setChargeImmediately(true);
                       }}
+                      disabled={hasBillingRestriction}
                       className="mt-1 shrink-0"
                     />
                     <div className="flex-1">
@@ -375,7 +470,13 @@ export const MembershipForm = React.memo(
                   </label>
 
                   {/* Option 3: Cohort (Deferred Start) */}
-                  <label className="flex items-start space-x-3 cursor-pointer p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                  <label
+                    className={`flex items-start space-x-3 p-4 border rounded-lg transition-colors ${
+                      hasBillingRestriction
+                        ? "opacity-60 cursor-not-allowed"
+                        : "cursor-pointer hover:bg-accent/50"
+                    }`}
+                  >
                     <input
                       type="radio"
                       name="billingModel"
@@ -384,6 +485,7 @@ export const MembershipForm = React.memo(
                         setBillingAnchor("NEXT_INTERVAL");
                         setChargeImmediately(false);
                       }}
+                      disabled={hasBillingRestriction}
                       className="mt-1 shrink-0"
                     />
                     <div className="flex-1">

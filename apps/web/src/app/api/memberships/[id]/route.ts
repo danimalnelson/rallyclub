@@ -7,9 +7,12 @@ import {
   ApiErrors,
 } from "@wine-club/lib";
 
-export const GET = withMiddleware(async (req: NextRequest, context) => {
+export const GET = withMiddleware(async (req: NextRequest) => {
   try {
-    const { id } = await (req as any).params as { id: string };
+    // Extract membership ID from URL path
+    const url = new URL(req.url);
+    const pathParts = url.pathname.split('/');
+    const id = pathParts[pathParts.length - 1]; // /api/memberships/[id]
 
     // Fetch membership
     const membership = await prisma.membership.findUnique({
@@ -52,9 +55,12 @@ export const GET = withMiddleware(async (req: NextRequest, context) => {
   }
 });
 
-export const PUT = withMiddleware(async (req: NextRequest, context) => {
+export const PUT = withMiddleware(async (req: NextRequest) => {
   try {
-    const { id } = await (req as any).params as { id: string };
+    // Extract membership ID from URL path
+    const url = new URL(req.url);
+    const pathParts = url.pathname.split('/');
+    const id = pathParts[pathParts.length - 1]; // /api/memberships/[id]
     const body = await req.json();
     const { businessId, ...membershipData } = body;
 
@@ -90,6 +96,47 @@ export const PUT = withMiddleware(async (req: NextRequest, context) => {
       );
     }
 
+    // Check if billing settings are changing
+    const billingSettingsChanging =
+      (membershipData.billingAnchor !== undefined &&
+        membershipData.billingAnchor !== existingMembership.billingAnchor) ||
+      (membershipData.chargeImmediately !== undefined &&
+        membershipData.chargeImmediately !== existingMembership.chargeImmediately) ||
+      (membershipData.cohortBillingDay !== undefined &&
+        membershipData.cohortBillingDay !== existingMembership.cohortBillingDay);
+
+    if (billingSettingsChanging) {
+      console.log("[Membership Update] Billing settings changing, checking for active subscriptions");
+
+      // Check for active subscriptions across all plans in this membership
+      // Note: Status values are lowercase to match Stripe's format
+      const activeSubscriptionCount = await prisma.planSubscription.count({
+        where: {
+          plan: {
+            membershipId: id,
+          },
+          status: {
+            in: ["active", "trialing", "paused"],
+          },
+        },
+      });
+
+      if (activeSubscriptionCount > 0) {
+        console.log(
+          `[Membership Update] Cannot change billing settings: ${activeSubscriptionCount} active subscription(s) exist`
+        );
+        return NextResponse.json(
+          {
+            error: "Cannot change billing settings while active subscriptions exist",
+            details: `Found ${activeSubscriptionCount} active subscription(s). These subscriptions must be cancelled or expired before changing billing settings.`,
+            code: "ACTIVE_SUBSCRIPTIONS_EXIST",
+            activeSubscriptionCount,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     // Update membership (slug is immutable, so exclude it)
     const { slug, ...updateData } = membershipData;
 
@@ -122,9 +169,12 @@ export const PUT = withMiddleware(async (req: NextRequest, context) => {
   }
 });
 
-export const DELETE = withMiddleware(async (req: NextRequest, context) => {
+export const DELETE = withMiddleware(async (req: NextRequest) => {
   try {
-    const { id } = await (req as any).params as { id: string };
+    // Extract membership ID from URL path
+    const url = new URL(req.url);
+    const pathParts = url.pathname.split('/');
+    const id = pathParts[pathParts.length - 1]; // /api/memberships/[id]
 
     // Fetch existing membership
     const existingMembership = await prisma.membership.findUnique({

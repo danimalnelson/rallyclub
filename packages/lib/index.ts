@@ -9,6 +9,8 @@ export * from "./api-auth";
 export * from "./cache";
 export * from "./api-middleware";
 export * from "./webhook-handlers";
+export * from "./resume-paused-subscriptions";
+export * from "./get-current-price";
 
 // Export metrics separately to avoid pulling in Prisma during tests
 export { calculateMetrics } from "./metrics";

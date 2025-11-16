@@ -29,13 +29,35 @@ export default async function EditMembershipPage({
   }
 
   // Fetch membership
-  const membership = await prisma.membership.findUnique({
+  const membershipData = await prisma.membership.findUnique({
     where: { id, businessId },
   });
 
-  if (!membership) {
+  if (!membershipData) {
     return notFound();
   }
+
+  // Convert to plain object for client component (serialize dates)
+  const membership = {
+    id: membershipData.id,
+    name: membershipData.name,
+    description: membershipData.description,
+    slug: membershipData.slug,
+    billingInterval: membershipData.billingInterval,
+    billingAnchor: membershipData.billingAnchor,
+    cohortBillingDay: membershipData.cohortBillingDay,
+    chargeImmediately: membershipData.chargeImmediately,
+    allowMultiplePlans: membershipData.allowMultiplePlans,
+    maxMembers: membershipData.maxMembers,
+    status: membershipData.status,
+    giftEnabled: membershipData.giftEnabled,
+    waitlistEnabled: membershipData.waitlistEnabled,
+    membersOnlyAccess: membershipData.membersOnlyAccess,
+    pauseEnabled: membershipData.pauseEnabled,
+    skipEnabled: membershipData.skipEnabled,
+    benefits: membershipData.benefits,
+    displayOrder: membershipData.displayOrder,
+  };
 
   return (
     <div className="min-h-screen bg-background">
