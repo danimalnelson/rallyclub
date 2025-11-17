@@ -8,15 +8,8 @@ export async function POST(
 ) {
   try {
     const { slug, planId } = await context.params;
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const { consumerEmail } = body;
-
-    if (!consumerEmail) {
-      return NextResponse.json(
-        { error: "Email is required" },
-        { status: 400 }
-      );
-    }
 
     // Find plan and verify it's active
     const plan = await prisma.plan.findFirst({
@@ -70,27 +63,31 @@ export async function POST(
     // Only reuse customer if they have a previous successful subscription
     let stripeCustomerId: string | undefined;
     
-    const existingConsumer = await prisma.consumer.findUnique({
-      where: { email: consumerEmail },
-      include: {
-        planSubscriptions: {
-          take: 5, // Get a few recent subscriptions
-          select: { stripeCustomerId: true },
-          orderBy: { createdAt: 'desc' },
+    if (consumerEmail) {
+      const existingConsumer = await prisma.consumer.findUnique({
+        where: { email: consumerEmail },
+        include: {
+          planSubscriptions: {
+            take: 5, // Get a few recent subscriptions
+            select: { stripeCustomerId: true },
+            orderBy: { createdAt: 'desc' },
+          },
         },
-      },
-    });
+      });
 
-    // Find first subscription with a valid Stripe customer ID
-    const subscriptionWithCustomer = existingConsumer?.planSubscriptions.find(
-      sub => sub.stripeCustomerId !== null && sub.stripeCustomerId !== undefined
-    );
+      // Find first subscription with a valid Stripe customer ID
+      const subscriptionWithCustomer = existingConsumer?.planSubscriptions.find(
+        sub => sub.stripeCustomerId !== null && sub.stripeCustomerId !== undefined
+      );
 
-    if (subscriptionWithCustomer) {
-      stripeCustomerId = subscriptionWithCustomer.stripeCustomerId!;
-      console.log("[Setup Intent] Reusing existing customer:", stripeCustomerId);
+      if (subscriptionWithCustomer) {
+        stripeCustomerId = subscriptionWithCustomer.stripeCustomerId!;
+        console.log("[Setup Intent] Reusing existing customer:", stripeCustomerId);
+      } else {
+        console.log("[Setup Intent] New customer - will create on successful payment");
+      }
     } else {
-      console.log("[Setup Intent] New customer - will create on successful payment");
+      console.log("[Setup Intent] No email provided - will collect in form");
     }
 
     // Create SetupIntent WITHOUT customer for new users
@@ -105,7 +102,7 @@ export async function POST(
         membershipId: plan.membershipId,
         businessId: business.id,
         businessSlug: slug,
-        consumerEmail: consumerEmail,
+        ...(consumerEmail ? { consumerEmail } : {}),
       },
     });
 

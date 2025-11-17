@@ -1,438 +1,30 @@
 "use client";
 
 import { Button, formatCurrency } from "@wine-club/ui";
-import { X, Lock, Check } from "lucide-react";
+import { X, Check } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  PaymentElement,
-  ExpressCheckoutElement,
-  useStripe,
-  useElements,
+  EmbeddedCheckoutProvider,
+  EmbeddedCheckout,
 } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
 
 interface Plan {
   id: string;
   name: string;
   description: string | null;
   basePrice: number | null;
-  currency: string;
-  pricingType: string;
   setupFee: number | null;
   shippingFee: number | null;
-  stockStatus: string;
+  currency: string;
+  pricingType: string;
 }
 
 interface Membership {
   name: string;
   description: string | null;
   billingInterval: string;
-}
-
-interface CheckoutFormProps {
-  plan: Plan;
-  membership: Membership;
-  email: string;
-  businessSlug: string;
-  onSuccess: () => void;
-  onClose: () => void;
-}
-
-function CheckoutForm({
-  plan,
-  membership,
-  email,
-  businessSlug,
-  onSuccess,
-  onClose,
-}: CheckoutFormProps) {
-  const stripe = useStripe();
-  const elements = useElements();
-  const router = useRouter();
-  
-  const [name, setName] = useState("");
-  const [country, setCountry] = useState("US");
-  const [postalCode, setPostalCode] = useState("");
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const calculateTotal = () => {
-    let total = plan.basePrice || 0;
-    if (plan.setupFee) total += plan.setupFee;
-    if (plan.shippingFee) total += plan.shippingFee;
-    return total;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!stripe || !elements) {
-      return;
-    }
-
-    if (!name.trim()) {
-      setErrorMessage("Please enter your name");
-      return;
-    }
-
-    if (!acceptedTerms) {
-      setErrorMessage("Please accept the terms and conditions");
-      return;
-    }
-
-    setIsProcessing(true);
-    setErrorMessage(null);
-
-    try {
-      // Confirm payment with Stripe
-      const { error: submitError } = await elements.submit();
-      if (submitError) {
-        throw new Error(submitError.message);
-      }
-
-      // Confirm the setup intent (for subscriptions)
-      const { error, setupIntent } = await stripe.confirmSetup({
-        elements,
-        confirmParams: {
-          return_url: `${window.location.origin}/${businessSlug}/success`,
-          payment_method_data: {
-            billing_details: {
-              name: name,
-              email: email,
-            },
-          },
-        },
-        redirect: "if_required",
-      });
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      if (setupIntent?.status === "succeeded") {
-        // Create subscription on our backend
-        const confirmRes = await fetch(
-          `/api/checkout/${businessSlug}/${plan.id}/confirm`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              setupIntentId: setupIntent.id,
-              paymentMethodId: setupIntent.payment_method,
-              consumerEmail: email,
-              consumerName: name,
-            }),
-          }
-        );
-
-        if (!confirmRes.ok) {
-          const errorData = await confirmRes.json();
-          throw new Error(errorData.error || "Failed to create subscription");
-        }
-
-        // Success!
-        onSuccess();
-        router.push(`/${businessSlug}/success`);
-      }
-    } catch (err: any) {
-      console.error("Payment error:", err);
-      setErrorMessage(err.message || "Payment failed. Please try again.");
-      setIsProcessing(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Order Summary */}
-      <div>
-        <h3 className="text-lg font-semibold mb-3">Order Summary</h3>
-        <div className="bg-accent/50 rounded-lg p-4 space-y-2">
-          <div className="flex justify-between">
-            <span className="text-sm text-muted-foreground">
-              {membership.name} - {plan.name}
-            </span>
-            <span className="text-sm font-medium">
-              {plan.basePrice && formatCurrency(plan.basePrice, plan.currency)}
-            </span>
-          </div>
-          <div className="text-xs text-muted-foreground">
-            Billed {membership.billingInterval.toLowerCase()}ly
-          </div>
-          
-          {plan.setupFee && plan.setupFee > 0 && (
-            <div className="flex justify-between pt-2 border-t">
-              <span className="text-sm text-muted-foreground">
-                One-time setup fee
-              </span>
-              <span className="text-sm font-medium">
-                {formatCurrency(plan.setupFee, plan.currency)}
-              </span>
-            </div>
-          )}
-          
-          {plan.shippingFee && plan.shippingFee > 0 && (
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Shipping</span>
-              <span className="text-sm font-medium">
-                {formatCurrency(plan.shippingFee, plan.currency)}
-              </span>
-            </div>
-          )}
-
-          <div className="flex justify-between pt-2 border-t font-semibold">
-            <span>Total due today</span>
-            <span>{formatCurrency(calculateTotal(), plan.currency)}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Customer Information */}
-      <div>
-        <h3 className="text-lg font-semibold mb-3">Customer Information</h3>
-        <div className="space-y-3">
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Email <span className="text-destructive">*</span>
-            </label>
-            <input
-              type="email"
-              value={email}
-              disabled
-              className="w-full px-4 py-2 rounded-lg border border-input bg-muted text-muted-foreground cursor-not-allowed"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              Using Express Checkout? We'll use the email from your payment method.
-            </p>
-          </div>
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium mb-1">
-              Full Name <span className="text-destructive">*</span>
-            </label>
-            <input
-              type="text"
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              placeholder="John Doe"
-              className="w-full px-4 py-2 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-              disabled={isProcessing}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Express Checkout (Apple Pay, Link, etc) */}
-      <div>
-        <ExpressCheckoutElement
-          onConfirm={async (event) => {
-            if (!stripe || !elements) return;
-
-            setIsProcessing(true);
-            setErrorMessage("");
-
-            try {
-              // Submit the elements
-              const { error: submitError } = await elements.submit();
-              if (submitError) {
-                setErrorMessage(submitError.message || "Failed to process payment");
-                setIsProcessing(false);
-                return;
-              }
-
-              // Extract email and name from the express checkout event
-              // This ensures we use the email from Link/Apple Pay, not the pre-filled one
-              const expressEmail = event.billingDetails?.email || email;
-              const expressName = event.billingDetails?.name || name || email.split("@")[0];
-
-              // Confirm the payment with the express checkout payment method
-              const result = await fetch(`/api/checkout/${businessSlug}/${plan.id}/confirm`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ 
-                  email: expressEmail,
-                  name: expressName,
-                }),
-              });
-
-              const data = await result.json();
-
-              if (!result.ok) {
-                throw new Error(data.error || "Failed to create subscription");
-              }
-
-              if (data.clientSecret) {
-                const { error } = await stripe.confirmPayment({
-                  elements,
-                  clientSecret: data.clientSecret,
-                  confirmParams: {
-                    return_url: `${window.location.origin}/${businessSlug}/success`,
-                  },
-                  redirect: "if_required",
-                });
-
-                if (error) {
-                  setErrorMessage(error.message || "Payment failed");
-                  setIsProcessing(false);
-                } else {
-                  onSuccess();
-                }
-              } else {
-                onSuccess();
-              }
-            } catch (error) {
-              console.error("Express checkout error:", error);
-              setErrorMessage(error instanceof Error ? error.message : "Payment failed");
-              setIsProcessing(false);
-            }
-          }}
-          options={{
-            buttonType: {
-              applePay: "buy",
-              googlePay: "buy",
-            },
-          }}
-        />
-        
-        {/* Divider */}
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-border"></div>
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">Or pay with card</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Payment Details */}
-      <div>
-        <h3 className="text-lg font-semibold mb-3">Payment Details</h3>
-        <PaymentElement 
-          options={{
-            defaultValues: {
-              billingDetails: {
-                email: email,
-                name: name || undefined,
-                address: {
-                  country: country,
-                  postal_code: postalCode || undefined,
-                },
-              },
-            },
-            fields: {
-              billingDetails: {
-                email: "never", // Hide email field, we already have it
-                name: "never", // Hide name field, we already have it
-                address: {
-                  country: "never", // We collect this separately
-                  postalCode: "never", // We collect this separately
-                },
-              },
-            },
-          }}
-        />
-      </div>
-
-      {/* Billing Location (Country + Zip for tax/verification) */}
-      <div>
-        <h3 className="text-lg font-semibold mb-3">Billing Location</h3>
-        <div className="grid grid-cols-2 gap-4">
-          {/* Country */}
-          <div>
-            <label htmlFor="country" className="block text-sm font-medium mb-2">
-              Country <span className="text-red-500">*</span>
-            </label>
-            <select
-              id="country"
-              value={country}
-              onChange={(e) => setCountry(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md"
-              required
-              disabled={isProcessing}
-            >
-              <option value="US">United States</option>
-              <option value="CA">Canada</option>
-              <option value="GB">United Kingdom</option>
-              <option value="AU">Australia</option>
-              <option value="DE">Germany</option>
-              <option value="FR">France</option>
-              <option value="IT">Italy</option>
-              <option value="ES">Spain</option>
-              <option value="NL">Netherlands</option>
-              <option value="SE">Sweden</option>
-              <option value="NO">Norway</option>
-              <option value="DK">Denmark</option>
-              <option value="FI">Finland</option>
-              <option value="JP">Japan</option>
-              <option value="KR">South Korea</option>
-              <option value="SG">Singapore</option>
-              <option value="NZ">New Zealand</option>
-              <option value="MX">Mexico</option>
-              <option value="BR">Brazil</option>
-              <option value="AR">Argentina</option>
-            </select>
-          </div>
-          
-          {/* Postal Code */}
-          <div>
-            <label htmlFor="postalCode" className="block text-sm font-medium mb-2">
-              Postal Code <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="postalCode"
-              value={postalCode}
-              onChange={(e) => setPostalCode(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md"
-              placeholder="12345"
-              required
-              disabled={isProcessing}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Terms & Conditions */}
-      <div className="flex items-start gap-2">
-        <input
-          type="checkbox"
-          id="terms"
-          checked={acceptedTerms}
-          onChange={(e) => setAcceptedTerms(e.target.checked)}
-          className="mt-1"
-          disabled={isProcessing}
-        />
-        <label htmlFor="terms" className="text-sm text-muted-foreground">
-          I agree to the terms and conditions and authorize recurring charges
-          for this subscription
-        </label>
-      </div>
-
-      {/* Error Message */}
-      {errorMessage && (
-        <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-          <p className="text-sm text-destructive">{errorMessage}</p>
-        </div>
-      )}
-
-      {/* Submit Button */}
-      <Button
-        type="submit"
-        className="w-full h-12 text-base"
-        disabled={!stripe || isProcessing || !acceptedTerms}
-      >
-        {isProcessing ? "Processing..." : "Complete Purchase"}
-      </Button>
-
-      {/* Security Badge */}
-      <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-        <Lock className="h-4 w-4" />
-        <span>Secured by Stripe</span>
-      </div>
-    </form>
-  );
 }
 
 interface CheckoutModalProps {
@@ -442,10 +34,6 @@ interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  initialEmail?: string;
-  onEmailConfirm?: (email: string) => Promise<void>;
-  skipEmailStep?: boolean; // If true, go directly to payment (Elements already initialized)
-  onEditEmail?: () => void; // Callback to reset and go back to email step
 }
 
 export function CheckoutModal({
@@ -455,56 +43,37 @@ export function CheckoutModal({
   isOpen,
   onClose,
   onSuccess,
-  initialEmail = "",
-  onEmailConfirm,
-  skipEmailStep = false,
-  onEditEmail,
 }: CheckoutModalProps) {
-  const [email, setEmail] = useState(initialEmail);
-  const [emailConfirmed, setEmailConfirmed] = useState(skipEmailStep);
-  const [isConfirmingEmail, setIsConfirmingEmail] = useState(false);
-  const [emailError, setEmailError] = useState<string | null>(null);
+  const router = useRouter();
+  const [stripePromise, setStripePromise] = useState<any>(null);
 
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
+      
+      // Initialize Stripe when modal opens
+      const initStripe = async () => {
+        const configRes = await fetch(`/api/portal/${businessSlug}/stripe-config`);
+        const config = await configRes.json();
+
+        const stripe = await loadStripe(config.publishableKey, {
+          stripeAccount: config.stripeAccount,
+        });
+
+        setStripePromise(stripe);
+      };
+
+      initStripe();
     } else {
       document.body.style.overflow = "unset";
-      // Reset state when modal closes
-      if (!isOpen) {
-        setEmail(initialEmail);
-        setEmailConfirmed(false);
-        setIsConfirmingEmail(false);
-        setEmailError(null);
-      }
     }
+    
     return () => {
       document.body.style.overflow = "unset";
     };
-  }, [isOpen, initialEmail]);
+  }, [isOpen, businessSlug]);
 
   if (!isOpen) return null;
-
-  const handleEmailConfirm = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-
-    setIsConfirmingEmail(true);
-    setEmailError(null);
-
-    try {
-      // Call parent's email confirm handler to initialize SetupIntent
-      if (onEmailConfirm) {
-        await onEmailConfirm(email);
-      }
-      setEmailConfirmed(true);
-    } catch (error) {
-      console.error("Email confirmation error:", error);
-      setEmailError("Failed to initialize checkout. Please try again.");
-    } finally {
-      setIsConfirmingEmail(false);
-    }
-  };
 
   return (
     <div
@@ -618,92 +187,46 @@ export function CheckoutModal({
             </div>
           </div>
 
-          {/* RIGHT COLUMN - Email or Payment */}
+          {/* RIGHT COLUMN - Embedded Checkout */}
           <div className="p-8 md:p-10">
-            <div className="max-w-md mx-auto">
-              {!emailConfirmed ? (
-                /* Email Step */
-                <div>
-                  <h3 className="text-xl font-semibold mb-2">Enter Your Email</h3>
-                  <p className="text-sm text-muted-foreground mb-6">
-                    We'll send your subscription details and login information here
-                  </p>
-
-                  <form onSubmit={handleEmailConfirm} className="space-y-4">
-                    <div>
-                      <label htmlFor="email" className="block text-sm font-medium mb-2">
-                        Email address
-                      </label>
-                      <input
-                        type="email"
-                        id="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                        placeholder="you@example.com"
-                        className="w-full px-4 py-3 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
-                        autoFocus
-                        disabled={isConfirmingEmail}
-                      />
-                    </div>
-
-                    {emailError && (
-                      <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-                        <p className="text-sm text-destructive">{emailError}</p>
-                      </div>
-                    )}
-
-                    <Button type="submit" className="w-full h-12 text-base" disabled={!email || isConfirmingEmail}>
-                      {isConfirmingEmail ? "Initializing..." : "Continue to Payment"}
-                    </Button>
-
-                    <p className="text-center text-xs text-muted-foreground">
-                      By continuing, you agree to receive subscription updates and can unsubscribe at any time
-                    </p>
-                  </form>
-                </div>
-              ) : (
-                /* Payment Step */
-                <div>
-                  <div className="flex items-start justify-between mb-6">
-                    <div>
-                      <h3 className="text-xl font-semibold mb-2">Complete Your Purchase</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Subscribing as: <span className="font-medium text-foreground">{email}</span>
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => {
-                        if (skipEmailStep && onEditEmail) {
-                          // If we're in the second modal with Elements, need to reset parent state
-                          onEditEmail();
-                        } else {
-                          // If we're in the first modal, just go back
-                          setEmailConfirmed(false);
-                          setEmailError(null);
-                        }
-                      }}
-                      className="text-sm text-primary hover:underline shrink-0 ml-4"
-                    >
-                      Edit email
-                    </button>
-                  </div>
-
-                  <CheckoutForm
-                    plan={plan}
-                    membership={membership}
-                    email={email}
-                    businessSlug={businessSlug}
-                    onSuccess={onSuccess}
-                    onClose={onClose}
-                  />
-                </div>
-              )}
-            </div>
+            {stripePromise ? (
+              <EmbeddedCheckoutProvider
+                stripe={stripePromise}
+                options={{
+                  fetchClientSecret: async () => {
+                    const res = await fetch(
+                      `/api/checkout/${businessSlug}/${plan.id}/session`,
+                      {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                      }
+                    );
+                    const data = await res.json();
+                    
+                    if (!res.ok || !data.clientSecret) {
+                      console.error("Failed to create checkout session:", data);
+                      throw new Error(data.error || "Failed to initialize checkout");
+                    }
+                    
+                    return data.clientSecret;
+                  },
+                  onComplete: () => {
+                    onSuccess();
+                    router.push(`/${businessSlug}/success`);
+                  },
+                }}
+              >
+                <EmbeddedCheckout />
+              </EmbeddedCheckoutProvider>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+                <p className="text-sm text-muted-foreground">Loading checkout...</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
     </div>
   );
 }
-

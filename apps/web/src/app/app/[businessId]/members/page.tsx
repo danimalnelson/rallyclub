@@ -52,20 +52,29 @@ export default async function MembersPage({
     },
   });
 
-  // Group subscriptions by consumer
+  // Group subscriptions by consumer email (to consolidate duplicate consumer records)
   const consumersMap = new Map<string, {
     consumer: any;
     subscriptions: any[];
   }>();
 
   planSubscriptions.forEach((sub) => {
-    if (!consumersMap.has(sub.consumer.id)) {
-      consumersMap.set(sub.consumer.id, {
+    const email = sub.consumer.email.toLowerCase();
+    
+    if (!consumersMap.has(email)) {
+      consumersMap.set(email, {
         consumer: sub.consumer,
         subscriptions: [],
       });
+    } else {
+      // If we already have this email, prefer the consumer with a name set
+      const existing = consumersMap.get(email)!;
+      if (!existing.consumer.name && sub.consumer.name) {
+        existing.consumer = sub.consumer;
+      }
     }
-    consumersMap.get(sub.consumer.id)!.subscriptions.push(sub);
+    
+    consumersMap.get(email)!.subscriptions.push(sub);
   });
 
   const members = Array.from(consumersMap.values());
@@ -106,7 +115,7 @@ export default async function MembersPage({
           <div className="space-y-4">
             {members.map((member) => {
               const activeSubscriptions = member.subscriptions.filter(
-                (sub: any) => sub.status === "active" || sub.status === "trialing"
+                (sub: any) => sub.status === "active" || sub.status === "trialing" || sub.status === "ACTIVE"
               );
               const latestSubscription = member.subscriptions[0];
               
@@ -135,10 +144,24 @@ export default async function MembersPage({
                           </span>
                         </div>
 
-                        {/* Active Subscriptions */}
-                        {activeSubscriptions.length > 0 && (
+                        {/* All Subscriptions (active, paused, incomplete) */}
+                        {member.subscriptions.filter((sub: any) => 
+                          sub.status === "active" || 
+                          sub.status === "ACTIVE" || 
+                          sub.status === "trialing" || 
+                          sub.status === "paused" || 
+                          sub.status === "incomplete"
+                        ).length > 0 && (
                           <div className="mt-4 space-y-2">
-                            {activeSubscriptions.map((sub: any) => (
+                            {member.subscriptions
+                              .filter((sub: any) => 
+                                sub.status === "active" || 
+                                sub.status === "ACTIVE" || 
+                                sub.status === "trialing" || 
+                                sub.status === "paused" || 
+                                sub.status === "incomplete"
+                              )
+                              .map((sub: any) => (
                               <div key={sub.id} className="grid grid-cols-4 gap-4 text-sm p-3 bg-muted/50 rounded-lg">
                                 <div>
                                   <div className="text-muted-foreground">Plan</div>
@@ -150,12 +173,24 @@ export default async function MembersPage({
                                 </div>
                                 <div>
                                   <div className="text-muted-foreground">Status</div>
-                                  <div className="font-medium capitalize">{sub.status}</div>
+                                  <div className="font-medium capitalize">
+                                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                                      sub.status === "active" || sub.status === "ACTIVE" || sub.status === "trialing"
+                                        ? "bg-green-100 text-green-700"
+                                        : sub.status === "paused"
+                                        ? "bg-yellow-100 text-yellow-700"
+                                        : sub.status === "incomplete"
+                                        ? "bg-orange-100 text-orange-700"
+                                        : "bg-gray-100 text-gray-700"
+                                    }`}>
+                                      {sub.status}
+                                    </span>
+                                  </div>
                                 </div>
                                 <div>
                                   <div className="text-muted-foreground">Next Billing</div>
                                   <div className="font-medium">
-                                    {formatDate(sub.currentPeriodEnd)}
+                                    {sub.currentPeriodEnd ? formatDate(sub.currentPeriodEnd) : "N/A"}
                                   </div>
                                 </div>
                               </div>
