@@ -13,19 +13,19 @@ const monthlyPriceSchema = z.object({
 
 const updatePlanSchema = z.object({
   name: z.string().min(1).max(100).optional(),
-  description: z.string().max(1000).optional().nullable(),
+  description: z.string().max(1000).or(z.literal("")).optional().nullable(),
   pricingType: z.enum(["FIXED", "DYNAMIC"]).optional(),
-  basePrice: z.number().int().positive().optional().nullable(),
+  basePrice: z.union([z.number().int().positive(), z.null(), z.literal("")]).optional().nullable(),
   monthlyPrices: z.array(monthlyPriceSchema).optional(), // For DYNAMIC
   currency: z.string().optional(),
   interval: z.enum(["WEEK", "MONTH", "YEAR"]).optional(),
   intervalCount: z.number().int().positive().optional(),
-  setupFee: z.number().int().min(0).optional().nullable(),
-  recurringFee: z.number().int().min(0).optional().nullable(),
-  recurringFeeName: z.string().max(100).optional().nullable(),
-  shippingFee: z.number().int().min(0).optional().nullable(),
+  setupFee: z.union([z.number().int().min(0), z.null(), z.literal("")]).optional().nullable(),
+  recurringFee: z.union([z.number().int().min(0), z.null(), z.literal("")]).optional().nullable(),
+  recurringFeeName: z.string().max(100).or(z.literal("")).optional().nullable(),
+  shippingFee: z.union([z.number().int().min(0), z.null(), z.literal("")]).optional().nullable(),
   stockStatus: z.enum(["AVAILABLE", "SOLD_OUT", "COMING_SOON", "WAITLIST"]).optional(),
-  maxSubscribers: z.number().int().positive().optional().nullable(),
+  maxSubscribers: z.union([z.number().int().positive(), z.null(), z.literal("")]).optional().nullable(),
   status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]).optional(),
 });
 
@@ -115,7 +115,57 @@ export async function PUT(
   try {
     const { planId } = await context.params;
     const body = await req.json();
-    const data = updatePlanSchema.parse(body);
+    
+    // Debug: Log monthlyPrices before processing
+    if (body.monthlyPrices) {
+      console.log('[Plan Update] monthlyPrices before processing:', JSON.stringify(body.monthlyPrices, null, 2));
+    }
+    
+    // Preprocess: Convert empty strings to null and parse numeric strings in monthlyPrices
+    const cleanedBody = Object.fromEntries(
+      Object.entries(body).map(([key, value]) => {
+        if (value === "") return [key, null];
+        
+        // Handle monthlyPrices array - convert price strings to numbers (cents)
+        if (key === "monthlyPrices" && Array.isArray(value)) {
+          const processedPrices = value
+            .map((item: any) => {
+              let price = item.price;
+              
+              // Skip entries with empty prices (for FIXED pricing plans)
+              if (price === "" || price === null || price === undefined) {
+                return null;
+              }
+              
+              // If price is a string, parse it
+              if (typeof price === "string") {
+                // Remove $ and whitespace
+                price = price.replace(/[\$\s]/g, '');
+                
+                // Parse as float and convert to cents
+                const parsed = parseFloat(price);
+                if (isNaN(parsed)) {
+                  console.error(`Invalid price in monthlyPrices: ${item.price}`);
+                  return null;
+                }
+                
+                // If it looks like dollars (has decimal or < 100), convert to cents
+                price = price.includes('.') || parsed < 100 ? Math.round(parsed * 100) : parsed;
+              }
+              
+              return { ...item, price };
+            })
+            .filter((item: any) => item !== null);
+          
+          // If all prices are empty, omit monthlyPrices entirely
+          return [key, processedPrices.length > 0 ? processedPrices : undefined];
+        }
+        
+        return [key, value];
+      })
+    );
+    
+    const data = updatePlanSchema.parse(cleanedBody);
 
     // Get existing plan and verify access
     const existingPlan = await prisma.plan.findFirst({
@@ -493,10 +543,13 @@ export async function PUT(
     }
 
     // Update plan in database
+    // Exclude interval/intervalCount (moved to Membership model) and monthlyPrices (not a DB field)
+    const { interval, intervalCount, monthlyPrices, ...planUpdateData } = data;
+    
     const updatedPlan = await prisma.plan.update({
       where: { id: planId },
       data: {
-        ...data,
+        ...planUpdateData,
         stripePriceId: finalStripePriceId,
       },
     });

@@ -40,10 +40,6 @@ export default async function BusinessLandingPage({
     notFound();
   }
 
-  // Generate a simple business description if not present
-  const businessDescription = business.description || 
-    `Join ${business.name} and gain access to exclusive membership benefits, special events, and a community of enthusiasts.`;
-
   return (
     <main className="min-h-screen bg-background">
       <BusinessHeader
@@ -61,7 +57,7 @@ export default async function BusinessLandingPage({
       <MembershipListing
         businessName={business.name}
         businessSlug={slug}
-        businessDescription={businessDescription}
+        businessDescription={business.description || undefined}
         memberships={business.memberships}
       />
     </main>
