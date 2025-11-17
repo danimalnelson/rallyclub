@@ -546,10 +546,18 @@ export async function PUT(
     // Exclude interval/intervalCount (moved to Membership model) and monthlyPrices (not a DB field)
     const { interval, intervalCount, monthlyPrices, ...planUpdateData } = data;
     
+    // Convert any remaining empty strings to null for Prisma
+    const cleanedUpdateData = Object.fromEntries(
+      Object.entries(planUpdateData).map(([key, value]) => [
+        key,
+        value === "" ? null : value
+      ])
+    );
+    
     const updatedPlan = await prisma.plan.update({
       where: { id: planId },
       data: {
-        ...planUpdateData,
+        ...cleanedUpdateData,
         stripePriceId: finalStripePriceId,
       },
     });
