@@ -6,24 +6,24 @@
   :root {
     /* Simpler color palette - more utilitarian and product-focused */
     --background: 0 0% 100%; /* Pure white background */
-    --foreground: 0 0% 15%; /* Deep black text */
+    --foreground: 0 0% 9%; /* #181818 base text */
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 15%;
+    --card-foreground: 0 0% 9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 15%;
-    --primary: 0 0% 15%; /* Black primary */
+    --popover-foreground: 0 0% 9%;
+    --primary: 0 0% 9%; /* #181818 primary */
     --primary-foreground: 0 0% 100%;
     --secondary: 0 0% 96%; /* Light grey */
-    --secondary-foreground: 0 0% 15%;
+    --secondary-foreground: 0 0% 9%;
     --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%; /* Medium grey */
+    --muted-foreground: 0 0% 28%; /* #484848 muted text */
     --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 15%;
+    --accent-foreground: 0 0% 9%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
     --border: 0 0% 88%; /* Subtle border */
     --input: 0 0% 88%;
-    --ring: 0 0% 15%;
+    --ring: 0 0% 9%;
     --radius: 0.75rem; /* Slightly larger border radius for modern feel */
   }
 
