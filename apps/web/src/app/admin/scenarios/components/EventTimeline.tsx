@@ -55,9 +55,10 @@ interface ClockDetails {
 
 interface EventTimelineProps {
   testClockId: string;
+  frozenTime: number; // When this changes, we refetch
 }
 
-export function EventTimeline({ testClockId }: EventTimelineProps) {
+export function EventTimeline({ testClockId, frozenTime }: EventTimelineProps) {
   const [details, setDetails] = useState<ClockDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,26 +69,37 @@ export function EventTimeline({ testClockId }: EventTimelineProps) {
 
     try {
       const res = await fetch(`/api/admin/test-clocks/${testClockId}/details`);
-      const data = await res.json();
+      
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error(`Invalid JSON response: ${text.substring(0, 100)}`);
+      }
 
       if (!res.ok) {
-        throw new Error(data.error || "Failed to fetch details");
+        throw new Error(data.details || data.error || "Failed to fetch details");
       }
 
       setDetails(data);
     } catch (err: any) {
+      console.error("[EventTimeline] Error:", err);
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
+  // Fetch when testClockId changes (new scenario) or frozenTime changes (time advanced)
   useEffect(() => {
-    fetchDetails();
-    // Refresh every 5 seconds while viewing
-    const interval = setInterval(fetchDetails, 5000);
-    return () => clearInterval(interval);
-  }, [testClockId]);
+    // Small delay to let test clock be ready
+    const timeout = setTimeout(() => {
+      fetchDetails();
+    }, 500);
+    
+    return () => clearTimeout(timeout);
+  }, [testClockId, frozenTime]);
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp * 1000).toLocaleDateString("en-US", {
@@ -280,10 +292,16 @@ export function EventTimeline({ testClockId }: EventTimelineProps) {
         </div>
       )}
 
-      {details.events.length === 0 && customer?.invoices.length === 0 && (
-        <p className="text-muted-foreground text-center text-sm py-4">
-          No events yet. Advance time to trigger billing events.
-        </p>
+      {details.events.length === 0 && (
+        <div className="text-center text-sm py-4">
+          <p className="text-muted-foreground mb-2">
+            No Stripe events captured yet.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Events may take a few seconds to appear after actions.
+            Try clicking Refresh above.
+          </p>
+        </div>
       )}
     </div>
   );

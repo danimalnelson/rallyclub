@@ -27,6 +27,15 @@ export async function POST(
   req: NextRequest,
   context: { params: Promise<{ type: string }> }
 ) {
+  // Check Stripe configuration first
+  const stripeKey = process.env.STRIPE_SECRET_KEY;
+  if (!stripeKey || stripeKey.includes('placeholder')) {
+    return NextResponse.json(
+      { error: "Stripe not configured", details: "STRIPE_SECRET_KEY environment variable is missing or invalid" },
+      { status: 500 }
+    );
+  }
+  
   try {
     const { type } = await context.params;
     const body = await req.json().catch(() => ({}));
@@ -65,8 +74,19 @@ export async function POST(
       },
     });
 
-    // 3. Create or get a test price
-    // If no priceId provided, create a simple $10/month test price
+    // 3. Attach a test payment method to the customer
+    const paymentMethod = await stripe.paymentMethods.attach("pm_card_visa", {
+      customer: customer.id,
+    });
+
+    // Set as default payment method
+    await stripe.customers.update(customer.id, {
+      invoice_settings: {
+        default_payment_method: paymentMethod.id,
+      },
+    });
+
+    // 4. Create or get a test price
     let effectivePriceId = priceId;
     
     if (!effectivePriceId) {
@@ -87,7 +107,7 @@ export async function POST(
       effectivePriceId = price.id;
     }
 
-    // 4. Create subscription based on scenario type
+    // 5. Create subscription based on scenario type
     let subscriptionParams: any = {
       customer: customer.id,
       items: [{ price: effectivePriceId }],
@@ -125,7 +145,7 @@ export async function POST(
 
     const subscription = await stripe.subscriptions.create(subscriptionParams);
 
-    // 5. Get initial invoice info
+    // 6. Get initial invoice info
     const invoices = await stripe.invoices.list({
       customer: customer.id,
       limit: 5,
@@ -168,9 +188,17 @@ export async function POST(
       nextSteps: getNextSteps(scenarioType, testClock.frozen_time, nextFirst),
     });
   } catch (error: any) {
-    console.error("[Scenario Run] Error:", error);
+    console.error("[Scenario Run] Error:", error.message);
     return NextResponse.json(
-      { error: "Failed to run scenario", details: error.message },
+      { 
+        error: "Failed to run scenario", 
+        details: error.message,
+        stripeError: {
+          type: error.type,
+          code: error.code,
+          statusCode: error.statusCode,
+        }
+      },
       { status: 500 }
     );
   }

@@ -11,11 +11,26 @@ export async function POST(
 ) {
   try {
     const { id } = await context.params;
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const { frozenTime, advanceBy } = body;
 
-    // Get current clock state
-    const currentClock = await stripe.testHelpers.testClocks.retrieve(id);
+    // Get current clock state, with retry if advancing
+    let currentClock = await stripe.testHelpers.testClocks.retrieve(id);
+    
+    // If clock is advancing, wait and retry a few times
+    let retries = 0;
+    while (currentClock.status === "advancing" && retries < 10) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      currentClock = await stripe.testHelpers.testClocks.retrieve(id);
+      retries++;
+    }
+    
+    if (currentClock.status === "advancing") {
+      return NextResponse.json(
+        { error: "Test clock is still advancing after waiting. Please try again in a few seconds." },
+        { status: 400 }
+      );
+    }
     
     let newFrozenTime: number;
 
@@ -53,7 +68,7 @@ export async function POST(
       advancedBy: testClock.frozen_time - currentClock.frozen_time,
     });
   } catch (error: any) {
-    console.error("[Test Clocks] Advance error:", error);
+    console.error("[Test Clocks] Advance error:", error.message);
     return NextResponse.json(
       { error: "Failed to advance test clock", details: error.message },
       { status: 500 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@wine-club/ui";
 import { Clock, FastForward, Calendar } from "lucide-react";
 
@@ -21,8 +21,15 @@ export function TimeControls({ testClockId, currentTime, onTimeAdvanced }: TimeC
   const [loading, setLoading] = useState(false);
   const [customDate, setCustomDate] = useState("");
   const [error, setError] = useState<string | null>(null);
+  
+  // Synchronous lock to prevent multiple concurrent advances
+  const isAdvancingRef = useRef(false);
 
   const advanceByDuration = async (seconds: number) => {
+    // Synchronous lock to prevent multiple concurrent advances
+    if (isAdvancingRef.current) return;
+    isAdvancingRef.current = true;
+    
     setLoading(true);
     setError(null);
 
@@ -36,19 +43,26 @@ export function TimeControls({ testClockId, currentTime, onTimeAdvanced }: TimeC
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "Failed to advance time");
+        throw new Error(data.details || data.error || "Failed to advance time");
       }
 
+      // Wait a moment for Stripe to process, then refresh
+      await new Promise(resolve => setTimeout(resolve, 1000));
       onTimeAdvanced();
     } catch (err: any) {
       setError(err.message);
     } finally {
+      isAdvancingRef.current = false;
       setLoading(false);
     }
   };
 
   const advanceToDate = async () => {
     if (!customDate) return;
+    
+    // Synchronous lock
+    if (isAdvancingRef.current) return;
+    isAdvancingRef.current = true;
 
     setLoading(true);
     setError(null);
@@ -74,15 +88,21 @@ export function TimeControls({ testClockId, currentTime, onTimeAdvanced }: TimeC
       }
 
       setCustomDate("");
+      await new Promise(resolve => setTimeout(resolve, 1000));
       onTimeAdvanced();
     } catch (err: any) {
       setError(err.message);
     } finally {
+      isAdvancingRef.current = false;
       setLoading(false);
     }
   };
 
   const advanceToNextFirst = async () => {
+    // Synchronous lock
+    if (isAdvancingRef.current) return;
+    isAdvancingRef.current = true;
+    
     const currentDate = new Date(currentTime * 1000);
     const nextFirst = new Date(currentDate);
     nextFirst.setMonth(nextFirst.getMonth() + 1);
@@ -105,10 +125,12 @@ export function TimeControls({ testClockId, currentTime, onTimeAdvanced }: TimeC
         throw new Error(data.error || "Failed to advance time");
       }
 
+      await new Promise(resolve => setTimeout(resolve, 1000));
       onTimeAdvanced();
     } catch (err: any) {
       setError(err.message);
     } finally {
+      isAdvancingRef.current = false;
       setLoading(false);
     }
   };

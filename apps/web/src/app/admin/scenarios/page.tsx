@@ -44,7 +44,7 @@ const SCENARIOS = [
     name: "Rolling Membership",
     description: "Bills immediately on signup, renews on the same day each month (anniversary billing).",
     billingAnchor: "IMMEDIATE",
-    chargeImmediately: "n/a",
+    chargeImmediately: "true",
     color: "bg-blue-500",
   },
   {
@@ -87,12 +87,32 @@ export default function ScenariosPage() {
     }
   };
 
+  const cleanupAllTestClocks = async () => {
+    // Delete active scenario's clock
+    if (activeScenario) {
+      try {
+        await fetch(`/api/admin/test-clocks/${activeScenario.testClock.id}`, { method: "DELETE" });
+      } catch (e) {}
+    }
+    // Delete any remaining clocks
+    for (const clock of testClocks) {
+      try {
+        await fetch(`/api/admin/test-clocks/${clock.id}`, { method: "DELETE" });
+      } catch (e) {}
+    }
+    setActiveScenario(null);
+    setTestClocks([]);
+  };
+
   const runScenario = async (type: ScenarioType) => {
     setRunningScenario(type);
     setError(null);
     setLoading(true);
 
     try {
+      // Auto-cleanup before running new scenario
+      await cleanupAllTestClocks();
+
       const res = await fetch(`/api/admin/test-clocks/scenarios/${type}/run`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -102,28 +122,18 @@ export default function ScenariosPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "Failed to run scenario");
+        const errorMsg = data.details 
+          ? `${data.error}: ${data.details}` 
+          : data.error || "Failed to run scenario";
+        throw new Error(errorMsg);
       }
 
       setActiveScenario(data);
-      await fetchTestClocks();
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
       setRunningScenario(null);
-    }
-  };
-
-  const deleteTestClock = async (id: string) => {
-    try {
-      await fetch(`/api/admin/test-clocks/${id}`, { method: "DELETE" });
-      await fetchTestClocks();
-      if (activeScenario?.testClock.id === id) {
-        setActiveScenario(null);
-      }
-    } catch (err) {
-      console.error("Failed to delete test clock:", err);
     }
   };
 
@@ -151,7 +161,6 @@ export default function ScenariosPage() {
         console.error("Failed to refresh scenario:", err);
       }
     }
-    await fetchTestClocks();
   };
 
   const formatDate = (timestamp: number) => {
@@ -309,54 +318,28 @@ export default function ScenariosPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <EventTimeline testClockId={activeScenario.testClock.id} />
+                <EventTimeline 
+                  testClockId={activeScenario.testClock.id} 
+                  frozenTime={activeScenario.testClock.frozenTime}
+                />
               </CardContent>
             </Card>
           </div>
         )}
 
-        {/* Existing Test Clocks */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              Existing Test Clocks
-              <Button variant="outline" size="sm" onClick={fetchTestClocks}>
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Refresh
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {testClocks.length === 0 ? (
-              <p className="text-muted-foreground text-center py-4">
-                No test clocks. Run a scenario to create one.
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {testClocks.map((clock) => (
-                  <div
-                    key={clock.id}
-                    className="flex items-center justify-between p-3 border rounded-lg"
-                  >
-                    <div>
-                      <p className="font-medium">{clock.name || clock.id}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Frozen at: {formatDate(clock.frozenTime)} • Status: {clock.status}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => deleteTestClock(clock.id)}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* End Test Button - only show when there's an active scenario */}
+        {activeScenario && (
+          <div className="flex justify-center">
+            <Button
+              variant="outline"
+              onClick={cleanupAllTestClocks}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              End Test & Clean Up
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -12,18 +12,40 @@ export async function GET(
   try {
     const { id } = await context.params;
 
-    // Get test clock
-    const testClock = await stripe.testHelpers.testClocks.retrieve(id);
+    // Get test clock - may need to wait if still advancing
+    let testClock = await stripe.testHelpers.testClocks.retrieve(id);
+    
+    // Wait if clock is still advancing
+    let retries = 0;
+    while (testClock.status === "advancing" && retries < 10) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      testClock = await stripe.testHelpers.testClocks.retrieve(id);
+      retries++;
+    }
 
-    // Find customers attached to this test clock
-    const customers = await stripe.customers.list({
-      limit: 10,
-    });
-
-    // Filter to customers with this test clock
-    const clockCustomers = customers.data.filter(
-      (c) => c.test_clock === id
-    );
+    // Find customers attached to this test clock by searching metadata
+    let clockCustomers: any[] = [];
+    
+    try {
+      const searchResults = await stripe.customers.search({
+        query: `metadata["testClock"]:"${id}"`,
+        limit: 10,
+      });
+      clockCustomers = searchResults.data;
+    } catch (searchError: any) {
+      // Search might fail, use fallback
+    }
+    
+    // Fallback: also try listing and filtering if search returns nothing
+    if (clockCustomers.length === 0) {
+      const allCustomers = await stripe.customers.list({
+        limit: 100,
+      });
+      
+      clockCustomers = allCustomers.data.filter((c: any) => {
+        return c.metadata?.testClock === id;
+      });
+    }
 
     // Get subscriptions and invoices for each customer
     const customerDetails = await Promise.all(
@@ -32,7 +54,7 @@ export async function GET(
           stripe.subscriptions.list({ customer: customer.id, limit: 10 }),
           stripe.invoices.list({ customer: customer.id, limit: 20 }),
         ]);
-
+        
         return {
           id: customer.id,
           email: customer.email,
@@ -71,30 +93,34 @@ export async function GET(
 
     // Get recent events related to this test clock's customers
     const allEvents: any[] = [];
-    for (const customer of clockCustomers) {
+    try {
       const events = await stripe.events.list({
-        limit: 50,
-        types: [
-          "customer.subscription.created",
-          "customer.subscription.updated",
-          "customer.subscription.deleted",
-          "customer.subscription.trial_will_end",
-          "invoice.created",
-          "invoice.finalized",
-          "invoice.paid",
-          "invoice.payment_failed",
-          "payment_intent.succeeded",
-          "payment_intent.payment_failed",
-        ],
+        limit: 100,
       });
-
-      // Filter events for this customer
-      const customerEvents = events.data.filter((event) => {
+      
+      const customerIds = clockCustomers.map(c => c.id);
+      
+      for (const event of events.data) {
         const data = event.data.object as any;
-        return data.customer === customer.id;
-      });
-
-      allEvents.push(...customerEvents);
+        // Check if event is related to our customers
+        if (data.customer && customerIds.includes(data.customer)) {
+          allEvents.push(event);
+        }
+        // Also check for subscription events that might have customer nested
+        else if (data.customer_id && customerIds.includes(data.customer_id)) {
+          allEvents.push(event);
+        }
+        // Check for invoice events where customer might be an object
+        else if (typeof data.customer === 'object' && data.customer?.id && customerIds.includes(data.customer.id)) {
+          allEvents.push(event);
+        }
+        // Check subscription field for customer
+        else if (data.subscription && typeof data.subscription === 'object' && data.subscription.customer && customerIds.includes(data.subscription.customer)) {
+          allEvents.push(event);
+        }
+      }
+    } catch (eventsError: any) {
+      // Continue without events
     }
 
     // Sort events by created time
@@ -119,7 +145,7 @@ export async function GET(
       })),
     });
   } catch (error: any) {
-    console.error("[Test Clock Details] Error:", error);
+    console.error("[Test Clock Details] Error:", error.message);
     return NextResponse.json(
       { error: "Failed to get test clock details", details: error.message },
       { status: 500 }
