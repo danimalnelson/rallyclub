@@ -1,10 +1,6 @@
 import type { Metadata } from "next";
-import { Geist, Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/lib/providers";
-
-const geist = Geist({ subsets: ["latin"] });
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "Wine Club SaaS",
@@ -18,7 +14,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} antialiased`}>
+      <body className="antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>

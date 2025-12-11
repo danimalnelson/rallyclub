@@ -88,12 +88,39 @@ export async function POST(
       console.log("[Checkout Session] No email provided - will collect in form");
     }
 
-    // Ensure plan has a Stripe product
-    if (!plan.stripeProductId) {
-      return NextResponse.json(
-        { error: "Plan does not have a Stripe product configured. Please edit and save the plan." },
-        { status: 400 }
-      );
+    // Ensure plan has a Stripe product - create if missing
+    let stripeProductId = plan.stripeProductId;
+    
+    if (!stripeProductId) {
+      console.log("[Checkout Session] Plan missing stripeProductId, creating on-the-fly");
+      
+      try {
+        const stripeProduct = await stripe.products.create({
+          name: plan.name,
+          description: plan.description || undefined,
+          metadata: {
+            planId: plan.id,
+            membershipId: plan.membershipId,
+            businessId: business.id,
+          },
+        });
+        
+        stripeProductId = stripeProduct.id;
+        
+        // Update plan with the product ID
+        await prisma.plan.update({
+          where: { id: plan.id },
+          data: { stripeProductId: stripeProduct.id },
+        });
+        
+        console.log("[Checkout Session] Created product:", stripeProduct.id);
+      } catch (productError: any) {
+        console.error("[Checkout Session] Failed to create product:", productError);
+        return NextResponse.json(
+          { error: "Failed to create Stripe product", details: productError.message },
+          { status: 500 }
+        );
+      }
     }
 
     // Ensure plan has a Stripe price - create if missing
@@ -111,7 +138,7 @@ export async function POST(
             interval: plan.membership.billingInterval.toLowerCase() as "month" | "week" | "year",
             interval_count: 1,
           },
-          product: plan.stripeProductId,
+          product: stripeProductId,
           nickname: `${plan.name} - ${plan.membership.billingInterval}`,
         });
         
@@ -216,4 +243,3 @@ export async function POST(
     );
   }
 }
-

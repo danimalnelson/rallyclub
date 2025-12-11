@@ -57,12 +57,15 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     font-feature-settings: 'rlig' 1, 'calt' 1;
+    font-weight: 400; /* Default font weight */
   }
   
   /* Refined typography with tighter letter spacing for titles */
   h1, h2, h3, h4, h5, h6 {
-    @apply tracking-tight font-semibold;
+    @apply tracking-tight;
+    font-weight: 500;
   }
 }
 

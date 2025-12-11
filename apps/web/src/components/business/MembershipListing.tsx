@@ -59,20 +59,6 @@ export function MembershipListing({
 
   return (
     <>
-      {/* Business info section */}
-      <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8">
-        <div className="max-w-4xl mx-auto text-center pb-8 md:pb-10">
-          <h1 className="text-3xl md:text-4xl font-semibold mb-4 md:mb-6">
-            {businessName}
-          </h1>
-          {businessDescription && (
-            <p className="text-lg font-medium leading-[1.5rem] text-muted-foreground text-pretty">
-              {businessDescription}
-            </p>
-          )}
-        </div>
-      </div>
-
       {/* Memberships section - full width gray background */}
       <div className="bg-[#F5F5F5] py-24">
         <div className="max-w-6xl mx-auto px-4 md:px-6">
@@ -87,7 +73,7 @@ export function MembershipListing({
                   {membership.name}
                 </h3>
                 {membership.description && (
-                  <p className="text-lg font-medium leading-[1.5rem] text-muted-foreground text-pretty">
+                  <p className="text-lg leading-[1.5rem] text-muted-foreground text-pretty">
                     {membership.description}
                   </p>
                 )}
@@ -138,7 +124,7 @@ export function MembershipListing({
                     </div>
 
                     {plan.description && (
-                      <p className="text-base text-muted-foreground font-medium mb-4">
+                      <p className="text-base text-muted-foreground mb-4">
                         {plan.description}
                       </p>
                     )}

@@ -42,11 +42,25 @@ export default async function BusinessLandingPage({
 
   return (
     <main className="min-h-screen bg-background">
+      {/* Business name with manage button */}
       <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8">
+        <div className="flex items-center justify-between mb-6 md:mb-8">
+          <h1 className="text-3xl md:text-4xl font-semibold">
+            {business.name}
+          </h1>
+          <FloatingManageButton businessSlug={slug} />
+        </div>
+
         <BusinessPhotos
           businessName={business.name}
           photos={[]} // Add business.photos when available in schema
         />
+
+        {business.description && (
+          <p className="text-lg leading-[1.5rem] text-muted-foreground text-pretty mt-6 md:mt-8">
+            {business.description}
+          </p>
+        )}
       </div>
 
       <MembershipListing
@@ -55,8 +69,6 @@ export default async function BusinessLandingPage({
         businessDescription={business.description || undefined}
         memberships={business.memberships}
       />
-
-      <FloatingManageButton businessSlug={slug} />
     </main>
   );
 }
