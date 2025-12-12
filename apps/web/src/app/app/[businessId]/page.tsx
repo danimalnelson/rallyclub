@@ -3,9 +3,15 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@wine-club/db";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, formatCurrency, Button } from "@wine-club/ui";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, formatCurrency } from "@wine-club/ui";
 import { CopyButton } from "@/components/copy-button";
 import { DashboardHeader } from "@/components/dashboard-header";
+import { MetricCard } from "@/components/dashboard/MetricCard";
+import { ActivityFeed, createActivityFromSubscription, createActivityFromTransaction, type ActivityItem } from "@/components/dashboard/ActivityFeed";
+import { ActionItems } from "@/components/dashboard/ActionItems";
+import { GettingStarted } from "@/components/dashboard/GettingStarted";
+import { AlertBanner } from "@/components/dashboard/AlertBanner";
+import { Users, DollarSign, TrendingDown, CreditCard } from "lucide-react";
 
 export default async function BusinessDashboardPage({
   params,
@@ -43,7 +49,6 @@ export default async function BusinessDashboardPage({
 
   // Handle non-complete onboarding states
   if (business.status !== "ONBOARDING_COMPLETE") {
-    // Redirect to appropriate onboarding step based on status
     switch (business.status) {
       case "CREATED":
       case "DETAILS_COLLECTED":
@@ -56,94 +61,210 @@ export default async function BusinessDashboardPage({
         redirect(`/onboarding/return`);
       case "PENDING_VERIFICATION":
       case "RESTRICTED":
-        // Allow limited dashboard access for these states (handled below)
+        // Allow limited dashboard access for these states
         break;
       case "FAILED":
       case "ABANDONED":
         redirect(`/onboarding/connect?businessId=${business.id}`);
       case "SUSPENDED":
-        // Will show suspended banner below
         break;
       default:
         redirect(`/onboarding`);
     }
   }
 
-  // Get active subscriptions using new PlanSubscription model
+  // Date ranges
+  const now = new Date();
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+
+  // Get active subscriptions with plan info
   const activeSubscriptions = await prisma.planSubscription.findMany({
     where: {
-      plan: {
-        businessId: business.id,
-      },
-      status: {
-        in: ["active", "trialing"],
-      },
+      plan: { businessId: business.id },
+      status: { in: ["active", "trialing"] },
     },
     include: {
       plan: {
         include: {
-          membership: {
-            select: {
-              billingInterval: true,
-            },
-          },
+          membership: { select: { billingInterval: true } },
         },
       },
       consumer: true,
     },
   });
 
-  // Count unique active members (consumers with active subscriptions)
-  const activeMembers = new Set(activeSubscriptions.map(sub => sub.consumerId)).size;
-
-  // Calculate MRR from active subscriptions
-  const mrr = activeSubscriptions.reduce((sum: number, sub: any) => {
+  // Calculate current MRR
+  const currentMrr = activeSubscriptions.reduce((sum, sub) => {
     if (!sub.plan.basePrice) return sum;
-    
-    const monthlyAmount = sub.plan.membership.billingInterval === "YEAR"
+    const interval = sub.plan.membership.billingInterval;
+    const monthlyAmount = interval === "YEAR"
       ? sub.plan.basePrice / 12
-      : sub.plan.membership.billingInterval === "WEEK"
+      : interval === "WEEK"
       ? sub.plan.basePrice * 4
       : sub.plan.basePrice;
-    
     return sum + monthlyAmount;
   }, 0);
 
-  // Get past due subscriptions in last 7 days
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  
-  const pastDueMembers = await prisma.planSubscription.count({
+  // Get last month MRR for comparison
+  const lastMonthSubscriptions = await prisma.planSubscription.findMany({
     where: {
+      plan: { businessId: business.id },
+      createdAt: { lt: thisMonthStart },
+      OR: [
+        { status: { in: ["active", "trialing"] } },
+        { status: "canceled", updatedAt: { gt: lastMonthEnd } },
+      ],
+    },
+    include: {
       plan: {
-        businessId: business.id,
+        include: {
+          membership: { select: { billingInterval: true } },
+        },
       },
+    },
+  });
+
+  const lastMonthMrr = lastMonthSubscriptions.reduce((sum, sub) => {
+    if (!sub.plan.basePrice) return sum;
+    const interval = sub.plan.membership.billingInterval;
+    const monthlyAmount = interval === "YEAR"
+      ? sub.plan.basePrice / 12
+      : interval === "WEEK"
+      ? sub.plan.basePrice * 4
+      : sub.plan.basePrice;
+    return sum + monthlyAmount;
+  }, 0);
+
+  // Calculate MRR trend
+  const mrrTrendPercent = lastMonthMrr > 0 
+    ? ((currentMrr - lastMonthMrr) / lastMonthMrr) * 100 
+    : currentMrr > 0 ? 100 : 0;
+
+  // Count unique active members
+  const activeMembers = new Set(activeSubscriptions.map(s => s.consumerId)).size;
+
+  // Get member count from one week ago
+  const weekAgoSubscriptions = await prisma.planSubscription.findMany({
+    where: {
+      plan: { businessId: business.id },
+      createdAt: { lt: sevenDaysAgo },
+      OR: [
+        { status: { in: ["active", "trialing"] } },
+        { status: "canceled", updatedAt: { gt: sevenDaysAgo } },
+      ],
+    },
+    select: { consumerId: true },
+  });
+  const weekAgoMembers = new Set(weekAgoSubscriptions.map(s => s.consumerId)).size;
+  const membersTrendPercent = weekAgoMembers > 0 
+    ? ((activeMembers - weekAgoMembers) / weekAgoMembers) * 100 
+    : activeMembers > 0 ? 100 : 0;
+
+  // Get failed payments (past due)
+  const pastDueCount = await prisma.planSubscription.count({
+    where: {
+      plan: { businessId: business.id },
       status: "past_due",
-      updatedAt: {
-        gte: sevenDaysAgo,
-      },
     },
   });
 
-  // Get total member count (unique consumers who have ever subscribed)
-  const allSubscriptions = await prisma.planSubscription.findMany({
-    where: {
-      plan: {
-        businessId: business.id,
-      },
-    },
-    select: {
-      consumerId: true,
-    },
-  });
-  const totalMembers = new Set(allSubscriptions.map(sub => sub.consumerId)).size;
-
-  // Get total plans count
-  const totalPlans = await prisma.plan.count({
+  // Get this month's revenue
+  const thisMonthRevenueResult = await prisma.transaction.aggregate({
     where: {
       businessId: business.id,
+      type: "CHARGE",
+      createdAt: { gte: thisMonthStart },
     },
+    _sum: { amount: true },
   });
+  const thisMonthRevenue = thisMonthRevenueResult._sum.amount || 0;
+
+  // Get total members (all time)
+  const allSubscriptions = await prisma.planSubscription.findMany({
+    where: { plan: { businessId: business.id } },
+    select: { consumerId: true },
+  });
+  const totalMembers = new Set(allSubscriptions.map(s => s.consumerId)).size;
+
+  // Get total plans
+  const totalPlans = await prisma.plan.count({
+    where: { businessId: business.id },
+  });
+
+  // Check for dynamic pricing plans
+  const dynamicPricingPlans = await prisma.plan.count({
+    where: { businessId: business.id, pricingType: "DYNAMIC" },
+  });
+
+  // Get unresolved alerts
+  const unresolvedAlerts = await prisma.businessAlert.findMany({
+    where: { businessId: business.id, resolved: false },
+    orderBy: [{ severity: "desc" }, { createdAt: "desc" }],
+    take: 5,
+  });
+
+  // Count missing price alerts
+  const missingPriceAlerts = unresolvedAlerts.filter(
+    (a) => a.type === "MISSING_DYNAMIC_PRICE"
+  ).length;
+
+  // Get recent activity data
+  const recentNewSubscriptions = await prisma.planSubscription.findMany({
+    where: {
+      plan: { businessId: business.id },
+      createdAt: { gte: sevenDaysAgo },
+    },
+    include: {
+      consumer: true,
+      plan: true,
+    },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+  });
+
+  const recentCancellations = await prisma.planSubscription.findMany({
+    where: {
+      plan: { businessId: business.id },
+      status: "canceled",
+      updatedAt: { gte: sevenDaysAgo },
+    },
+    include: {
+      consumer: true,
+      plan: true,
+    },
+    orderBy: { updatedAt: "desc" },
+    take: 5,
+  });
+
+  const recentTransactions = await prisma.transaction.findMany({
+    where: {
+      businessId: business.id,
+      type: "CHARGE",
+      createdAt: { gte: sevenDaysAgo },
+    },
+    include: {
+      consumer: true,
+    },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+  });
+
+  // Build activity feed
+  const activities: ActivityItem[] = [
+    ...recentNewSubscriptions.map((sub) =>
+      createActivityFromSubscription(sub, "new")
+    ),
+    ...recentCancellations.map((sub) =>
+      createActivityFromSubscription(sub, "cancelled")
+    ),
+    ...recentTransactions.map((tx) => createActivityFromTransaction(tx)),
+  ]
+    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+    .slice(0, 8);
 
   const publicAppUrl = process.env.PUBLIC_APP_URL || "http://localhost:3000";
 
@@ -155,9 +276,9 @@ export default async function BusinessDashboardPage({
       />
 
       <main className="container mx-auto px-4 py-8">
-        {/* Status Banners */}
+        {/* Status Banners for non-complete states */}
         {business.status === "PENDING_VERIFICATION" && (
-          <Card className="mb-8 border-blue-500 bg-blue-50 dark:bg-blue-950">
+          <Card className="mb-6 border-blue-500 bg-blue-50 dark:bg-blue-950">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <span className="text-2xl">⏳</span>
@@ -165,7 +286,6 @@ export default async function BusinessDashboardPage({
               </CardTitle>
               <CardDescription>
                 Your Stripe account is being verified. This usually takes a few minutes to 24 hours.
-                You can view your dashboard but cannot process payments yet.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -189,7 +309,7 @@ export default async function BusinessDashboardPage({
         )}
 
         {business.status === "RESTRICTED" && (
-          <Card className="mb-8 border-red-500 bg-red-50 dark:bg-red-950">
+          <Card className="mb-6 border-red-500 bg-red-50 dark:bg-red-950">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <span className="text-2xl">⚠️</span>
@@ -197,11 +317,6 @@ export default async function BusinessDashboardPage({
               </CardTitle>
               <CardDescription>
                 Your Stripe account requires additional information to process payments.
-                {business.stripeRequirements && JSON.stringify(business.stripeRequirements).includes("currently_due") && (
-                  <span className="block mt-2 font-medium text-red-700">
-                    Please complete the required fields in your Stripe account.
-                  </span>
-                )}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -215,142 +330,133 @@ export default async function BusinessDashboardPage({
         )}
 
         {business.status === "SUSPENDED" && (
-          <Card className="mb-8 border-red-600 bg-red-100 dark:bg-red-900">
+          <Card className="mb-6 border-red-600 bg-red-100 dark:bg-red-900">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-red-900 dark:text-red-100">
                 <span className="text-2xl">🚫</span>
                 Account Suspended
               </CardTitle>
               <CardDescription className="text-red-800 dark:text-red-200">
-                Your account has been suspended. Please contact support for assistance.
+                Your account has been suspended. Please contact support.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <Link href="/support">
-                <button className="px-4 py-2 bg-red-700 text-white rounded-md hover:bg-red-800">
-                  Contact Support
-                </button>
-              </Link>
-            </CardContent>
           </Card>
         )}
 
-        {!business.stripeAccountId && business.status === "ONBOARDING_COMPLETE" && (
-          <Card className="mb-8 border-yellow-500 bg-yellow-50 dark:bg-yellow-950">
-            <CardHeader>
-              <CardTitle>Complete Stripe Setup</CardTitle>
-              <CardDescription>
-                Connect your Stripe account to start accepting payments
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link href={`/app/${business.id}/settings`}>
-                <button className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
-                  Connect Stripe
-                </button>
-              </Link>
-            </CardContent>
-          </Card>
-        )}
+        {/* Alert Banner for unresolved alerts */}
+        <AlertBanner alerts={unresolvedAlerts} businessId={business.id} />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader>
-              <CardDescription>Monthly Recurring Revenue</CardDescription>
-              <CardTitle className="text-3xl">
-                {formatCurrency(Math.round(mrr), business.currency)}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                From {activeSubscriptions.length} active subscriptions
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardDescription>Active Members</CardDescription>
-              <CardTitle className="text-3xl">{activeMembers}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Total members: {totalMembers}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardDescription>Failed Payments (7d)</CardDescription>
-              <CardTitle className="text-3xl">{pastDueMembers}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Requires attention
-              </p>
-            </CardContent>
-          </Card>
+        {/* Getting Started (only shows if not complete) */}
+        <div className="mb-6">
+          <GettingStarted
+            businessId={business.id}
+            businessSlug={business.slug}
+            stripeConnected={!!business.stripeAccountId}
+            hasPlans={totalPlans > 0}
+            hasMembers={totalMembers > 0}
+          />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Link href={`/app/${business.id}/plans`} className="block">
-                <button className="w-full text-left px-4 py-3 border rounded-md hover:bg-accent">
-                  <div className="font-medium">Manage Plans</div>
-                  <div className="text-sm text-muted-foreground">
-                    {totalPlans} plans created
-                  </div>
-                </button>
-              </Link>
-              <Link href={`/app/${business.id}/members`} className="block">
-                <button className="w-full text-left px-4 py-3 border rounded-md hover:bg-accent">
-                  <div className="font-medium">View Members</div>
-                  <div className="text-sm text-muted-foreground">
-                    {totalMembers} total members
-                  </div>
-                </button>
-              </Link>
-            </CardContent>
-          </Card>
+        {/* Metrics Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <MetricCard
+            title="Monthly Recurring Revenue"
+            value={formatCurrency(Math.round(currentMrr), business.currency)}
+            trend={{
+              value: Math.round(mrrTrendPercent * 10) / 10,
+              label: "vs last month",
+            }}
+            icon={<DollarSign className="h-4 w-4" />}
+          />
+          <MetricCard
+            title="Active Members"
+            value={activeMembers}
+            description={`${totalMembers} total`}
+            trend={{
+              value: Math.round(membersTrendPercent * 10) / 10,
+              label: "vs last week",
+            }}
+            icon={<Users className="h-4 w-4" />}
+            href={`/app/${business.id}/members`}
+          />
+          <MetricCard
+            title="Failed Payments"
+            value={pastDueCount}
+            description={pastDueCount > 0 ? "Needs attention" : "All good"}
+            icon={<CreditCard className="h-4 w-4" />}
+            href={pastDueCount > 0 ? `/app/${business.id}/members?status=past_due` : undefined}
+          />
+          <MetricCard
+            title="Revenue This Month"
+            value={formatCurrency(thisMonthRevenue, business.currency)}
+            description={new Date().toLocaleDateString("en-US", { month: "long" })}
+            icon={<TrendingDown className="h-4 w-4" />}
+            href={`/app/${business.id}/transactions`}
+          />
+        </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Public Page</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Share your public page with customers:
-              </p>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={`${publicAppUrl}/${business.slug}`}
-                  readOnly
-                  className="flex-1 px-3 py-2 border rounded-md bg-muted text-sm"
-                />
-                <CopyButton
-                  text={`${publicAppUrl}/${business.slug}`}
-                  className="px-4 py-2 border rounded-md hover:bg-accent"
-                />
-              </div>
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Recent Activity */}
+          <ActivityFeed
+            activities={activities}
+            businessId={business.id}
+            maxItems={6}
+          />
+
+          {/* Action Items */}
+          <ActionItems
+            businessId={business.id}
+            businessSlug={business.slug}
+            totalPlans={totalPlans}
+            totalMembers={totalMembers}
+            failedPayments={pastDueCount}
+            unresolvedAlerts={unresolvedAlerts.length}
+            hasDynamicPricing={dynamicPricingPlans > 0}
+            missingPriceCount={missingPriceAlerts}
+          />
+        </div>
+
+        {/* Public Page Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Public Page</CardTitle>
+            <CardDescription>
+              Share this link with potential members
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={`${publicAppUrl}/${business.slug}`}
+                readOnly
+                className="flex-1 px-3 py-2 border rounded-md bg-muted text-sm font-mono"
+              />
+              <CopyButton
+                text={`${publicAppUrl}/${business.slug}`}
+                className="px-4 py-2 border rounded-md hover:bg-accent"
+              />
+            </div>
+            <div className="flex gap-4">
               <a
                 href={`${publicAppUrl}/${business.slug}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-block text-sm text-primary hover:underline"
+                className="text-sm text-primary hover:underline"
               >
-                View public page →
+                Preview page →
               </a>
-            </CardContent>
-          </Card>
-        </div>
+              <Link
+                href={`/app/${business.id}/settings`}
+                className="text-sm text-muted-foreground hover:underline"
+              >
+                Customize
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
       </main>
     </div>
   );
 }
-

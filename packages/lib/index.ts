@@ -13,6 +13,6 @@ export * from "./resume-paused-subscriptions";
 export * from "./get-current-price";
 
 // Export metrics separately to avoid pulling in Prisma during tests
-export { calculateMetrics } from "./metrics";
-export type { BusinessMetrics } from "./metrics";
+export { calculateMetrics, calculateDashboardMetrics } from "./metrics";
+export type { BusinessMetrics, DashboardMetrics, TrendData } from "./metrics";
 
