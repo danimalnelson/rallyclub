@@ -1,19 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@wine-club/db";
-import { requireBusinessAuth, withMiddleware } from "@wine-club/lib";
 
-export const GET = withMiddleware(async (req: NextRequest) => {
-  const { businessId } = await (req as any).params as { businessId: string };
-
-  // Authenticate and authorize
-  const authResult = await requireBusinessAuth(authOptions, prisma, businessId);
-
-  if ("error" in authResult) {
-    return authResult.error;
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ businessId: string }> }
+) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Get all members with their subscriptions
+  const { businessId } = await params;
+
+  // Verify user has access to this business
+  const business = await prisma.business.findFirst({
+    where: {
+      id: businessId,
+      users: { some: { userId: session.user.id } },
+    },
+    select: { id: true, name: true },
+  });
+
+  if (!business) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  // Get all subscriptions with member and plan info
   const subscriptions = await prisma.planSubscription.findMany({
     where: {
       plan: { businessId },
@@ -26,42 +40,21 @@ export const GET = withMiddleware(async (req: NextRequest) => {
         },
       },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: [
+      { consumer: { email: "asc" } },
+      { createdAt: "desc" },
+    ],
   });
 
-  // Dedupe by consumer (one row per member with their most recent subscription)
-  const memberMap = new Map<
-    string,
-    {
-      name: string;
-      email: string;
-      plan: string;
-      status: string;
-      joinDate: string;
-    }
-  >();
-
-  for (const sub of subscriptions) {
-    // Skip if we already have this consumer (keep the most recent)
-    if (memberMap.has(sub.consumerId)) continue;
-
-    memberMap.set(sub.consumerId, {
-      name: sub.consumer.name || "",
-      email: sub.consumer.email,
-      plan: `${sub.plan.membership.name} - ${sub.plan.name}`,
-      status: formatStatus(sub.status),
-      joinDate: sub.createdAt.toISOString().split("T")[0],
-    });
-  }
-
-  // Generate CSV
-  const headers = ["Name", "Email", "Plan", "Status", "Join Date"];
-  const rows = Array.from(memberMap.values()).map((member) => [
-    escapeCsvField(member.name),
-    escapeCsvField(member.email),
-    escapeCsvField(member.plan),
-    escapeCsvField(member.status),
-    member.joinDate,
+  // Generate CSV - one row per subscription (most compatible format)
+  const headers = ["Name", "Email", "Membership", "Plan", "Status", "Start Date"];
+  const rows = subscriptions.map((sub) => [
+    escapeCsvField(sub.consumer.name || ""),
+    escapeCsvField(sub.consumer.email),
+    escapeCsvField(sub.plan.membership.name),
+    escapeCsvField(sub.plan.name),
+    escapeCsvField(formatStatus(sub.status)),
+    sub.createdAt.toISOString().split("T")[0],
   ]);
 
   const csvContent = [
@@ -69,32 +62,18 @@ export const GET = withMiddleware(async (req: NextRequest) => {
     ...rows.map((row) => row.join(",")),
   ].join("\n");
 
-  // Get business name for filename
-  const business = await prisma.business.findUnique({
-    where: { id: businessId },
-    select: { name: true },
-  });
-  const filename = `${slugify(business?.name || "members")}-members-${new Date().toISOString().split("T")[0]}.csv`;
+  // Use business name for filename (already fetched above)
+  const filename = `${slugify(business.name || "members")}-members-${new Date().toISOString().split("T")[0]}.csv`;
 
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/7ebd8bc0-6508-4d0d-819b-62165c5218ee',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'export/route.ts:beforeResponse',message:'CSV content and headers',data:{csvContentLength:csvContent.length,csvPreview:csvContent.slice(0,200),filename},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2-H3'})}).catch(()=>{});
-  // #endregion
-
-  // Create response with CSV headers
-  const response = new NextResponse(csvContent, {
+  // Return CSV file directly using Response (not NextResponse)
+  return new Response(csvContent, {
     status: 200,
     headers: {
-      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Type": "text/csv",
       "Content-Disposition": `attachment; filename="${filename}"`,
     },
   });
-
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/7ebd8bc0-6508-4d0d-819b-62165c5218ee',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'export/route.ts:afterResponse',message:'Response created',data:{contentType:response.headers.get('Content-Type'),contentDisposition:response.headers.get('Content-Disposition')},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1-H2'})}).catch(()=>{});
-  // #endregion
-
-  return response;
-});
+}
 
 /**
  * Escape a field for CSV (wrap in quotes if contains comma, quote, or newline)
