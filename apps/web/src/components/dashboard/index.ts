@@ -11,3 +11,4 @@ export { ActionItems } from "./ActionItems";
 export type { ActionItem } from "./ActionItems";
 export { GettingStarted } from "./GettingStarted";
 export { AlertBanner } from "./AlertBanner";
+export { RevenueChart } from "./RevenueChart";

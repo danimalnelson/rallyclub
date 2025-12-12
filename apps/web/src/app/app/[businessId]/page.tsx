@@ -11,6 +11,7 @@ import { ActivityFeed, createActivityFromSubscription, createActivityFromTransac
 import { ActionItems } from "@/components/dashboard/ActionItems";
 import { GettingStarted } from "@/components/dashboard/GettingStarted";
 import { AlertBanner } from "@/components/dashboard/AlertBanner";
+import { RevenueChart } from "@/components/dashboard/RevenueChart";
 import { Users, DollarSign, TrendingDown, CreditCard } from "lucide-react";
 
 export default async function BusinessDashboardPage({
@@ -253,6 +254,38 @@ export default async function BusinessDashboardPage({
     take: 5,
   });
 
+  // Get monthly revenue for charts (last 6 months)
+  const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+  const monthlyTransactions = await prisma.transaction.findMany({
+    where: {
+      businessId: business.id,
+      type: "CHARGE",
+      createdAt: { gte: sixMonthsAgo },
+    },
+    select: { amount: true, createdAt: true },
+    orderBy: { createdAt: "asc" },
+  });
+
+  // Group transactions by month
+  const monthlyRevenueMap = new Map<string, number>();
+  monthlyTransactions.forEach(tx => {
+    const monthKey = tx.createdAt.toISOString().slice(0, 7);
+    monthlyRevenueMap.set(monthKey, (monthlyRevenueMap.get(monthKey) || 0) + tx.amount);
+  });
+
+  const monthlyRevenue = Array.from(monthlyRevenueMap.entries())
+    .map(([month, revenue]) => ({ month, revenue }))
+    .slice(-6);
+
+  // Generate MRR history from monthly revenue
+  const lastMonthRevenueValue = monthlyRevenue[monthlyRevenue.length - 1]?.revenue || 0;
+  const mrrHistory = monthlyRevenue.map(({ month, revenue }) => ({
+    month,
+    mrr: lastMonthRevenueValue > 0 
+      ? Math.round((revenue / lastMonthRevenueValue) * currentMrr)
+      : currentMrr,
+  }));
+
   // Build activity feed
   const activities: ActivityItem[] = [
     ...recentNewSubscriptions.map((sub) =>
@@ -414,6 +447,15 @@ export default async function BusinessDashboardPage({
             unresolvedAlerts={unresolvedAlerts.length}
             hasDynamicPricing={dynamicPricingPlans > 0}
             missingPriceCount={missingPriceAlerts}
+          />
+        </div>
+
+        {/* Revenue Charts */}
+        <div className="mb-6">
+          <RevenueChart
+            monthlyRevenue={monthlyRevenue}
+            mrrHistory={mrrHistory}
+            currency={business.currency}
           />
         </div>
 

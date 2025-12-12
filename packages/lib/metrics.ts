@@ -42,6 +42,8 @@ export interface DashboardMetrics extends BusinessMetrics {
   membersTrend: TrendData;
   /** This month's revenue so far */
   thisMonthRevenue: number;
+  /** MRR history by month for charting */
+  mrrHistory: Array<{ month: string; mrr: number }>;
 }
 
 /**
@@ -347,6 +349,11 @@ export async function calculateDashboardMetrics(
     .map(([month, revenue]) => ({ month, revenue }))
     .slice(-6);
 
+  // Calculate MRR history (simplified: use monthly revenue as proxy for MRR trend)
+  // For accurate MRR history, we'd need to track subscription counts per month
+  // This approximation shows revenue trend which correlates with MRR
+  const mrrHistory = generateMrrHistory(monthlyRevenue, currentMrr);
+
   return {
     mrr: Math.round(currentMrr),
     mrrTrend: calculateTrend(currentMrr, lastMonthMrr, "vs last month"),
@@ -356,6 +363,34 @@ export async function calculateDashboardMetrics(
     totalRevenue,
     thisMonthRevenue,
     monthlyRevenue,
+    mrrHistory,
   };
+}
+
+/**
+ * Generate MRR history from monthly revenue data
+ * Uses current MRR and scales historical months based on revenue ratios
+ */
+function generateMrrHistory(
+  monthlyRevenue: Array<{ month: string; revenue: number }>,
+  currentMrr: number
+): Array<{ month: string; mrr: number }> {
+  if (monthlyRevenue.length === 0) {
+    return [];
+  }
+
+  // Get the last month's revenue as baseline
+  const lastMonthRevenue = monthlyRevenue[monthlyRevenue.length - 1]?.revenue || 0;
+  
+  if (lastMonthRevenue === 0) {
+    // No revenue, just return current MRR for all months
+    return monthlyRevenue.map(({ month }) => ({ month, mrr: currentMrr }));
+  }
+
+  // Scale each month's MRR based on revenue ratio to current
+  return monthlyRevenue.map(({ month, revenue }) => ({
+    month,
+    mrr: Math.round((revenue / lastMonthRevenue) * currentMrr),
+  }));
 }
 

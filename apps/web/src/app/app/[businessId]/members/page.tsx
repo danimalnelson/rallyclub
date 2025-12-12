@@ -3,7 +3,8 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@wine-club/db";
-import { Card, CardContent, formatDate, formatCurrency } from "@wine-club/ui";
+import { Card, CardContent, formatDate, formatCurrency, Button } from "@wine-club/ui";
+import { Download } from "lucide-react";
 
 export default async function MembersPage({
   params,
@@ -95,11 +96,23 @@ export default async function MembersPage({
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold mb-2">Members</h2>
-          <p className="text-muted-foreground">
-            View and manage your club members
-          </p>
+        <div className="mb-8 flex items-start justify-between">
+          <div>
+            <h2 className="text-3xl font-bold mb-2">Members</h2>
+            <p className="text-muted-foreground">
+              View and manage your club members
+            </p>
+          </div>
+          {members.length > 0 && (
+            <a
+              href={`/api/business/${business.id}/members/export`}
+              download
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm border rounded-md hover:bg-accent"
+            >
+              <Download className="h-4 w-4" />
+              Export CSV
+            </a>
+          )}
         </div>
 
         {members.length === 0 ? (
