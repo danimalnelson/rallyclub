@@ -174,6 +174,9 @@ export default async function BusinessDashboardPage({
     },
   });
 
+  // Date for Stripe query (trailing 12 months)
+  const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 12, 1);
+
   // Get revenue from Stripe invoices (source of truth)
   let thisMonthRevenue = 0;
   let monthlyRevenue: Array<{ month: string; revenue: number }> = [];
@@ -292,9 +295,6 @@ export default async function BusinessDashboardPage({
     orderBy: { createdAt: "desc" },
     take: 5,
   });
-
-  // Date for Stripe query
-  const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 12, 1);
 
   // Build activity feed
   const activities: ActivityItem[] = [
