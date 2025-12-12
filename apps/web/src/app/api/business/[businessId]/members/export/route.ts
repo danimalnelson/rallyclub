@@ -3,8 +3,8 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@wine-club/db";
 import { requireBusinessAuth, withMiddleware } from "@wine-club/lib";
 
-export const GET = withMiddleware(async (req: NextRequest, context) => {
-  const { businessId } = (await context.params) as { businessId: string };
+export const GET = withMiddleware(async (req: NextRequest) => {
+  const { businessId } = await (req as any).params as { businessId: string };
 
   // Authenticate and authorize
   const authResult = await requireBusinessAuth(authOptions, prisma, businessId);
