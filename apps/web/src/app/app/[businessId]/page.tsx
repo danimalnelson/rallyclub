@@ -176,8 +176,17 @@ export default async function BusinessDashboardPage({
   // Get this month's revenue
   const thisMonthRevenueResult = await prisma.transaction.aggregate({
     where: {
-      businessId: business.id,
-      type: "CHARGE",
+      OR: [
+        { businessId: business.id },
+        {
+          subscription: {
+            member: {
+              businessId: business.id,
+            },
+          },
+        },
+      ],
+      type: { in: ["CHARGE", "Payment"] as any },
       createdAt: { gte: thisMonthStart },
     },
     _sum: { amount: true },
@@ -255,11 +264,24 @@ export default async function BusinessDashboardPage({
   });
 
   // Get monthly revenue for charts (last 12 months)
+  // Query transactions that either have businessId directly OR are linked through subscriptions
   const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 12, 1);
   const monthlyTransactions = await prisma.transaction.findMany({
     where: {
-      businessId: business.id,
-      type: "CHARGE",
+      OR: [
+        // Direct businessId match
+        { businessId: business.id },
+        // Or through subscription -> member -> business chain
+        {
+          subscription: {
+            member: {
+              businessId: business.id,
+            },
+          },
+        },
+      ],
+      // Accept multiple transaction types (CHARGE or legacy "Payment")
+      type: { in: ["CHARGE", "Payment"] as any },
       createdAt: { gte: twelveMonthsAgo },
     },
     select: { amount: true, createdAt: true },
