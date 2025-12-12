@@ -254,13 +254,13 @@ export default async function BusinessDashboardPage({
     take: 5,
   });
 
-  // Get monthly revenue for charts (last 6 months)
-  const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+  // Get monthly revenue for charts (last 12 months)
+  const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 12, 1);
   const monthlyTransactions = await prisma.transaction.findMany({
     where: {
       businessId: business.id,
       type: "CHARGE",
-      createdAt: { gte: sixMonthsAgo },
+      createdAt: { gte: twelveMonthsAgo },
     },
     select: { amount: true, createdAt: true },
     orderBy: { createdAt: "asc" },
@@ -275,7 +275,7 @@ export default async function BusinessDashboardPage({
 
   const monthlyRevenue = Array.from(monthlyRevenueMap.entries())
     .map(([month, revenue]) => ({ month, revenue }))
-    .slice(-6);
+    .slice(-12);
 
   // Generate MRR history from monthly revenue
   const lastMonthRevenueValue = monthlyRevenue[monthlyRevenue.length - 1]?.revenue || 0;
