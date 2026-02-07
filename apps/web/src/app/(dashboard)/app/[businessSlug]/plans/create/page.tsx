@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@wine-club/db";
+import { getBusinessBySlug } from "@/lib/data/business";
 import { PlanForm } from "@/components/plans/PlanForm";
 
 export default async function CreatePlanPage({
@@ -21,16 +22,7 @@ export default async function CreatePlanPage({
   const { businessSlug } = await params;
   const { membershipId } = await searchParams;
 
-  const business = await prisma.business.findFirst({
-    where: {
-      slug: businessSlug,
-      users: {
-        some: {
-          userId: session.user.id,
-        },
-      },
-    },
-  });
+  const business = await getBusinessBySlug(businessSlug, session.user.id);
 
   if (!business) {
     notFound();

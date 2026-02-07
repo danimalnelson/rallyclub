@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@wine-club/db";
+import { getBusinessBySlug } from "@/lib/data/business";
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@wine-club/ui";
 import { MembershipStatusBadge } from "@/components/memberships/MembershipStatusBadge";
 
@@ -18,17 +19,7 @@ export default async function MembershipsPage({
     redirect("/auth/signin");
   }
 
-  // Fetch business by slug and verify access
-  const business = await prisma.business.findFirst({
-    where: {
-      slug: businessSlug,
-      users: {
-        some: {
-          userId: session.user.id,
-        },
-      },
-    },
-  });
+  const business = await getBusinessBySlug(businessSlug, session.user.id);
 
   if (!business) {
     return notFound();

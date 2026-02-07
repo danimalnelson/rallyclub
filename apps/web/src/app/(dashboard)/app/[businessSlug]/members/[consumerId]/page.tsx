@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@wine-club/db";
+import { getBusinessBySlug } from "@/lib/data/business";
 import { Card, CardContent, CardHeader, CardTitle, formatDate, formatCurrency, Button } from "@wine-club/ui";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { EditMemberInfoDialog } from "@/components/members/EditMemberInfoDialog";
@@ -22,46 +23,49 @@ export default async function MemberDetailPage({
 
   const { businessSlug, consumerId } = await params;
 
-  // Verify business access
-  const business = await prisma.business.findFirst({
-    where: {
-      slug: businessSlug,
-      users: {
-        some: {
-          userId: session.user.id,
-        },
-      },
-    },
-  });
+  // Uses React cache() — shared with layout
+  const business = await getBusinessBySlug(businessSlug, session.user.id);
 
   if (!business) {
     notFound();
   }
 
-  // Get consumer details
-  const consumer = await prisma.consumer.findUnique({
-    where: { id: consumerId },
-  });
+  // Run consumer, subscriptions, and notes queries in parallel
+  const [consumer, subscriptions, notes] = await Promise.all([
+    prisma.consumer.findUnique({
+      where: { id: consumerId },
+    }),
+    prisma.planSubscription.findMany({
+      where: {
+        consumerId,
+        plan: { businessId: business.id },
+      },
+      include: { plan: true },
+      orderBy: { createdAt: "desc" },
+    }),
+    (async () => {
+      try {
+        if (prisma.memberNote) {
+          return await prisma.memberNote.findMany({
+            where: { consumerId },
+            include: {
+              createdBy: {
+                select: { name: true, email: true },
+              },
+            },
+            orderBy: { createdAt: "desc" },
+          });
+        }
+        return [];
+      } catch {
+        return [];
+      }
+    })(),
+  ]);
 
   if (!consumer) {
     notFound();
   }
-
-  // Get all subscriptions for this consumer in this business
-  const subscriptions = await prisma.planSubscription.findMany({
-    where: {
-      consumerId: consumer.id,
-      plan: {
-        businessId: business.id,
-      },
-    },
-    include: {
-      plan: true,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
 
   const activeSubscriptions = subscriptions.filter(
     (sub) => sub.status === "active" || sub.status === "trialing"
@@ -69,27 +73,6 @@ export default async function MemberDetailPage({
   const inactiveSubscriptions = subscriptions.filter(
     (sub) => sub.status !== "active" && sub.status !== "trialing"
   );
-
-  // Get member notes (safely handle if table doesn't exist yet)
-  let notes: any[] = [];
-  try {
-    if (prisma.memberNote) {
-      notes = await prisma.memberNote.findMany({
-        where: { consumerId: consumer.id },
-        include: {
-          createdBy: {
-            select: {
-              name: true,
-              email: true,
-            },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-      });
-    }
-  } catch (error) {
-    console.log("MemberNote table not yet available in production");
-  }
 
   return (
     <div className="max-w-5xl mx-auto">

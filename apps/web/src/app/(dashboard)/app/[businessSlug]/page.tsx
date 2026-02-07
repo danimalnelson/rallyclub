@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@wine-club/db";
+import { getBusinessBySlug } from "@/lib/data/business";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, formatCurrency } from "@wine-club/ui";
 import { CopyButton } from "@/components/copy-button";
 import { MetricCard } from "@/components/dashboard/MetricCard";
@@ -26,23 +27,9 @@ export default async function BusinessDashboardPage({
   }
 
   const { businessSlug } = await params;
-  const business = await prisma.business.findFirst({
-    where: {
-      slug: businessSlug,
-      users: {
-        some: {
-          userId: session.user.id,
-        },
-      },
-    },
-    include: {
-      users: {
-        where: {
-          userId: session.user.id,
-        },
-      },
-    },
-  });
+
+  // Uses React cache() — shared with layout, so only one DB call per request
+  const business = await getBusinessBySlug(businessSlug, session.user.id);
 
   if (!business) {
     notFound();
@@ -77,225 +64,225 @@ export default async function BusinessDashboardPage({
   // Date ranges
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
   const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
-
-  // Get active subscriptions with plan info
-  const activeSubscriptions = await prisma.planSubscription.findMany({
-    where: {
-      plan: { businessId: business.id },
-      status: { in: ["active", "trialing"] },
-    },
-    include: {
-      plan: {
-        include: {
-          membership: { select: { billingInterval: true } },
-        },
-      },
-      consumer: true,
-    },
-  });
-
-  // Calculate current MRR
-  const currentMrr = activeSubscriptions.reduce((sum, sub) => {
-    if (!sub.plan.basePrice) return sum;
-    const interval = sub.plan.membership.billingInterval;
-    const monthlyAmount = interval === "YEAR"
-      ? sub.plan.basePrice / 12
-      : interval === "WEEK"
-      ? sub.plan.basePrice * 4
-      : sub.plan.basePrice;
-    return sum + monthlyAmount;
-  }, 0);
-
-  // Get last month MRR for comparison
-  const lastMonthSubscriptions = await prisma.planSubscription.findMany({
-    where: {
-      plan: { businessId: business.id },
-      createdAt: { lt: thisMonthStart },
-      OR: [
-        { status: { in: ["active", "trialing"] } },
-        { status: "canceled", updatedAt: { gt: lastMonthEnd } },
-      ],
-    },
-    include: {
-      plan: {
-        include: {
-          membership: { select: { billingInterval: true } },
-        },
-      },
-    },
-  });
-
-  const lastMonthMrr = lastMonthSubscriptions.reduce((sum, sub) => {
-    if (!sub.plan.basePrice) return sum;
-    const interval = sub.plan.membership.billingInterval;
-    const monthlyAmount = interval === "YEAR"
-      ? sub.plan.basePrice / 12
-      : interval === "WEEK"
-      ? sub.plan.basePrice * 4
-      : sub.plan.basePrice;
-    return sum + monthlyAmount;
-  }, 0);
-
-  // Calculate MRR trend
-  const mrrTrendPercent = lastMonthMrr > 0 
-    ? ((currentMrr - lastMonthMrr) / lastMonthMrr) * 100 
-    : currentMrr > 0 ? 100 : 0;
-
-  // Count unique active members
-  const activeMembers = new Set(activeSubscriptions.map(s => s.consumerId)).size;
-
-  // Get member count from one week ago
-  const weekAgoSubscriptions = await prisma.planSubscription.findMany({
-    where: {
-      plan: { businessId: business.id },
-      createdAt: { lt: sevenDaysAgo },
-      OR: [
-        { status: { in: ["active", "trialing"] } },
-        { status: "canceled", updatedAt: { gt: sevenDaysAgo } },
-      ],
-    },
-    select: { consumerId: true },
-  });
-  const weekAgoMembers = new Set(weekAgoSubscriptions.map(s => s.consumerId)).size;
-  const membersTrendPercent = weekAgoMembers > 0 
-    ? ((activeMembers - weekAgoMembers) / weekAgoMembers) * 100 
-    : activeMembers > 0 ? 100 : 0;
-
-  // Get failed payments (past due)
-  const pastDueCount = await prisma.planSubscription.count({
-    where: {
-      plan: { businessId: business.id },
-      status: "past_due",
-    },
-  });
-
-  // Date for Stripe query (trailing 12 months)
   const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 12, 1);
 
-  // Get revenue from Stripe invoices (source of truth)
+  // ── Run ALL independent queries in parallel ──
+  const [
+    activeSubscriptions,
+    lastMonthSubscriptions,
+    weekAgoSubscriptions,
+    pastDueCount,
+    allSubscriptionConsumerIds,
+    totalPlans,
+    dynamicPricingPlans,
+    unresolvedAlerts,
+    recentNewSubscriptions,
+    recentCancellations,
+    recentTransactions,
+    stripeData,
+  ] = await Promise.all([
+    // Active subscriptions with plan info
+    prisma.planSubscription.findMany({
+      where: {
+        plan: { businessId: business.id },
+        status: { in: ["active", "trialing"] },
+      },
+      include: {
+        plan: {
+          include: {
+            membership: { select: { billingInterval: true } },
+          },
+        },
+        consumer: true,
+      },
+    }),
+
+    // Last month subscriptions for MRR comparison
+    prisma.planSubscription.findMany({
+      where: {
+        plan: { businessId: business.id },
+        createdAt: { lt: thisMonthStart },
+        OR: [
+          { status: { in: ["active", "trialing"] } },
+          { status: "canceled", updatedAt: { gt: lastMonthEnd } },
+        ],
+      },
+      include: {
+        plan: {
+          include: {
+            membership: { select: { billingInterval: true } },
+          },
+        },
+      },
+    }),
+
+    // Week ago subscriptions for member trend
+    prisma.planSubscription.findMany({
+      where: {
+        plan: { businessId: business.id },
+        createdAt: { lt: sevenDaysAgo },
+        OR: [
+          { status: { in: ["active", "trialing"] } },
+          { status: "canceled", updatedAt: { gt: sevenDaysAgo } },
+        ],
+      },
+      select: { consumerId: true },
+    }),
+
+    // Past due count
+    prisma.planSubscription.count({
+      where: {
+        plan: { businessId: business.id },
+        status: "past_due",
+      },
+    }),
+
+    // All subscription consumer IDs (for total members count)
+    prisma.planSubscription.findMany({
+      where: { plan: { businessId: business.id } },
+      select: { consumerId: true },
+    }),
+
+    // Total plans
+    prisma.plan.count({
+      where: { businessId: business.id },
+    }),
+
+    // Dynamic pricing plans
+    prisma.plan.count({
+      where: { businessId: business.id, pricingType: "DYNAMIC" },
+    }),
+
+    // Unresolved alerts
+    prisma.businessAlert.findMany({
+      where: { businessId: business.id, resolved: false },
+      orderBy: [{ severity: "desc" }, { createdAt: "desc" }],
+      take: 5,
+    }),
+
+    // Recent new subscriptions
+    prisma.planSubscription.findMany({
+      where: {
+        plan: { businessId: business.id },
+        createdAt: { gte: sevenDaysAgo },
+      },
+      include: { consumer: true, plan: true },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    }),
+
+    // Recent cancellations
+    prisma.planSubscription.findMany({
+      where: {
+        plan: { businessId: business.id },
+        status: "canceled",
+        updatedAt: { gte: sevenDaysAgo },
+      },
+      include: { consumer: true, plan: true },
+      orderBy: { updatedAt: "desc" },
+      take: 5,
+    }),
+
+    // Recent transactions
+    prisma.transaction.findMany({
+      where: {
+        businessId: business.id,
+        type: "CHARGE",
+        createdAt: { gte: sevenDaysAgo },
+      },
+      include: { consumer: true },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    }),
+
+    // Stripe invoices (runs in parallel with DB queries)
+    (async () => {
+      if (!business.stripeAccountId) return null;
+      try {
+        const stripe = getStripeClient(business.stripeAccountId);
+        return await stripe.invoices.list({
+          limit: 100,
+          status: "paid",
+          created: { gte: Math.floor(twelveMonthsAgo.getTime() / 1000) },
+        });
+      } catch (error) {
+        console.error("Failed to fetch Stripe invoices:", error);
+        return null;
+      }
+    })(),
+  ]);
+
+  // ── Compute metrics from parallel results ──
+
+  // MRR calculation
+  const calcMrr = (subs: Array<{ plan: { basePrice: number | null; membership: { billingInterval: string } } }>) =>
+    subs.reduce((sum, sub) => {
+      if (!sub.plan.basePrice) return sum;
+      const interval = sub.plan.membership.billingInterval;
+      const monthlyAmount = interval === "YEAR"
+        ? sub.plan.basePrice / 12
+        : interval === "WEEK"
+        ? sub.plan.basePrice * 4
+        : sub.plan.basePrice;
+      return sum + monthlyAmount;
+    }, 0);
+
+  const currentMrr = calcMrr(activeSubscriptions);
+  const lastMonthMrr = calcMrr(lastMonthSubscriptions);
+  const mrrTrendPercent = lastMonthMrr > 0
+    ? ((currentMrr - lastMonthMrr) / lastMonthMrr) * 100
+    : currentMrr > 0 ? 100 : 0;
+
+  // Member metrics
+  const activeMembers = new Set(activeSubscriptions.map(s => s.consumerId)).size;
+  const weekAgoMembers = new Set(weekAgoSubscriptions.map(s => s.consumerId)).size;
+  const membersTrendPercent = weekAgoMembers > 0
+    ? ((activeMembers - weekAgoMembers) / weekAgoMembers) * 100
+    : activeMembers > 0 ? 100 : 0;
+
+  const totalMembers = new Set(allSubscriptionConsumerIds.map(s => s.consumerId)).size;
+
+  // Stripe revenue
   let thisMonthRevenue = 0;
   let monthlyRevenue: Array<{ month: string; revenue: number }> = [];
   let mrrHistory: Array<{ month: string; mrr: number }> = [];
 
-  if (business.stripeAccountId) {
-    try {
-      const stripe = getStripeClient(business.stripeAccountId);
-      const invoices = await stripe.invoices.list({
-        limit: 100,
-        status: "paid",
-        created: { gte: Math.floor(twelveMonthsAgo.getTime() / 1000) },
-      });
+  if (stripeData) {
+    const monthlyRevenueMap = new Map<string, number>();
 
-      // Group invoices by month
-      const monthlyRevenueMap = new Map<string, number>();
-      
-      for (const invoice of invoices.data) {
-        const date = new Date(invoice.created * 1000);
-        const monthKey = date.toISOString().slice(0, 7); // YYYY-MM
-        monthlyRevenueMap.set(
-          monthKey,
-          (monthlyRevenueMap.get(monthKey) || 0) + invoice.amount_paid
-        );
-
-        // Calculate this month's revenue
-        if (date >= thisMonthStart) {
-          thisMonthRevenue += invoice.amount_paid;
-        }
+    for (const invoice of stripeData.data) {
+      const date = new Date(invoice.created * 1000);
+      const monthKey = date.toISOString().slice(0, 7);
+      monthlyRevenueMap.set(
+        monthKey,
+        (monthlyRevenueMap.get(monthKey) || 0) + invoice.amount_paid
+      );
+      if (date >= thisMonthStart) {
+        thisMonthRevenue += invoice.amount_paid;
       }
-
-      // Convert to sorted array
-      monthlyRevenue = Array.from(monthlyRevenueMap.entries())
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([month, revenue]) => ({ month, revenue }));
-
-      // Generate MRR history from revenue
-      const lastMonthRevenueValue = monthlyRevenue[monthlyRevenue.length - 1]?.revenue || 0;
-      mrrHistory = monthlyRevenue.map(({ month, revenue }) => ({
-        month,
-        mrr: lastMonthRevenueValue > 0 
-          ? Math.round((revenue / lastMonthRevenueValue) * currentMrr)
-          : currentMrr,
-      }));
-    } catch (error) {
-      console.error("Failed to fetch Stripe invoices for charts:", error);
     }
+
+    monthlyRevenue = Array.from(monthlyRevenueMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([month, revenue]) => ({ month, revenue }));
+
+    const lastMonthRevenueValue = monthlyRevenue[monthlyRevenue.length - 1]?.revenue || 0;
+    mrrHistory = monthlyRevenue.map(({ month, revenue }) => ({
+      month,
+      mrr: lastMonthRevenueValue > 0
+        ? Math.round((revenue / lastMonthRevenueValue) * currentMrr)
+        : currentMrr,
+    }));
   }
 
-  // Get total members (all time)
-  const allSubscriptions = await prisma.planSubscription.findMany({
-    where: { plan: { businessId: business.id } },
-    select: { consumerId: true },
-  });
-  const totalMembers = new Set(allSubscriptions.map(s => s.consumerId)).size;
-
-  // Get total plans
-  const totalPlans = await prisma.plan.count({
-    where: { businessId: business.id },
-  });
-
-  // Check for dynamic pricing plans
-  const dynamicPricingPlans = await prisma.plan.count({
-    where: { businessId: business.id, pricingType: "DYNAMIC" },
-  });
-
-  // Get unresolved alerts
-  const unresolvedAlerts = await prisma.businessAlert.findMany({
-    where: { businessId: business.id, resolved: false },
-    orderBy: [{ severity: "desc" }, { createdAt: "desc" }],
-    take: 5,
-  });
-
-  // Count missing price alerts
+  // Alert counts
   const missingPriceAlerts = unresolvedAlerts.filter(
     (a) => a.type === "MISSING_DYNAMIC_PRICE"
   ).length;
 
-  // Get recent activity data
-  const recentNewSubscriptions = await prisma.planSubscription.findMany({
-    where: {
-      plan: { businessId: business.id },
-      createdAt: { gte: sevenDaysAgo },
-    },
-    include: {
-      consumer: true,
-      plan: true,
-    },
-    orderBy: { createdAt: "desc" },
-    take: 5,
-  });
-
-  const recentCancellations = await prisma.planSubscription.findMany({
-    where: {
-      plan: { businessId: business.id },
-      status: "canceled",
-      updatedAt: { gte: sevenDaysAgo },
-    },
-    include: {
-      consumer: true,
-      plan: true,
-    },
-    orderBy: { updatedAt: "desc" },
-    take: 5,
-  });
-
-  const recentTransactions = await prisma.transaction.findMany({
-    where: {
-      businessId: business.id,
-      type: "CHARGE",
-      createdAt: { gte: sevenDaysAgo },
-    },
-    include: {
-      consumer: true,
-    },
-    orderBy: { createdAt: "desc" },
-    take: 5,
-  });
-
-  // Build activity feed
+  // Activity feed
   const activities: ActivityItem[] = [
     ...recentNewSubscriptions.map((sub) =>
       createActivityFromSubscription(sub, "new")

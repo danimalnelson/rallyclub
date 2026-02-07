@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@wine-club/db";
+import { getBusinessBySlug } from "@/lib/data/business";
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, formatCurrency } from "@wine-club/ui";
 import { PlanStatusBadge } from "@/components/plans/PlanStatusBadge";
 
@@ -18,16 +19,7 @@ export default async function PlansPage({
   }
 
   const { businessSlug } = await params;
-  const business = await prisma.business.findFirst({
-    where: {
-      slug: businessSlug,
-      users: {
-        some: {
-          userId: session.user.id,
-        },
-      },
-    },
-  });
+  const business = await getBusinessBySlug(businessSlug, session.user.id);
 
   if (!business) {
     notFound();

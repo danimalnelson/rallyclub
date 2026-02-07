@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@wine-club/db";
 import { getStripeClient } from "@wine-club/lib";
 import { Card, CardContent, formatCurrency, formatDate } from "@wine-club/ui";
+import { getBusinessBySlug } from "@/lib/data/business";
 
 export default async function TransactionsPage({
   params,
@@ -18,16 +19,7 @@ export default async function TransactionsPage({
   }
 
   const { businessSlug } = await params;
-  const business = await prisma.business.findFirst({
-    where: {
-      slug: businessSlug,
-      users: {
-        some: {
-          userId: session.user.id,
-        },
-      },
-    },
-  });
+  const business = await getBusinessBySlug(businessSlug, session.user.id);
 
   if (!business) {
     notFound();
@@ -45,28 +37,22 @@ export default async function TransactionsPage({
     );
   }
 
-  // Fetch invoices from Stripe
+  // Run Stripe API call and DB query in parallel
   const stripe = getStripeClient(business.stripeAccountId);
-  const stripeInvoices = await stripe.invoices.list({
-    limit: 100,
-  });
-
-  // Combine with subscription activity from database
-  const planSubscriptions = await prisma.planSubscription.findMany({
-    where: {
-      plan: {
-        businessId: business.id,
+  const [stripeInvoices, planSubscriptions] = await Promise.all([
+    stripe.invoices.list({ limit: 100 }),
+    prisma.planSubscription.findMany({
+      where: {
+        plan: { businessId: business.id },
       },
-    },
-    include: {
-      consumer: true,
-      plan: true,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-    take: 100,
-  });
+      include: {
+        consumer: true,
+        plan: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    }),
+  ]);
 
   // Create combined transaction list
   const transactions = [
@@ -177,4 +163,3 @@ export default async function TransactionsPage({
     </div>
   );
 }
-

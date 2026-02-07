@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@wine-club/db";
+import { getBusinessBySlug } from "@/lib/data/business";
 import { MembershipForm } from "@/components/memberships/MembershipForm";
 
 export default async function EditMembershipPage({
@@ -16,23 +17,13 @@ export default async function EditMembershipPage({
     redirect("/auth/signin");
   }
 
-  // Fetch business by slug and verify access
-  const business = await prisma.business.findFirst({
-    where: {
-      slug: businessSlug,
-      users: {
-        some: {
-          userId: session.user.id,
-        },
-      },
-    },
-  });
+  const business = await getBusinessBySlug(businessSlug, session.user.id);
 
   if (!business) {
     return notFound();
   }
 
-  // Fetch membership
+  // Fetch membership (business lookup was deduplicated via cache)
   const membershipData = await prisma.membership.findUnique({
     where: { id, businessId: business.id },
   });

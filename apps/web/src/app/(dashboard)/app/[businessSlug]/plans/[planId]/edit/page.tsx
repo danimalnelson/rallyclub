@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@wine-club/db";
+import { getBusinessBySlug } from "@/lib/data/business";
 import { PlanForm } from "@/components/plans/PlanForm";
 
 export default async function EditPlanPage({
@@ -18,44 +19,29 @@ export default async function EditPlanPage({
 
   const { businessSlug, planId } = await params;
 
-  // Get business and verify access
-  const business = await prisma.business.findFirst({
-    where: {
-      slug: businessSlug,
-      users: {
-        some: {
-          userId: session.user.id,
-        },
-      },
-    },
-  });
+  const business = await getBusinessBySlug(businessSlug, session.user.id);
 
   if (!business) {
     notFound();
   }
 
-  // Get the plan
-  const plan = await prisma.plan.findFirst({
-    where: {
-      id: planId,
-      businessId: business.id,
-    },
-  });
+  // Run plan and memberships queries in parallel
+  const [plan, memberships] = await Promise.all([
+    prisma.plan.findFirst({
+      where: { id: planId, businessId: business.id },
+    }),
+    prisma.membership.findMany({
+      where: {
+        businessId: business.id,
+        status: { in: ["DRAFT", "ACTIVE"] },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
 
   if (!plan) {
     notFound();
   }
-
-  // Get memberships for dropdown
-  const memberships = await prisma.membership.findMany({
-    where: {
-      businessId: business.id,
-      status: { in: ["DRAFT", "ACTIVE"] },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
 
   // Convert plan data for form (cents to dollars)
   const initialData = {

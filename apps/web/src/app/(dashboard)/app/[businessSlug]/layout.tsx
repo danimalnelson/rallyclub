@@ -1,9 +1,9 @@
 import { getServerSession } from "next-auth";
 import { redirect, notFound } from "next/navigation";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@wine-club/db";
 import { LinearLayout } from "@/components/linear-layout";
 import { BusinessProvider } from "@/contexts/business-context";
+import { getBusinessBySlug, getUserBusinesses } from "@/lib/data/business";
 
 export default async function BusinessLayout({
   children,
@@ -19,39 +19,16 @@ export default async function BusinessLayout({
   }
 
   const { businessSlug } = await params;
-  
-  // Fetch current business by slug
-  const business = await prisma.business.findFirst({
-    where: {
-      slug: businessSlug,
-      users: {
-        some: {
-          userId: session.user.id,
-        },
-      },
-    },
-  });
+
+  // Run both queries in parallel
+  const [business, allBusinesses] = await Promise.all([
+    getBusinessBySlug(businessSlug, session.user.id),
+    getUserBusinesses(session.user.id),
+  ]);
 
   if (!business) {
     notFound();
   }
-
-  // Fetch all businesses for the user (for business switcher)
-  const allBusinesses = await prisma.business.findMany({
-    where: {
-      users: {
-        some: {
-          userId: session.user.id,
-        },
-      },
-    },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      logoUrl: true,
-    },
-  });
 
   return (
     <BusinessProvider businessId={business.id} businessSlug={business.slug}>
