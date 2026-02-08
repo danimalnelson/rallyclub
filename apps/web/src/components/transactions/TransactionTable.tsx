@@ -109,7 +109,7 @@ const FILTER_CONFIGS: FilterConfig[] = [
     placeholder: "e.g. 4242",
     maxLength: 4,
     inputTransform: (v) => v.replace(/\D/g, ""),
-    formatActive: (v) => `Card: ••${v}`,
+    formatActive: (v) => `••${v}`,
   },
 ];
 
@@ -122,7 +122,8 @@ function filterFn(t: Transaction, filters: Record<string, string>): boolean {
     if (!t.customerEmail.toLowerCase().includes(filters.email.toLowerCase())) return false;
   }
   if (filters.type) {
-    if (t.type !== filters.type) return false;
+    const types = filters.type.split(",");
+    if (!types.includes(t.type)) return false;
   }
   if (filters.last4) {
     if (!t.paymentMethodLast4 || !t.paymentMethodLast4.includes(filters.last4)) return false;
@@ -208,12 +209,11 @@ export function TransactionTable({ transactions, timeZone }: { transactions: Tra
 
   return (
     <DataTable
-      title="Transactions"
+      title="Activity"
       columns={columns}
       data={transactions}
-      filtered={table.filtered}
-      paginated={table.paginated}
       keyExtractor={(t) => t.id}
+      filterFn={filterFn}
       filterConfigs={FILTER_CONFIGS}
       filterValues={table.filterValues}
       inputValues={table.inputValues}
@@ -225,10 +225,8 @@ export function TransactionTable({ transactions, timeZone }: { transactions: Tra
       setInput={table.setInput}
       page={table.page}
       setPage={table.setPage}
-      totalPages={table.totalPages}
       emptyMessage="No transactions yet"
       filteredEmptyMessage="No transactions match filters"
-      resultLabel="result"
       actions={
         <button
           onClick={exportCsv}

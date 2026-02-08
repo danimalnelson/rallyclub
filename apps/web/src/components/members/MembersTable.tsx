@@ -64,8 +64,8 @@ function buildFilterConfigs(allPlanNames: string[]): FilterConfig[] {
 function filterFn(m: Member, filters: Record<string, string>): boolean {
   if (filters.name && !m.name.toLowerCase().includes(filters.name.toLowerCase())) return false;
   if (filters.email && !m.email.toLowerCase().includes(filters.email.toLowerCase())) return false;
-  if (filters.status && m.status !== filters.status) return false;
-  if (filters.plan && !m.activePlans.some((p) => p === filters.plan)) return false;
+  if (filters.status && !filters.status.split(",").includes(m.status)) return false;
+  if (filters.plan && !m.activePlans.some((p) => filters.plan!.split(",").includes(p))) return false;
   return true;
 }
 
@@ -155,9 +155,8 @@ export function MembersTable({
       title="Members"
       columns={columns}
       data={members}
-      filtered={table.filtered}
-      paginated={table.paginated}
       keyExtractor={(m) => m.id}
+      filterFn={filterFn}
       onRowClick={(m) => {
         window.location.href = `/app/${businessSlug}/members/${m.id}`;
       }}
@@ -172,10 +171,8 @@ export function MembersTable({
       setInput={table.setInput}
       page={table.page}
       setPage={table.setPage}
-      totalPages={table.totalPages}
       emptyMessage="No members yet. Members will appear here when they subscribe to your plans."
       filteredEmptyMessage="No members match filters"
-      resultLabel="member"
       actions={
         <button
           onClick={exportCsv}

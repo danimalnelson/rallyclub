@@ -1,20 +1,14 @@
 "use client";
 
-const STATUS_COLORS: Record<string, string> = {
-  // Green
-  ACTIVE: "bg-green-100 text-green-700",
-  PAYMENT: "bg-green-100 text-green-700",
-  // Blue
-  SUBSCRIPTION_CREATED: "bg-blue-100 text-blue-700",
-  // Yellow
-  DRAFT: "bg-yellow-100 text-yellow-700",
-  PENDING: "bg-yellow-100 text-yellow-700",
-  // Orange
-  PAUSED: "bg-orange-100 text-orange-700",
-  // Red
-  VOIDED: "bg-red-100 text-red-700",
-  CANCELLED: "bg-red-100 text-red-700",
+const STATUS_STYLES: Record<string, { border: string; text: string; bg: string }> = {
+  ACTIVE: { border: "#34C759", text: "#34C759", bg: "rgba(52, 199, 89, 0.08)" },
+  PAYMENT: { border: "#34C759", text: "#34C759", bg: "rgba(52, 199, 89, 0.08)" },
+  CANCELLED: { border: "#E5484D", text: "#E5484D", bg: "rgba(229, 72, 77, 0.08)" },
+  VOIDED: { border: "#E5484D", text: "#E5484D", bg: "rgba(229, 72, 77, 0.08)" },
+  PENDING: { border: "#EAB308", text: "#EAB308", bg: "rgba(234, 179, 8, 0.08)" },
 };
+
+const DEFAULT_STYLE = { border: "#999", text: "#999", bg: "rgba(153, 153, 153, 0.08)" };
 
 interface StatusBadgeProps {
   status: string;
@@ -23,12 +17,19 @@ interface StatusBadgeProps {
 }
 
 export function StatusBadge({ status, label }: StatusBadgeProps) {
-  const colorClass = STATUS_COLORS[status] || "bg-gray-100 text-gray-700";
-  const displayLabel = label ?? status.replace(/_/g, " ");
+  const style = STATUS_STYLES[status] || DEFAULT_STYLE;
+  const raw = label ?? status.replace(/_/g, " ");
+  const displayLabel = raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
 
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colorClass}`}
+      className="inline-flex items-center rounded px-1.5 h-5 font-medium"
+      style={{
+        fontSize: 12,
+        color: style.text,
+        backgroundColor: style.bg,
+        border: `1px solid ${style.border}`,
+      }}
     >
       {displayLabel}
     </span>

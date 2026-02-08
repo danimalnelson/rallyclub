@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useCallback } from "react";
 
 export interface TextFilterConfig {
   type: "text";
@@ -90,26 +90,20 @@ export function useDataTable<T>({
   }, []);
 
   // Build active filters object (only non-empty values)
-  const activeFilters = useMemo(() => {
-    const active: Record<string, string> = {};
-    for (const [k, v] of Object.entries(filterValues)) {
-      if (v) active[k] = v;
-    }
-    return active;
-  }, [filterValues]);
+  const activeFilters: Record<string, string> = {};
+  for (const [k, v] of Object.entries(filterValues)) {
+    if (v) activeFilters[k] = v;
+  }
 
   // Filter data
-  const filtered = useMemo(() => {
-    if (Object.keys(activeFilters).length === 0) return data;
-    return data.filter((item) => filterFn(item, activeFilters));
-  }, [data, activeFilters, filterFn]);
+  const hasActiveFilters = Object.keys(activeFilters).length > 0;
+  const filtered = hasActiveFilters
+    ? data.filter((item) => filterFn(item, activeFilters))
+    : data;
 
   // Paginate
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const paginated = useMemo(
-    () => filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE),
-    [filtered, page]
-  );
+  const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   return {
     // Filter state

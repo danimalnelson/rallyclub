@@ -57,7 +57,7 @@ const FILTER_CONFIGS: FilterConfig[] = [
 
 function filterFn(m: Membership, filters: Record<string, string>): boolean {
   if (filters.name && !m.name.toLowerCase().includes(filters.name.toLowerCase())) return false;
-  if (filters.status && m.status !== filters.status) return false;
+  if (filters.status && !filters.status.split(",").includes(m.status)) return false;
   return true;
 }
 
@@ -121,9 +121,8 @@ export function MembershipsTable({
       title="Memberships"
       columns={columns}
       data={memberships}
-      filtered={table.filtered}
-      paginated={table.paginated}
       keyExtractor={(m) => m.id}
+      filterFn={filterFn}
       onRowClick={(m) => {
         window.location.href = `/app/${businessSlug}/memberships/${m.id}/edit`;
       }}
@@ -138,10 +137,8 @@ export function MembershipsTable({
       setInput={table.setInput}
       page={table.page}
       setPage={table.setPage}
-      totalPages={table.totalPages}
       emptyMessage="No memberships yet. Create your first membership to start offering subscription plans."
       filteredEmptyMessage="No memberships match filters"
-      resultLabel="membership"
       actions={
         <Link
           href={`/app/${businessSlug}/memberships/create`}

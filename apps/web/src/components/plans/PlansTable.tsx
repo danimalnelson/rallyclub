@@ -55,8 +55,8 @@ function buildFilterConfigs(allMembershipNames: string[]): FilterConfig[] {
 
 function filterFn(p: Plan, filters: Record<string, string>): boolean {
   if (filters.name && !p.name.toLowerCase().includes(filters.name.toLowerCase())) return false;
-  if (filters.status && p.status !== filters.status) return false;
-  if (filters.membership && p.membershipName !== filters.membership) return false;
+  if (filters.status && !filters.status.split(",").includes(p.status)) return false;
+  if (filters.membership && !filters.membership.split(",").includes(p.membershipName)) return false;
   return true;
 }
 
@@ -127,9 +127,8 @@ export function PlansTable({
       title="Plans"
       columns={columns}
       data={plans}
-      filtered={table.filtered}
-      paginated={table.paginated}
       keyExtractor={(p) => p.id}
+      filterFn={filterFn}
       onRowClick={(p) => {
         window.location.href = `/app/${businessSlug}/plans/${p.id}/edit`;
       }}
@@ -144,10 +143,8 @@ export function PlansTable({
       setInput={table.setInput}
       page={table.page}
       setPage={table.setPage}
-      totalPages={table.totalPages}
       emptyMessage="No plans yet. Create a membership first, then add plans."
       filteredEmptyMessage="No plans match filters"
-      resultLabel="plan"
       actions={
         <Link
           href={`/app/${businessSlug}/plans/create`}
