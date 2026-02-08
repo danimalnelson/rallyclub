@@ -72,6 +72,7 @@ export const updateBusinessProfileSchema = z.object({
   contactPhone: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format").or(z.literal("")).optional().nullable(),
   brandColorPrimary: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color format").optional().nullable(),
   brandColorSecondary: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color format").or(z.literal("")).optional().nullable(),
+  timeZone: z.string().min(1).max(100).optional(),
 });
 
 export type UpdateBusinessProfileInput = z.infer<typeof updateBusinessProfileSchema>;

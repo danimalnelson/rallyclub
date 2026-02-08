@@ -30,6 +30,7 @@ export default function SettingsPage() {
     contactPhone: "",
     brandColorPrimary: "#6366f1",
     brandColorSecondary: "",
+    timeZone: "America/New_York",
   });
 
   useEffect(() => {
@@ -49,6 +50,7 @@ export default function SettingsPage() {
           contactPhone: data.contactPhone || "",
           brandColorPrimary: data.brandColorPrimary || "#6366f1",
           brandColorSecondary: data.brandColorSecondary || "",
+          timeZone: data.timeZone || "America/New_York",
         });
       } catch (err: any) {
         setError(err.message);
@@ -233,6 +235,46 @@ export default function SettingsPage() {
                   setFormData({ ...formData, contactPhone: e.target.value })
                 }
               />
+            </div>
+
+            {/* Timezone */}
+            <div>
+              <label
+                htmlFor="timeZone"
+                className="block text-sm font-medium mb-2"
+              >
+                Timezone
+              </label>
+              <select
+                id="timeZone"
+                className="w-full px-3 py-2 border rounded-md bg-white"
+                value={formData.timeZone}
+                onChange={(e) =>
+                  setFormData({ ...formData, timeZone: e.target.value })
+                }
+              >
+                <optgroup label="US">
+                  <option value="America/New_York">Eastern (New York)</option>
+                  <option value="America/Chicago">Central (Chicago)</option>
+                  <option value="America/Denver">Mountain (Denver)</option>
+                  <option value="America/Los_Angeles">Pacific (Los Angeles)</option>
+                  <option value="America/Anchorage">Alaska (Anchorage)</option>
+                  <option value="Pacific/Honolulu">Hawaii (Honolulu)</option>
+                </optgroup>
+                <optgroup label="Europe">
+                  <option value="Europe/London">London (GMT)</option>
+                  <option value="Europe/Paris">Paris (CET)</option>
+                  <option value="Europe/Berlin">Berlin (CET)</option>
+                </optgroup>
+                <optgroup label="Asia/Pacific">
+                  <option value="Asia/Tokyo">Tokyo (JST)</option>
+                  <option value="Asia/Shanghai">Shanghai (CST)</option>
+                  <option value="Australia/Sydney">Sydney (AEST)</option>
+                </optgroup>
+              </select>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Used for displaying dates and times across the dashboard
+              </p>
             </div>
 
             {/* Brand Colors */}
