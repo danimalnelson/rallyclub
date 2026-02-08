@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@wine-club/db";
 import { updateBusinessProfileSchema } from "@wine-club/lib";
 import { stripe } from "@wine-club/lib";
+import { del } from "@vercel/blob";
 import { z } from "zod";
 
 export async function PATCH(
@@ -41,6 +42,22 @@ export async function PATCH(
         { error: "Business not found or insufficient permissions" },
         { status: 404 }
       );
+    }
+
+    // Clean up old blob if logoUrl is being cleared or changed
+    const oldLogoUrl = business.logoUrl;
+    const newLogoUrl = validatedData.logoUrl;
+    if (
+      oldLogoUrl &&
+      oldLogoUrl.includes(".vercel-storage.com") &&
+      newLogoUrl !== undefined &&
+      newLogoUrl !== oldLogoUrl
+    ) {
+      try {
+        await del(oldLogoUrl);
+      } catch {
+        // Ignore deletion errors (file may already be gone)
+      }
     }
 
     // Update business profile
