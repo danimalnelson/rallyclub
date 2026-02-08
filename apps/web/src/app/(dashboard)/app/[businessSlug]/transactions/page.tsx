@@ -84,13 +84,6 @@ export default async function TransactionsPage({
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-foreground mb-1">Transactions</h1>
-        <p className="text-muted-foreground text-sm">
-          View all payments, invoices, and subscription activity
-        </p>
-      </div>
 
         {transactions.length === 0 ? (
           <Card>

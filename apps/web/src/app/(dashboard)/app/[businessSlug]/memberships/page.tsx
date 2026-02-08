@@ -46,14 +46,8 @@ export default async function MembershipsPage({
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground mb-1">Memberships</h1>
-          <p className="text-muted-foreground text-sm">
-            Manage your subscription memberships and plans
-          </p>
-        </div>
+      {/* Actions */}
+      <div className="mb-6 flex justify-end">
         <Link href={`/app/${business.slug}/memberships/create`}>
           <Button size="sm">+ Create Membership</Button>
         </Link>

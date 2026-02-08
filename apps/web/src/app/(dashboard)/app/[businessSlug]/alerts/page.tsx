@@ -114,13 +114,6 @@ export default function AlertsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Alerts</h1>
-        <p className="text-muted-foreground mt-1">
-          Important notifications and action items for your business
-        </p>
-      </div>
-
       {/* Summary Cards */}
       {data && data.total > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">

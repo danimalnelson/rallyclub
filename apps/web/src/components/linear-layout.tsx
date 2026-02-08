@@ -27,7 +27,7 @@ export function LinearLayout({
   userEmail,
 }: LinearLayoutProps) {
   return (
-    <div className="min-h-screen bg-[#0e0f11] dark">
+    <div className="min-h-screen bg-[#fafafa]">
       {/* Desktop Sidebar */}
       <div className="hidden lg:block">
         <LinearSidebar
@@ -49,12 +49,11 @@ export function LinearLayout({
       </div>
 
       {/* Main Content Area */}
-      <main className="lg:pl-[220px] min-h-screen">
-        <div className="p-6">
+      <main className="lg:pl-[241px] min-h-screen">
+        <div className="p-3">
           {children}
         </div>
       </main>
     </div>
   );
 }
-

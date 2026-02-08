@@ -40,7 +40,7 @@ interface LinearSidebarProps {
 }
 
 const mainNavItems = [
-  { href: "", label: "Dashboard", icon: LayoutDashboard },
+  { href: "", label: "Dashboard", icon: Inbox },
   { href: "/members", label: "Members", icon: Users },
   { href: "/transactions", label: "Transactions", icon: Receipt },
   { href: "/plans", label: "Plans", icon: BarChart3 },
@@ -85,12 +85,12 @@ export const LinearSidebar = memo(function LinearSidebar({
   const otherBusinesses = allBusinesses.filter(b => b.id !== businessId);
 
   return (
-    <aside className="fixed left-0 top-0 bottom-0 z-40 w-[220px] flex flex-col bg-[#0e0f11] border-r border-white/[0.06]">
+    <aside className="fixed left-0 top-0 bottom-0 z-40 w-[241px] flex flex-col bg-[#fafafa] border-r border-[#eaeaea]">
       {/* Workspace Header */}
       <div className="px-3 pt-3 pb-2" ref={dropdownRef}>
         <button
           onClick={() => setIsBusinessDropdownOpen(!isBusinessDropdownOpen)}
-          className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-white/[0.06] transition-colors"
+          className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-[#f5f5f5] transition-colors"
         >
           {business.logoUrl ? (
             <img
@@ -105,29 +105,29 @@ export const LinearSidebar = memo(function LinearSidebar({
               </span>
             </div>
           )}
-          <span className="text-[13px] font-medium text-white/90 truncate flex-1 text-left">
+          <span className="text-sm font-medium text-[#171717] truncate flex-1 text-left">
             {business.name}
           </span>
           <ChevronDown className={cn(
-            "h-3.5 w-3.5 text-white/40 transition-transform",
+            "h-3.5 w-3.5 text-[#999] transition-transform",
             isBusinessDropdownOpen && "rotate-180"
           )} />
         </button>
 
         {/* Workspace Dropdown */}
         {isBusinessDropdownOpen && (
-          <div className="absolute left-2 right-2 top-12 bg-[#1c1d1f] rounded-lg shadow-xl border border-white/[0.08] overflow-hidden z-50">
+          <div className="absolute left-2 right-2 top-12 bg-white rounded-lg shadow-lg border border-[#eaeaea] overflow-hidden z-50">
             {/* User Info */}
             {userEmail && (
-              <div className="px-3 py-2.5 border-b border-white/[0.06]">
-                <p className="text-[11px] text-white/40">Signed in as</p>
-                <p className="text-[13px] text-white/80 truncate">{userEmail}</p>
+              <div className="px-3 py-2.5 border-b border-[#eaeaea]">
+                <p className="text-[11px] text-[#999]">Signed in as</p>
+                <p className="text-sm text-[#444] truncate">{userEmail}</p>
               </div>
             )}
 
             {/* Current Business */}
             <div className="py-1">
-              <div className="flex items-center gap-2.5 px-3 py-2 bg-white/[0.04]">
+              <div className="flex items-center gap-2.5 px-3 py-2 bg-[#fafafa]">
                 {business.logoUrl ? (
                   <img src={business.logoUrl} alt={business.name} className="h-5 w-5 rounded object-cover" />
                 ) : (
@@ -135,40 +135,40 @@ export const LinearSidebar = memo(function LinearSidebar({
                     <span className="text-white font-semibold text-[10px]">{business.name.charAt(0).toUpperCase()}</span>
                   </div>
                 )}
-                <span className="text-[13px] text-white/90 truncate flex-1">{business.name}</span>
-                <Check className="h-4 w-4 text-blue-400" />
+                <span className="text-sm text-[#171717] truncate flex-1">{business.name}</span>
+                <Check className="h-4 w-4 text-[#171717]" />
               </div>
             </div>
 
             {/* Other Businesses */}
             {otherBusinesses.length > 0 && (
-              <div className="py-1 border-t border-white/[0.06]">
-                <p className="px-3 py-1 text-[11px] text-white/40 uppercase tracking-wide">Switch workspace</p>
+              <div className="py-1 border-t border-[#eaeaea]">
+                <p className="px-3 py-1 text-[11px] text-[#999] uppercase tracking-wide">Switch workspace</p>
                 {otherBusinesses.map((b) => (
                   <Link
                     key={b.id}
                     href={`/app/${b.slug}`}
                     onClick={() => setIsBusinessDropdownOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 hover:bg-white/[0.04] transition-colors"
+                    className="flex items-center gap-2.5 px-3 py-2 hover:bg-[#fafafa] transition-colors"
                   >
                     {b.logoUrl ? (
                       <img src={b.logoUrl} alt={b.name} className="h-5 w-5 rounded object-cover" />
                     ) : (
-                      <div className="h-5 w-5 rounded bg-white/10 flex items-center justify-center">
-                        <span className="text-white/60 font-semibold text-[10px]">{b.name.charAt(0).toUpperCase()}</span>
+                      <div className="h-5 w-5 rounded bg-[#eaeaea] flex items-center justify-center">
+                        <span className="text-[#666] font-semibold text-[10px]">{b.name.charAt(0).toUpperCase()}</span>
                       </div>
                     )}
-                    <span className="text-[13px] text-white/70 truncate">{b.name}</span>
+                    <span className="text-sm text-[#666] truncate">{b.name}</span>
                   </Link>
                 ))}
               </div>
             )}
 
             {/* Sign Out */}
-            <div className="py-1 border-t border-white/[0.06]">
+            <div className="py-1 border-t border-[#eaeaea]">
               <button
                 onClick={handleSignOut}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-white/70 hover:bg-white/[0.04] hover:text-white/90 transition-colors"
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#666] hover:bg-[#fafafa] hover:text-black transition-colors"
               >
                 <LogOut className="h-4 w-4" />
                 Sign out
@@ -178,83 +178,45 @@ export const LinearSidebar = memo(function LinearSidebar({
         )}
       </div>
 
-      {/* Search & New */}
-      <div className="px-3 pb-2 flex gap-1">
-        <button className="flex-1 flex items-center gap-2 px-2.5 py-1.5 text-[13px] text-white/50 hover:text-white/70 hover:bg-white/[0.04] rounded-md transition-colors">
+      {/* Search */}
+      <div className="px-2 pb-2">
+        <button className="w-full flex items-center gap-2.5 px-2 h-9 text-sm font-medium text-[#999] hover:text-[#666] bg-white border border-[#ebebeb] rounded-md transition-colors">
           <Search className="h-4 w-4" />
           <span>Search</span>
         </button>
       </div>
 
-      {/* Quick Navigation */}
-      <nav className="px-2 py-1">
-        <Link
-          href={`${basePath}`}
-          className={cn(
-            "flex items-center gap-2.5 px-2 py-1.5 rounded-md text-[13px] transition-colors",
-            pathname === basePath
-              ? "bg-white/[0.08] text-white"
-              : "text-white/60 hover:text-white/90 hover:bg-white/[0.04]"
-          )}
-        >
-          <Inbox className="h-4 w-4" />
-          <span>Dashboard</span>
-        </Link>
-      </nav>
+      {/* Nav Items */}
+      <nav className="px-2 py-1 flex flex-col gap-0.5">
+        {mainNavItems.map((item) => {
+          const Icon = item.icon;
+          const active = isActive(item.href);
+          return (
+            <Link
+              key={item.href}
+              href={`${basePath}${item.href}`}
+              className={cn(
+                "flex items-center gap-2.5 px-2 h-9 rounded-md text-sm font-medium transition-colors",
+                active
+                  ? "bg-[#f0f0f0] text-[#171717]"
+                  : "text-[#666] hover:text-black hover:bg-[#f5f5f5]"
+              )}
+            >
+              <Icon className="h-4 w-4" />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
 
-      {/* Your Business Section */}
-      <div className="px-2 pt-4">
-        <button
-          onClick={() => setIsTeamExpanded(!isTeamExpanded)}
-          className="w-full flex items-center gap-1 px-2 py-1 text-[11px] text-white/40 uppercase tracking-wide hover:text-white/60 transition-colors"
-        >
-          <ChevronRight className={cn(
-            "h-3 w-3 transition-transform",
-            isTeamExpanded && "rotate-90"
-          )} />
-          <span>Your Business</span>
-        </button>
+        <div className="border-t border-[#eaeaea] mt-[4px] mb-[4px]" />
 
-        {isTeamExpanded && (
-          <div className="mt-1">
-            {/* Business Item with expandable nav */}
-            <div className="space-y-0.5">
-              {mainNavItems.slice(1).map((item) => {
-                const Icon = item.icon;
-                const active = isActive(item.href);
-                return (
-                  <Link
-                    key={item.href}
-                    href={`${basePath}${item.href}`}
-                    className={cn(
-                      "flex items-center gap-2.5 px-2 py-1.5 rounded-md text-[13px] transition-colors",
-                      active
-                        ? "bg-white/[0.08] text-white"
-                        : "text-white/60 hover:text-white/90 hover:bg-white/[0.04]"
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Spacer */}
-      <div className="flex-1" />
-
-      {/* Bottom Section */}
-      <div className="px-2 pb-3 space-y-0.5">
         <Link
           href={`${basePath}/settings`}
           className={cn(
-            "flex items-center gap-2.5 px-2 py-1.5 rounded-md text-[13px] transition-colors",
+            "flex items-center gap-2.5 px-2 h-9 rounded-md text-sm font-medium transition-colors",
             isActive("/settings")
-              ? "bg-white/[0.08] text-white"
-              : "text-white/60 hover:text-white/90 hover:bg-white/[0.04]"
+              ? "bg-[#f0f0f0] text-[#171717]"
+              : "text-[#666] hover:text-black hover:bg-[#f5f5f5]"
           )}
         >
           <Settings className="h-4 w-4" />
@@ -262,13 +224,15 @@ export const LinearSidebar = memo(function LinearSidebar({
         </Link>
         <a
           href="mailto:support@example.com"
-          className="flex items-center gap-2.5 px-2 py-1.5 rounded-md text-[13px] text-white/60 hover:text-white/90 hover:bg-white/[0.04] transition-colors"
+          className="flex items-center gap-2.5 px-2 h-9 rounded-md text-sm font-medium text-[#666] hover:text-black hover:bg-[#f5f5f5] transition-colors"
         >
           <HelpCircle className="h-4 w-4" />
           <span>Help & Support</span>
         </a>
-      </div>
+      </nav>
+
+      {/* Spacer */}
+      <div className="flex-1" />
     </aside>
   );
 });
-

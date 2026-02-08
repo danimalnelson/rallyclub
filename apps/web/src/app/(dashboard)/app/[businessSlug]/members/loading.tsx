@@ -7,11 +7,7 @@ function Skeleton({ className = "" }: { className?: string }) {
 export default function MembersLoading() {
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="mb-8 flex items-start justify-between">
-        <div>
-          <Skeleton className="h-7 w-32 mb-2" />
-          <Skeleton className="h-4 w-56" />
-        </div>
+      <div className="mb-6 flex justify-end">
         <Skeleton className="h-9 w-28" />
       </div>
 

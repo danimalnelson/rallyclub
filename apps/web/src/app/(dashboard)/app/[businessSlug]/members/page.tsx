@@ -74,15 +74,9 @@ export default async function MembersPage({
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="mb-8 flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground mb-1">Members</h1>
-          <p className="text-muted-foreground text-sm">
-            View and manage your club members
-          </p>
-        </div>
-        {members.length > 0 && (
+      {/* Actions */}
+      {members.length > 0 && (
+        <div className="mb-6 flex justify-end">
           <a
             href={`/api/business/${business.id}/members/export`}
             download
@@ -91,8 +85,8 @@ export default async function MembersPage({
             <Download className="h-4 w-4" />
             Export CSV
           </a>
-        )}
-      </div>
+        </div>
+      )}
 
         {members.length === 0 ? (
           <Card>

@@ -51,14 +51,8 @@ export default async function PlansPage({
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground mb-1">Subscription Plans</h1>
-          <p className="text-muted-foreground text-sm">
-            Manage your membership plans and pricing
-          </p>
-        </div>
+      {/* Actions */}
+      <div className="mb-6 flex justify-end">
         <Link href={`/app/${business.slug}/memberships`}>
           <Button variant="outline" size="sm">Manage Memberships</Button>
         </Link>

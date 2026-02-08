@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@wine-club/db";
 import { getBusinessBySlug } from "@/lib/data/business";
 import { PlanForm } from "@/components/plans/PlanForm";
+import { ArrowLeft } from "lucide-react";
 
 export default async function EditPlanPage({
   params,
@@ -64,18 +65,11 @@ export default async function EditPlanPage({
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground mb-1">Edit Plan</h1>
-            <p className="text-sm text-muted-foreground">{plan.name}</p>
-          </div>
-          <Link href={`/app/${business.slug}/plans`}>
-            <button className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              ← Back to Plans
-            </button>
-          </Link>
-        </div>
+      <div className="mb-6 flex items-center gap-3">
+        <Link href={`/app/${business.slug}/plans`} className="text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="h-4 w-4" />
+        </Link>
+        <span className="text-sm font-medium text-foreground">{plan.name}</span>
       </div>
       <PlanForm
         businessId={business.id}

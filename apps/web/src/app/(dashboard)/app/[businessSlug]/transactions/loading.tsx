@@ -7,11 +7,6 @@ function Skeleton({ className = "" }: { className?: string }) {
 export default function TransactionsLoading() {
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="mb-8">
-        <Skeleton className="h-7 w-40 mb-2" />
-        <Skeleton className="h-4 w-72" />
-      </div>
-
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">

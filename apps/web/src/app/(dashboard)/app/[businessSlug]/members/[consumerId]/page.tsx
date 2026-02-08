@@ -76,19 +76,17 @@ export default async function MemberDetailPage({
 
   return (
     <div className="max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="mb-6 flex items-center gap-4">
+      {/* Back nav + member name */}
+      <div className="mb-6 flex items-center gap-3">
         <Link href={`/app/${business.slug}/members`}>
           <button className="text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-4 w-4" />
           </button>
         </Link>
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">
-            {consumer.name || consumer.email.split('@')[0]}
-          </h1>
-          <p className="text-sm text-muted-foreground">{consumer.email}</p>
-        </div>
+        <span className="text-sm font-medium text-foreground">
+          {consumer.name || consumer.email.split('@')[0]}
+        </span>
+        <span className="text-sm text-muted-foreground">{consumer.email}</span>
       </div>
         {/* Member Info Card */}
         <Card className="mb-6">
