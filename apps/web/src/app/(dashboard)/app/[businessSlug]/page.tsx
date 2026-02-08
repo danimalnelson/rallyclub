@@ -68,22 +68,14 @@ export default async function BusinessDashboardPage({
   const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
   const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 12, 1);
 
-  // ── Run ALL independent queries in parallel ──
+  // ── Batch 1: Core metrics (4 DB queries + Stripe in parallel) ──
   const [
     activeSubscriptions,
     lastMonthSubscriptions,
     weekAgoSubscriptions,
     pastDueCount,
-    allSubscriptionConsumerIds,
-    totalPlans,
-    dynamicPricingPlans,
-    unresolvedAlerts,
-    recentNewSubscriptions,
-    recentCancellations,
-    recentTransactions,
     stripeData,
   ] = await Promise.all([
-    // Active subscriptions with plan info
     prisma.planSubscription.findMany({
       where: {
         plan: { businessId: business.id },
@@ -98,8 +90,6 @@ export default async function BusinessDashboardPage({
         consumer: true,
       },
     }),
-
-    // Last month subscriptions for MRR comparison
     prisma.planSubscription.findMany({
       where: {
         plan: { businessId: business.id },
@@ -117,8 +107,6 @@ export default async function BusinessDashboardPage({
         },
       },
     }),
-
-    // Week ago subscriptions for member trend
     prisma.planSubscription.findMany({
       where: {
         plan: { businessId: business.id },
@@ -130,74 +118,12 @@ export default async function BusinessDashboardPage({
       },
       select: { consumerId: true },
     }),
-
-    // Past due count
     prisma.planSubscription.count({
       where: {
         plan: { businessId: business.id },
         status: "past_due",
       },
     }),
-
-    // All subscription consumer IDs (for total members count)
-    prisma.planSubscription.findMany({
-      where: { plan: { businessId: business.id } },
-      select: { consumerId: true },
-    }),
-
-    // Total plans
-    prisma.plan.count({
-      where: { businessId: business.id },
-    }),
-
-    // Dynamic pricing plans
-    prisma.plan.count({
-      where: { businessId: business.id, pricingType: "DYNAMIC" },
-    }),
-
-    // Unresolved alerts
-    prisma.businessAlert.findMany({
-      where: { businessId: business.id, resolved: false },
-      orderBy: [{ severity: "desc" }, { createdAt: "desc" }],
-      take: 5,
-    }),
-
-    // Recent new subscriptions
-    prisma.planSubscription.findMany({
-      where: {
-        plan: { businessId: business.id },
-        createdAt: { gte: sevenDaysAgo },
-      },
-      include: { consumer: true, plan: true },
-      orderBy: { createdAt: "desc" },
-      take: 5,
-    }),
-
-    // Recent cancellations
-    prisma.planSubscription.findMany({
-      where: {
-        plan: { businessId: business.id },
-        status: "canceled",
-        updatedAt: { gte: sevenDaysAgo },
-      },
-      include: { consumer: true, plan: true },
-      orderBy: { updatedAt: "desc" },
-      take: 5,
-    }),
-
-    // Recent transactions
-    prisma.transaction.findMany({
-      where: {
-        businessId: business.id,
-        type: "CHARGE",
-        createdAt: { gte: sevenDaysAgo },
-      },
-      include: { consumer: true },
-      orderBy: { createdAt: "desc" },
-      take: 5,
-    }),
-
-    // Stripe invoices (runs in parallel with DB queries)
     (async () => {
       if (!business.stripeAccountId) return null;
       try {
@@ -212,6 +138,67 @@ export default async function BusinessDashboardPage({
         return null;
       }
     })(),
+  ]);
+
+  // ── Batch 2: Counts and alerts (4 DB queries) ──
+  const [
+    allSubscriptionConsumerIds,
+    totalPlans,
+    dynamicPricingPlans,
+    unresolvedAlerts,
+  ] = await Promise.all([
+    prisma.planSubscription.findMany({
+      where: { plan: { businessId: business.id } },
+      select: { consumerId: true },
+    }),
+    prisma.plan.count({
+      where: { businessId: business.id },
+    }),
+    prisma.plan.count({
+      where: { businessId: business.id, pricingType: "DYNAMIC" },
+    }),
+    prisma.businessAlert.findMany({
+      where: { businessId: business.id, resolved: false },
+      orderBy: [{ severity: "desc" }, { createdAt: "desc" }],
+      take: 5,
+    }),
+  ]);
+
+  // ── Batch 3: Activity feed (3 DB queries) ──
+  const [
+    recentNewSubscriptions,
+    recentCancellations,
+    recentTransactions,
+  ] = await Promise.all([
+    prisma.planSubscription.findMany({
+      where: {
+        plan: { businessId: business.id },
+        createdAt: { gte: sevenDaysAgo },
+      },
+      include: { consumer: true, plan: true },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    }),
+    prisma.planSubscription.findMany({
+      where: {
+        plan: { businessId: business.id },
+        status: "canceled",
+        updatedAt: { gte: sevenDaysAgo },
+      },
+      include: { consumer: true, plan: true },
+      orderBy: { updatedAt: "desc" },
+      take: 5,
+    }),
+    prisma.transaction.findMany({
+      where: {
+        businessId: business.id,
+        type: "CHARGE",
+        createdAt: { gte: sevenDaysAgo },
+      },
+      include: { consumer: true },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    }),
   ]);
 
   // ── Compute metrics from parallel results ──
