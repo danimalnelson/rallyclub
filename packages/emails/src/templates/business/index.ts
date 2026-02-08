@@ -7,3 +7,6 @@ export * from "./new-member";
 export * from "./member-churned";
 export * from "./monthly-summary";
 export * from "./payment-alert";
+export * from "./subscription-paused";
+export * from "./subscription-resumed";
+export * from "./payment-received";

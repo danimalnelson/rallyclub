@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@wine-club/db";
 import { getStripeClient } from "@wine-club/lib";
+import { sendBusinessEmail, subscriptionPausedAlertEmail } from "@wine-club/emails";
 
 export async function POST(
   req: NextRequest,
@@ -21,6 +22,7 @@ export async function POST(
     const planSubscription = await prisma.planSubscription.findUnique({
       where: { id: subscriptionId },
       include: {
+        consumer: true,
         plan: {
           include: {
             business: {
@@ -69,6 +71,24 @@ export async function POST(
         lastSyncedAt: new Date(),
       },
     });
+
+    // Notify business owner
+    const business = planSubscription.plan.business;
+    if (business.contactEmail) {
+      const publicAppUrl = process.env.PUBLIC_APP_URL || "http://localhost:3000";
+      await sendBusinessEmail(
+        business.contactEmail,
+        `Subscription Paused - ${planSubscription.consumer.name || planSubscription.consumer.email}`,
+        subscriptionPausedAlertEmail({
+          businessName: business.name,
+          memberName: planSubscription.consumer.name || "Member",
+          memberEmail: planSubscription.consumer.email,
+          planName: planSubscription.plan.name,
+          pausedDate: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+          dashboardUrl: `${publicAppUrl}/app/${business.slug}/members`,
+        })
+      ).catch((err) => console.error("Failed to send pause notification:", err));
+    }
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

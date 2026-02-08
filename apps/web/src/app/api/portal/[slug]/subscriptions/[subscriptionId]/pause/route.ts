@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { prisma } from "@wine-club/db";
 import { getStripeClient } from "@wine-club/lib";
 import { decodeConsumerSession } from "@/lib/consumer-auth";
-import { sendEmail, subscriptionPausedEmail } from "@wine-club/emails";
+import { sendEmail, sendBusinessEmail, subscriptionPausedEmail, subscriptionPausedAlertEmail } from "@wine-club/emails";
 
 export async function POST(
   req: NextRequest,
@@ -69,7 +69,7 @@ export async function POST(
       },
     });
 
-    // Send pause confirmation email
+    // Send pause confirmation email to member
     const publicAppUrl = process.env.PUBLIC_APP_URL || "http://localhost:3000";
     await sendEmail({
       to: planSubscription.consumer.email,
@@ -81,6 +81,22 @@ export async function POST(
         portalUrl: `${publicAppUrl}/${slug}/portal`,
       }),
     });
+
+    // Notify business owner
+    if (business.contactEmail) {
+      await sendBusinessEmail(
+        business.contactEmail,
+        `Subscription Paused - ${planSubscription.consumer.name || planSubscription.consumer.email}`,
+        subscriptionPausedAlertEmail({
+          businessName: business.name,
+          memberName: planSubscription.consumer.name || "Member",
+          memberEmail: planSubscription.consumer.email,
+          planName: planSubscription.plan.name,
+          pausedDate: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+          dashboardUrl: `${publicAppUrl}/app/${business.slug}/members`,
+        })
+      ).catch((err) => console.error("Failed to send pause notification:", err));
+    }
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

@@ -48,6 +48,12 @@ export {
   monthlySummaryEmail,
   PaymentAlertEmail,
   paymentAlertEmail,
+  SubscriptionPausedAlertEmail,
+  subscriptionPausedAlertEmail,
+  SubscriptionResumedAlertEmail,
+  subscriptionResumedAlertEmail,
+  PaymentReceivedEmail,
+  paymentReceivedEmail,
 } from "./templates/business";
 
 export type {
@@ -55,4 +61,7 @@ export type {
   MemberChurnedEmailProps,
   MonthlySummaryEmailProps,
   PaymentAlertEmailProps,
+  SubscriptionPausedAlertEmailProps,
+  SubscriptionResumedAlertEmailProps,
+  PaymentReceivedEmailProps,
 } from "./templates/business";

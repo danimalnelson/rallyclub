@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { prisma } from "@wine-club/db";
 import { getStripeClient } from "@wine-club/lib";
 import { decodeConsumerSession } from "@/lib/consumer-auth";
-import { sendEmail, subscriptionResumedEmail } from "@wine-club/emails";
+import { sendEmail, sendBusinessEmail, subscriptionResumedEmail, subscriptionResumedAlertEmail } from "@wine-club/emails";
 
 export async function POST(
   req: NextRequest,
@@ -89,6 +89,21 @@ export async function POST(
         businessName: business.name,
       }),
     });
+
+    // Notify business owner
+    if (business.contactEmail) {
+      await sendBusinessEmail(
+        business.contactEmail,
+        `Subscription Resumed - ${planSubscription.consumer.name || planSubscription.consumer.email}`,
+        subscriptionResumedAlertEmail({
+          businessName: business.name,
+          memberName: planSubscription.consumer.name || "Member",
+          memberEmail: planSubscription.consumer.email,
+          planName: planSubscription.plan.name,
+          dashboardUrl: `${publicAppUrl}/app/${business.slug}/members`,
+        })
+      ).catch((err) => console.error("Failed to send resume notification:", err));
+    }
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

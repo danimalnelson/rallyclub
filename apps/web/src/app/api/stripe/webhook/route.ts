@@ -15,6 +15,9 @@ import {
   newMemberEmail,
   memberChurnedEmail,
   paymentAlertEmail,
+  subscriptionPausedAlertEmail,
+  subscriptionResumedAlertEmail,
+  paymentReceivedEmail,
 } from "@wine-club/emails";
 import {
   createPlanSubscriptionFromCheckout,
@@ -320,10 +323,17 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription, accou
 
   if (planSubscription) {
     // NEW MODEL: Sync PlanSubscription
+    const oldStatus = planSubscription.status;
     console.log(`[Webhook] Syncing new model PlanSubscription ${planSubscription.id}`);
     try {
       await syncPlanSubscription(prisma, subscription, accountId);
       console.log(`[Webhook] ✅ Synced PlanSubscription ${planSubscription.id}`);
+
+      // Detect status transitions and notify business owner
+      const newStatus = subscription.status;
+      if (oldStatus !== newStatus) {
+        await notifyBusinessSubscriptionStatusChange(planSubscription.id, oldStatus, newStatus);
+      }
     } catch (error) {
       console.error(`[Webhook] ❌ Failed to sync PlanSubscription:`, error);
       throw error;
@@ -688,27 +698,49 @@ async function handleInvoicePaid(invoice: Stripe.Invoice, accountId?: string) {
     },
   });
 
-  // Send confirmation email on successful payment
-  // Note: More sophisticated logic could check if this is the first invoice
-  if (subscription.member.consumer.email && invoice.billing_reason === "subscription_create") {
-    const business = await prisma.business.findUnique({
-      where: { id: subscription.member.businessId },
+  const business = await prisma.business.findUnique({
+    where: { id: subscription.member.businessId },
+  });
+
+  // Send confirmation email on first payment (subscription create)
+  if (subscription.member.consumer.email && invoice.billing_reason === "subscription_create" && business) {
+    await sendEmail({
+      to: subscription.member.consumer.email,
+      subject: `Welcome to ${business.name}!`,
+      html: subscriptionConfirmationEmail({
+        customerName: subscription.member.consumer.name || "Valued Member",
+        planName: subscription.membershipPlan.name,
+        amount: invoice.amount_paid,
+        currency: invoice.currency,
+        interval: subscription.price.interval,
+        businessName: business.name,
+      }),
+    });
+  }
+
+  // Notify business owner of every successful payment
+  if (business?.contactEmail && invoice.amount_paid > 0) {
+    const publicAppUrl = process.env.PUBLIC_APP_URL || "http://localhost:3000";
+    const paymentDate = new Date(invoice.created * 1000).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
 
-    if (business) {
-      await sendEmail({
-        to: subscription.member.consumer.email,
-        subject: `Welcome to ${business.name}!`,
-        html: subscriptionConfirmationEmail({
-          customerName: subscription.member.consumer.name || "Valued Member",
-          planName: subscription.membershipPlan.name,
-          amount: invoice.amount_paid,
-          currency: invoice.currency,
-          interval: subscription.price.interval,
-          businessName: business.name,
-        }),
-      });
-    }
+    await sendBusinessEmail(
+      business.contactEmail,
+      `Payment Received - $${(invoice.amount_paid / 100).toFixed(2)} from ${subscription.member.consumer.name || subscription.member.consumer.email}`,
+      paymentReceivedEmail({
+        businessName: business.name,
+        memberName: subscription.member.consumer.name || "Member",
+        memberEmail: subscription.member.consumer.email,
+        planName: subscription.membershipPlan.name,
+        amount: invoice.amount_paid,
+        currency: invoice.currency,
+        paymentDate,
+        dashboardUrl: `${publicAppUrl}/app/${business.slug}/transactions`,
+      })
+    );
   }
 }
 
@@ -1191,6 +1223,77 @@ async function notifyBusinessOwnerMemberChurned(
     console.log(`[Webhook] ✉️ Sent churn notification to ${planSubscription.plan.business.contactEmail}`);
   } catch (error) {
     console.error(`[Webhook] Failed to send churn notification:`, error);
+    // Don't throw - notification failure shouldn't fail the webhook
+  }
+}
+
+/**
+ * Notify business owner of subscription status changes (pause/resume)
+ */
+async function notifyBusinessSubscriptionStatusChange(
+  planSubscriptionId: string,
+  oldStatus: string,
+  newStatus: string
+) {
+  try {
+    const planSubscription = await prisma.planSubscription.findUnique({
+      where: { id: planSubscriptionId },
+      include: {
+        consumer: true,
+        plan: {
+          include: {
+            business: true,
+          },
+        },
+      },
+    });
+
+    if (!planSubscription?.plan.business.contactEmail) {
+      return;
+    }
+
+    const business = planSubscription.plan.business;
+    const publicAppUrl = process.env.PUBLIC_APP_URL || "http://localhost:3000";
+    const dashboardUrl = `${publicAppUrl}/app/${business.slug}/members`;
+
+    // Subscription paused
+    if (newStatus === "paused" && oldStatus !== "paused") {
+      await sendBusinessEmail(
+        business.contactEmail,
+        `Subscription Paused - ${planSubscription.consumer.name || planSubscription.consumer.email}`,
+        subscriptionPausedAlertEmail({
+          businessName: business.name,
+          memberName: planSubscription.consumer.name || "Member",
+          memberEmail: planSubscription.consumer.email,
+          planName: planSubscription.plan.name,
+          pausedDate: new Date().toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          }),
+          dashboardUrl,
+        })
+      );
+      console.log(`[Webhook] ✉️ Sent pause notification to ${business.contactEmail}`);
+    }
+
+    // Subscription resumed (paused -> active)
+    if (oldStatus === "paused" && (newStatus === "active" || newStatus === "trialing")) {
+      await sendBusinessEmail(
+        business.contactEmail,
+        `Subscription Resumed - ${planSubscription.consumer.name || planSubscription.consumer.email}`,
+        subscriptionResumedAlertEmail({
+          businessName: business.name,
+          memberName: planSubscription.consumer.name || "Member",
+          memberEmail: planSubscription.consumer.email,
+          planName: planSubscription.plan.name,
+          dashboardUrl,
+        })
+      );
+      console.log(`[Webhook] ✉️ Sent resume notification to ${business.contactEmail}`);
+    }
+  } catch (error) {
+    console.error(`[Webhook] Failed to send status change notification:`, error);
     // Don't throw - notification failure shouldn't fail the webhook
   }
 }
