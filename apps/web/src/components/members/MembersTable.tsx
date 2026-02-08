@@ -1,76 +1,37 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Card, CardContent, formatCurrency } from "@wine-club/ui";
+import { Card, CardContent } from "@wine-club/ui";
 import { Plus, X, Download } from "lucide-react";
+import Link from "next/link";
 
-export interface Transaction {
+export interface Member {
   id: string;
-  date: Date;
-  type: string;
-  amount: number;
-  currency: string;
-  customerEmail: string;
-  customerName: string | null;
-  description: string;
-  stripeId: string | null;
-  paymentMethodBrand: string | null;
-  paymentMethodLast4: string | null;
-}
-
-const CARD_BRAND_COLORS: Record<string, { bg: string; text: string; label: string }> = {
-  visa: { bg: "#1a1f71", text: "#ffffff", label: "VISA" },
-  mastercard: { bg: "#eb001b", text: "#ffffff", label: "MC" },
-  amex: { bg: "#006fcf", text: "#ffffff", label: "AMEX" },
-  discover: { bg: "#ff6000", text: "#ffffff", label: "DISC" },
-  diners: { bg: "#0079be", text: "#ffffff", label: "DC" },
-  jcb: { bg: "#0e4c96", text: "#ffffff", label: "JCB" },
-  unionpay: { bg: "#de2910", text: "#ffffff", label: "UP" },
-};
-
-function CardBrandBadge({ brand }: { brand: string }) {
-  const info = CARD_BRAND_COLORS[brand.toLowerCase()] || { bg: "#666", text: "#fff", label: brand.toUpperCase().slice(0, 4) };
-  return (
-    <span
-      className="inline-flex items-center justify-center rounded text-[10px] font-bold leading-none px-1.5 py-1"
-      style={{ backgroundColor: info.bg, color: info.text, minWidth: 36 }}
-    >
-      {info.label}
-    </span>
-  );
-}
-
-function PaymentMethod({ brand, last4 }: { brand: string | null; last4: string | null }) {
-  if (!brand || !last4) return <span className="text-muted-foreground">—</span>;
-  return (
-    <span className="inline-flex items-center gap-2">
-      <CardBrandBadge brand={brand} />
-      <span className="text-sm text-muted-foreground tracking-wide">
-        •••• {last4}
-      </span>
-    </span>
-  );
+  name: string;
+  email: string;
+  status: "ACTIVE" | "INACTIVE";
+  joinedAt: Date;
+  activePlans: string[];
 }
 
 interface FilterState {
   name: string;
   email: string;
-  type: string | null;
+  status: string | null;
+  plan: string | null;
 }
 
-function formatTransactionDate(date: Date, timeZone?: string) {
+function formatJoinedDate(date: Date, timeZone?: string) {
   const d = date instanceof Date ? date : new Date(date);
   const month = new Intl.DateTimeFormat("en-US", { month: "short", timeZone }).format(d);
   const day = new Intl.DateTimeFormat("en-US", { day: "numeric", timeZone }).format(d);
-  const time = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZone }).format(d);
-  return `${month} ${day}, ${time}`;
+  const year = new Intl.DateTimeFormat("en-US", { year: "numeric", timeZone }).format(d);
+  return `${month} ${day}, ${year}`;
 }
 
-const TRANSACTION_TYPES = [
-  { value: "PAYMENT", label: "Payment" },
-  { value: "SUBSCRIPTION_CREATED", label: "Subscription Created" },
-  { value: "VOIDED", label: "Voided" },
-  { value: "PENDING", label: "Pending" },
+const STATUS_OPTIONS = [
+  { value: "ACTIVE", label: "Active" },
+  { value: "INACTIVE", label: "Inactive" },
 ];
 
 function FilterPill({
@@ -123,11 +84,22 @@ function FilterPill({
 
 const PAGE_SIZE = 100;
 
-export function TransactionTable({ transactions, timeZone }: { transactions: Transaction[]; timeZone?: string }) {
+export function MembersTable({
+  members,
+  allPlanNames,
+  businessSlug,
+  timeZone,
+}: {
+  members: Member[];
+  allPlanNames: string[];
+  businessSlug: string;
+  timeZone?: string;
+}) {
   const [filters, setFilters] = useState<FilterState>({
     name: "",
     email: "",
-    type: null,
+    status: null,
+    plan: null,
   });
   const [openFilter, setOpenFilter] = useState<string | null>(null);
   const [nameInput, setNameInput] = useState("");
@@ -135,11 +107,7 @@ export function TransactionTable({ transactions, timeZone }: { transactions: Tra
   const [page, setPage] = useState(0);
 
   const toggleFilter = (key: string) => {
-    if (openFilter === key) {
-      setOpenFilter(null);
-    } else {
-      setOpenFilter(key);
-    }
+    setOpenFilter(openFilter === key ? null : key);
   };
 
   const applyNameFilter = () => {
@@ -147,7 +115,6 @@ export function TransactionTable({ transactions, timeZone }: { transactions: Tra
     setPage(0);
     setOpenFilter(null);
   };
-
   const clearNameFilter = () => {
     setFilters((f) => ({ ...f, name: "" }));
     setNameInput("");
@@ -160,7 +127,6 @@ export function TransactionTable({ transactions, timeZone }: { transactions: Tra
     setPage(0);
     setOpenFilter(null);
   };
-
   const clearEmailFilter = () => {
     setFilters((f) => ({ ...f, email: "" }));
     setEmailInput("");
@@ -168,52 +134,52 @@ export function TransactionTable({ transactions, timeZone }: { transactions: Tra
     setOpenFilter(null);
   };
 
-  const applyTypeFilter = (type: string) => {
-    setFilters((f) => ({ ...f, type }));
+  const applyStatusFilter = (status: string) => {
+    setFilters((f) => ({ ...f, status }));
+    setPage(0);
+    setOpenFilter(null);
+  };
+  const clearStatusFilter = () => {
+    setFilters((f) => ({ ...f, status: null }));
     setPage(0);
     setOpenFilter(null);
   };
 
-  const clearTypeFilter = () => {
-    setFilters((f) => ({ ...f, type: null }));
+  const applyPlanFilter = (plan: string) => {
+    setFilters((f) => ({ ...f, plan }));
+    setPage(0);
+    setOpenFilter(null);
+  };
+  const clearPlanFilter = () => {
+    setFilters((f) => ({ ...f, plan: null }));
     setPage(0);
     setOpenFilter(null);
   };
 
   const exportCsv = () => {
-    const headers = ["Date", "Customer", "Email", "Plan", "Type", "Payment Method", "Amount"];
-    const rows = filtered.map((t) => [
-      t.date instanceof Date ? t.date.toISOString().split("T")[0] : String(t.date).split("T")[0],
-      (t.customerName || t.customerEmail.split("@")[0]).replace(/,/g, ""),
-      t.customerEmail,
-      t.description.replace(/,/g, ""),
-      t.type.replace(/_/g, " "),
-      t.paymentMethodBrand && t.paymentMethodLast4
-        ? `${t.paymentMethodBrand} ****${t.paymentMethodLast4}`
-        : "",
-      t.amount > 0 ? (t.amount / 100).toFixed(2) : "0.00",
+    const headers = ["Name", "Email", "Status", "Joined", "Active Plans"];
+    const rows = filtered.map((m) => [
+      m.name.replace(/,/g, ""),
+      m.email,
+      m.status,
+      m.joinedAt instanceof Date ? m.joinedAt.toISOString().split("T")[0] : String(m.joinedAt).split("T")[0],
+      m.activePlans.join("; "),
     ]);
     const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `transactions-${new Date().toISOString().split("T")[0]}.csv`;
+    a.download = `members-${new Date().toISOString().split("T")[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
-  const filtered = transactions.filter((t) => {
-    if (filters.name) {
-      const name = t.customerName || t.customerEmail.split("@")[0];
-      if (!name.toLowerCase().includes(filters.name.toLowerCase())) return false;
-    }
-    if (filters.email) {
-      if (!t.customerEmail.toLowerCase().includes(filters.email.toLowerCase())) return false;
-    }
-    if (filters.type) {
-      if (t.type !== filters.type) return false;
-    }
+  const filtered = members.filter((m) => {
+    if (filters.name && !m.name.toLowerCase().includes(filters.name.toLowerCase())) return false;
+    if (filters.email && !m.email.toLowerCase().includes(filters.email.toLowerCase())) return false;
+    if (filters.status && m.status !== filters.status) return false;
+    if (filters.plan && !m.activePlans.some((p) => p === filters.plan)) return false;
     return true;
   });
 
@@ -224,7 +190,7 @@ export function TransactionTable({ transactions, timeZone }: { transactions: Tra
     <>
       {/* Title + Filter Pills + Export */}
       <div className="sticky top-0 z-10 -mx-3 px-3 flex items-center gap-2 pb-3 mb-3 border-b border-[#eaeaea] bg-[#fafafa]">
-        <h1 className="text-sm font-medium text-foreground w-[120px] shrink-0">Transactions</h1>
+        <h1 className="text-sm font-medium text-foreground w-[120px] shrink-0">Members</h1>
         <div className="flex items-center gap-1.5">
           <FilterPill
             label={filters.name ? `Name: ${filters.name}` : "Name"}
@@ -279,20 +245,40 @@ export function TransactionTable({ transactions, timeZone }: { transactions: Tra
           </FilterPill>
 
           <FilterPill
-            label={filters.type ? `Type: ${TRANSACTION_TYPES.find((t) => t.value === filters.type)?.label}` : "Type"}
-            active={!!filters.type}
-            onToggle={() => (filters.type ? clearTypeFilter() : toggleFilter("type"))}
-            isOpen={openFilter === "type"}
+            label={filters.status ? `Status: ${filters.status}` : "Status"}
+            active={!!filters.status}
+            onToggle={() => (filters.status ? clearStatusFilter() : toggleFilter("status"))}
+            isOpen={openFilter === "status"}
           >
             <div className="w-52">
-              <p className="px-3 pt-3 pb-1 text-sm font-semibold text-[#171717]">Filter by type</p>
-              {TRANSACTION_TYPES.map((t) => (
+              <p className="px-3 pt-3 pb-1 text-sm font-semibold text-[#171717]">Filter by status</p>
+              {STATUS_OPTIONS.map((s) => (
                 <button
-                  key={t.value}
-                  onClick={() => applyTypeFilter(t.value)}
+                  key={s.value}
+                  onClick={() => applyStatusFilter(s.value)}
                   className="w-full text-left px-3 py-2 text-sm text-[#444] hover:bg-[#f5f5f5] transition-colors"
                 >
-                  {t.label}
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </FilterPill>
+
+          <FilterPill
+            label={filters.plan ? `Plan: ${filters.plan}` : "Plan"}
+            active={!!filters.plan}
+            onToggle={() => (filters.plan ? clearPlanFilter() : toggleFilter("plan"))}
+            isOpen={openFilter === "plan"}
+          >
+            <div className="w-64 max-h-64 overflow-y-auto">
+              <p className="px-3 pt-3 pb-1 text-sm font-semibold text-[#171717]">Filter by plan</p>
+              {allPlanNames.map((plan) => (
+                <button
+                  key={plan}
+                  onClick={() => applyPlanFilter(plan)}
+                  className="w-full text-left px-3 py-2 text-sm text-[#444] hover:bg-[#f5f5f5] transition-colors truncate"
+                >
+                  {plan}
                 </button>
               ))}
             </div>
@@ -315,7 +301,9 @@ export function TransactionTable({ transactions, timeZone }: { transactions: Tra
         <Card>
           <CardContent className="py-12 text-center">
             <p className="text-muted-foreground">
-              {transactions.length === 0 ? "No transactions yet" : "No transactions match filters"}
+              {members.length === 0
+                ? "No members yet. Members will appear here when they subscribe to your plans."
+                : "No members match filters"}
             </p>
           </CardContent>
         </Card>
@@ -326,52 +314,48 @@ export function TransactionTable({ transactions, timeZone }: { transactions: Tra
               <table className="w-full">
                 <thead className="border-b">
                   <tr className="text-left">
-                    <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Date</th>
-                    <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Customer</th>
+                    <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Name</th>
                     <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Email</th>
-                    <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Plan</th>
-                    <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Type</th>
-                    <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Payment method</th>
-                    <th className="px-3 py-2 font-medium text-xs text-muted-foreground text-right">Amount</th>
+                    <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Status</th>
+                    <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Joined</th>
+                    <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Plans</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {paginated.map((transaction) => (
-                    <tr key={transaction.id} className="hover:bg-muted/50">
-                      <td className="px-3 py-2 text-sm">
-                        {formatTransactionDate(transaction.date, timeZone)}
-                      </td>
+                  {paginated.map((member) => (
+                    <tr
+                      key={member.id}
+                      className="hover:bg-muted/50 cursor-pointer"
+                      onClick={() => window.location.href = `/app/${businessSlug}/members/${member.id}`}
+                    >
                       <td className="px-3 py-2 text-sm font-medium">
-                        {transaction.customerName || transaction.customerEmail.split("@")[0]}
+                        {member.name}
                       </td>
                       <td className="px-3 py-2 text-sm text-muted-foreground">
-                        {transaction.customerEmail}
-                      </td>
-                      <td className="px-3 py-2 text-sm">
-                        {transaction.description}
+                        {member.email}
                       </td>
                       <td className="px-3 py-2">
                         <span
                           className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                            transaction.type === "PAYMENT"
+                            member.status === "ACTIVE"
                               ? "bg-green-100 text-green-700"
-                              : transaction.type === "SUBSCRIPTION_CREATED"
-                              ? "bg-blue-100 text-blue-700"
-                              : transaction.type === "VOIDED"
-                              ? "bg-red-100 text-red-700"
                               : "bg-gray-100 text-gray-700"
                           }`}
                         >
-                          {transaction.type.replace(/_/g, " ")}
+                          {member.status}
                         </span>
                       </td>
-                      <td className="px-3 py-2">
-                        <PaymentMethod brand={transaction.paymentMethodBrand} last4={transaction.paymentMethodLast4} />
+                      <td className="px-3 py-2 text-sm text-muted-foreground">
+                        {formatJoinedDate(member.joinedAt, timeZone)}
                       </td>
-                      <td className="px-3 py-2 text-sm text-right font-medium">
-                        {transaction.amount > 0
-                          ? formatCurrency(transaction.amount, transaction.currency)
-                          : "—"}
+                      <td className="px-3 py-2 text-sm max-w-[200px]">
+                        {member.activePlans.length > 0 ? (
+                          <span className="block truncate" title={member.activePlans.join(", ")}>
+                            {member.activePlans.join(", ")}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -384,7 +368,7 @@ export function TransactionTable({ transactions, timeZone }: { transactions: Tra
 
       {/* Footer */}
       <div className="sticky bottom-0 -mx-3 px-3 mt-3 flex items-center justify-between h-10 border-t border-[#eaeaea] bg-[#fafafa] text-xs text-muted-foreground">
-        <span>{filtered.length} result{filtered.length !== 1 ? "s" : ""}</span>
+        <span>{filtered.length} member{filtered.length !== 1 ? "s" : ""}</span>
         {totalPages > 1 && (
           <div className="flex items-center gap-2">
             <button
