@@ -54,11 +54,23 @@ export default async function TransactionsPage({
     }),
   ]);
 
+  // Build a lookup from Stripe subscription ID to plan name
+  const subIdToPlanName = new Map<string, string>();
+  for (const sub of planSubscriptions) {
+    if (sub.stripeSubscriptionId) {
+      subIdToPlanName.set(sub.stripeSubscriptionId, sub.plan.name);
+    }
+  }
+
   // Create combined transaction list
   const transactions = [
     ...stripeInvoices.data.map((invoice) => {
       const charge = typeof invoice.charge === "object" && invoice.charge !== null ? invoice.charge : null;
       const card = charge?.payment_method_details?.card ?? null;
+      // Resolve plan name from invoice's subscription
+      const planName = invoice.subscription
+        ? subIdToPlanName.get(typeof invoice.subscription === "string" ? invoice.subscription : invoice.subscription.id) ?? null
+        : null;
       return {
         id: invoice.id,
         date: new Date(invoice.created * 1000),
@@ -67,7 +79,7 @@ export default async function TransactionsPage({
         currency: invoice.currency,
         customerEmail: invoice.customer_email || "Unknown",
         customerName: invoice.customer_name || null,
-        description: `Invoice ${invoice.number || invoice.id}`,
+        description: planName || "–",
         stripeId: invoice.id,
         paymentMethodBrand: card?.brand ?? null,
         paymentMethodLast4: card?.last4 ?? null,

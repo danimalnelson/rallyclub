@@ -63,7 +63,8 @@ export const LinearMobileSidebar = memo(function LinearMobileSidebar({
     if (href === "") {
       return pathname === basePath;
     }
-    return pathname.startsWith(`${basePath}${href}`);
+    const fullPath = `${basePath}${href}`;
+    return pathname === fullPath || pathname.startsWith(`${fullPath}/`);
   };
 
   const handleSignOut = () => {

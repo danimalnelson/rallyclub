@@ -19,7 +19,6 @@ import {
   ChevronRight,
   LogOut,
   Check,
-  Search,
   Plus,
   Inbox,
   Compass,
@@ -64,7 +63,9 @@ export const LinearSidebar = memo(function LinearSidebar({
     if (href === "") {
       return pathname === basePath;
     }
-    return pathname.startsWith(`${basePath}${href}`);
+    const fullPath = `${basePath}${href}`;
+    // Exact match or match followed by a slash (to prevent /members matching /memberships)
+    return pathname === fullPath || pathname.startsWith(`${fullPath}/`);
   };
 
   const handleSignOut = () => {
@@ -177,14 +178,6 @@ export const LinearSidebar = memo(function LinearSidebar({
             </div>
           </div>
         )}
-      </div>
-
-      {/* Search */}
-      <div className="px-2 pb-2">
-        <button className="w-full flex items-center gap-2.5 px-2 h-9 text-sm font-medium text-[#999] hover:text-[#666] bg-white border border-[#ebebeb] rounded-md transition-colors">
-          <Search className="h-4 w-4" />
-          <span>Search</span>
-        </button>
       </div>
 
       {/* Nav Items */}
