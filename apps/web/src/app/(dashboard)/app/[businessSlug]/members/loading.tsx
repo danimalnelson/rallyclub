@@ -6,36 +6,51 @@ function Skeleton({ className = "" }: { className?: string }) {
 
 export default function MembersLoading() {
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="mb-6 flex justify-end">
-        <Skeleton className="h-9 w-28" />
+    <>
+      {/* Sticky header skeleton */}
+      <div className="sticky top-0 z-10 -mx-3 px-3 pt-3 flex items-center gap-2 pb-3 mb-3 border-b border-[#eaeaea] bg-[#fafafa]">
+        <Skeleton className="h-4 w-[120px] shrink-0" />
+        <div className="flex items-center gap-1.5">
+          <Skeleton className="h-6 w-16 rounded-full" />
+          <Skeleton className="h-6 w-16 rounded-full" />
+          <Skeleton className="h-6 w-14 rounded-full" />
+        </div>
+        <div className="flex-1" />
+        <Skeleton className="h-9 w-20 rounded-md" />
       </div>
 
-      <div className="space-y-4">
-        {[...Array(5)].map((_, i) => (
-          <Card key={i}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div>
-                      <Skeleton className="h-5 w-36 mb-1" />
-                      <Skeleton className="h-4 w-48" />
-                    </div>
-                    <Skeleton className="h-6 w-16 rounded-full" />
-                  </div>
-                  <Skeleton className="h-16 w-full rounded-lg" />
-                  <div className="mt-3 flex items-center gap-4">
-                    <Skeleton className="h-3 w-32" />
-                    <Skeleton className="h-3 w-28" />
-                  </div>
-                </div>
-                <Skeleton className="h-9 w-24 ml-4" />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      {/* Table skeleton */}
+      <Card>
+        <CardContent className="p-0">
+          <table className="w-full">
+            <thead className="border-b">
+              <tr>
+                {["Name", "Email", "Status", "Joined", "Plans"].map((h) => (
+                  <th key={h} className="px-3 h-[42px] text-left">
+                    <Skeleton className="h-3 w-14" />
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {[...Array(8)].map((_, i) => (
+                <tr key={i} className="h-[42px]">
+                  <td className="px-3"><Skeleton className="h-3.5 w-28" /></td>
+                  <td className="px-3"><Skeleton className="h-3.5 w-40" /></td>
+                  <td className="px-3"><Skeleton className="h-5 w-16 rounded" /></td>
+                  <td className="px-3"><Skeleton className="h-3.5 w-24" /></td>
+                  <td className="px-3"><Skeleton className="h-3.5 w-20" /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
+
+      {/* Footer skeleton */}
+      <div className="sticky bottom-0 -mx-3 px-3 mt-3 flex items-center h-10 border-t border-[#eaeaea] bg-[#fafafa]">
+        <Skeleton className="h-3 w-16" />
       </div>
-    </div>
+    </>
   );
 }

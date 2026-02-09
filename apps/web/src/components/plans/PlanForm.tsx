@@ -51,6 +51,7 @@ interface PlanFormProps {
   memberships: Membership[];
   initialData?: Partial<PlanFormData>;
   planId?: string; // If editing
+  onSuccess?: () => void; // If provided, called instead of router.push on save
 }
 
 // Generate next N months starting from current month
@@ -82,6 +83,7 @@ export function PlanForm({
   memberships,
   initialData,
   planId,
+  onSuccess,
 }: PlanFormProps) {
   const router = useRouter();
   const { businessSlug } = useBusinessContext();
@@ -187,9 +189,13 @@ export function PlanForm({
 
       const data = await response.json();
 
-      // Redirect to plans list
-      router.push(`/app/${businessSlug}/plans`);
-      router.refresh();
+      // Close drawer or redirect to plans list
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push(`/app/${businessSlug}/plans`);
+        router.refresh();
+      }
     } catch (err: any) {
       setError(err.message);
       setLoading(false);

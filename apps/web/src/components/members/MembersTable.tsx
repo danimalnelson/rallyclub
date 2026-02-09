@@ -1,14 +1,16 @@
 "use client";
 
-import { useCallback } from "react";
-import { Download } from "lucide-react";
+import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { Download, Plus } from "lucide-react";
 import {
   DataTable,
   useDataTable,
-  StatusBadge,
   type Column,
   type FilterConfig,
 } from "@/components/ui/data-table";
+import { Drawer } from "@/components/ui/drawer";
+import { AddMemberForm } from "./AddMemberForm";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -76,14 +78,18 @@ function filterFn(m: Member, filters: Record<string, string>): boolean {
 export function MembersTable({
   members,
   allPlanNames,
+  businessId,
   businessSlug,
   timeZone,
 }: {
   members: Member[];
   allPlanNames: string[];
+  businessId: string;
   businessSlug: string;
   timeZone?: string;
 }) {
+  const router = useRouter();
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const filterConfigs = buildFilterConfigs(allPlanNames);
 
   const table = useDataTable({
@@ -106,13 +112,8 @@ export function MembersTable({
       render: (m) => m.email,
     },
     {
-      key: "status",
-      label: "Status",
-      render: (m) => <StatusBadge status={m.status} />,
-    },
-    {
       key: "joined",
-      label: "Joined",
+      label: "Created",
       cellClassName: "text-muted-foreground",
       render: (m) => formatJoinedDate(m.joinedAt, timeZone),
     },
@@ -132,7 +133,7 @@ export function MembersTable({
   ];
 
   const exportCsv = useCallback(() => {
-    const headers = ["Name", "Email", "Status", "Joined", "Active Plans"];
+    const headers = ["Name", "Email", "Status", "Created", "Active Plans"];
     const rows = table.filtered.map((m) => [
       m.name.replace(/,/g, ""),
       m.email,
@@ -151,6 +152,7 @@ export function MembersTable({
   }, [table.filtered]);
 
   return (
+  <>
     <DataTable
       title="Members"
       columns={columns}
@@ -174,14 +176,35 @@ export function MembersTable({
       emptyMessage="No members yet. Members will appear here when they subscribe to your plans."
       filteredEmptyMessage="No members match filters"
       actions={
-        <button
-          onClick={exportCsv}
-          className="inline-flex items-center gap-1.5 px-3 h-9 rounded-md text-sm font-medium border border-[#e0e0e0] bg-white text-[#171717] hover:border-[#ccc] transition-colors"
-        >
-          <Download className="h-3.5 w-3.5" />
-          Export
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={exportCsv}
+            className="inline-flex items-center gap-1.5 px-3 h-9 rounded-md text-sm font-medium border border-[#e0e0e0] bg-white text-[#171717] hover:border-[#ccc] transition-colors"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Export
+          </button>
+          <button
+            onClick={() => setDrawerOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 h-9 rounded-md text-sm font-medium bg-[#171717] text-white hover:bg-black transition-colors"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add customer
+          </button>
+        </div>
       }
     />
+
+    <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} title="Add customer">
+      <AddMemberForm
+        businessId={businessId}
+        onSuccess={() => {
+          setDrawerOpen(false);
+          router.refresh();
+        }}
+        onCancel={() => setDrawerOpen(false)}
+      />
+    </Drawer>
+  </>
   );
 }

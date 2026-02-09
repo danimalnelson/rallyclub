@@ -57,6 +57,7 @@ export default async function MembershipsPage({
     <div className="max-w-7xl mx-auto">
       <MembershipsTable
         memberships={flatMemberships}
+        businessId={business.id}
         businessSlug={business.slug}
       />
     </div>

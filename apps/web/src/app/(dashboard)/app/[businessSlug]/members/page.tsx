@@ -87,6 +87,7 @@ export default async function MembersPage({
       <MembersTable
         members={members}
         allPlanNames={allPlanNames}
+        businessId={business.id}
         businessSlug={business.slug}
         timeZone={business.timeZone}
       />

@@ -30,10 +30,11 @@ interface MembershipFormProps {
     benefits: any;
     displayOrder: number;
   };
+  onSuccess?: () => void; // If provided, called instead of router.push on save
 }
 
 export const MembershipForm = React.memo(
-  ({ businessId, membership }: MembershipFormProps) => {
+  ({ businessId, membership, onSuccess }: MembershipFormProps) => {
     const router = useRouter();
     const { businessSlug } = useBusinessContext();
     const isEdit = !!membership;
@@ -189,9 +190,13 @@ export const MembershipForm = React.memo(
             throw new Error(data.error || "Failed to save membership");
           }
 
-          // Success - redirect to memberships list
-          router.push(`/app/${businessSlug}/memberships`);
-          router.refresh();
+          // Close drawer or redirect to memberships list
+          if (onSuccess) {
+            onSuccess();
+          } else {
+            router.push(`/app/${businessSlug}/memberships`);
+            router.refresh();
+          }
         } catch (err) {
           setError(err instanceof Error ? err.message : "An error occurred");
           setIsSubmitting(false);
@@ -217,6 +222,7 @@ export const MembershipForm = React.memo(
         businessId,
         isEdit,
         membership,
+        onSuccess,
         router,
       ]
     );

@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
-import Link from "next/link";
 import {
   DataTable,
   useDataTable,
@@ -9,6 +10,8 @@ import {
   type Column,
   type FilterConfig,
 } from "@/components/ui/data-table";
+import { Drawer } from "@/components/ui/drawer";
+import { MembershipForm } from "./MembershipForm";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -67,11 +70,15 @@ function filterFn(m: Membership, filters: Record<string, string>): boolean {
 
 export function MembershipsTable({
   memberships,
+  businessId,
   businessSlug,
 }: {
   memberships: Membership[];
+  businessId: string;
   businessSlug: string;
 }) {
+  const router = useRouter();
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const table = useDataTable({
     data: memberships,
     filters: FILTER_CONFIGS,
@@ -117,6 +124,7 @@ export function MembershipsTable({
   ];
 
   return (
+  <>
     <DataTable
       title="Memberships"
       columns={columns}
@@ -140,14 +148,25 @@ export function MembershipsTable({
       emptyMessage="No memberships yet. Create your first membership to start offering subscription plans."
       filteredEmptyMessage="No memberships match filters"
       actions={
-        <Link
-          href={`/app/${businessSlug}/memberships/create`}
+        <button
+          onClick={() => setDrawerOpen(true)}
           className="inline-flex items-center gap-1.5 px-3 h-9 rounded-md text-sm font-medium border border-[#e0e0e0] bg-white text-[#171717] hover:border-[#ccc] transition-colors"
         >
           <Plus className="h-3.5 w-3.5" />
           Create membership
-        </Link>
+        </button>
       }
     />
+
+    <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} title="Create membership">
+      <MembershipForm
+        businessId={businessId}
+        onSuccess={() => {
+          setDrawerOpen(false);
+          router.refresh();
+        }}
+      />
+    </Drawer>
+  </>
   );
 }

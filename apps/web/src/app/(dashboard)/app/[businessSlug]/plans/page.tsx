@@ -107,7 +107,15 @@ export default async function PlansPage({
       <PlansTable
         plans={plans}
         allMembershipNames={allMembershipNames}
+        businessId={business.id}
         businessSlug={business.slug}
+        memberships={memberships.map((m) => ({
+          id: m.id,
+          name: m.name,
+          billingAnchor: m.billingAnchor,
+          cohortBillingDay: m.cohortBillingDay,
+          status: m.status,
+        }))}
       />
     </div>
   );

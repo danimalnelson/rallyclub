@@ -151,7 +151,7 @@ export function DataTable<T>({
       {/* Sticky header: title + filters + actions */}
       <div className="sticky top-0 z-10 -mx-3 px-3 pt-3 flex items-center gap-2 pb-3 mb-3 border-b border-[#eaeaea] bg-[#fafafa]">
         <h1 className="text-sm font-medium text-foreground w-[120px] shrink-0">{title}</h1>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           {filterConfigs.map((config) => (
             <FilterPillFromConfig
               key={config.key}
@@ -181,7 +181,7 @@ export function DataTable<T>({
 
       {/* Table */}
       {filtered.length === 0 ? (
-        <Card>
+        <Card className="shadow-none">
           <CardContent className="py-12 text-center">
             <p className="text-muted-foreground">
               {data.length === 0 ? emptyMessage : filteredEmptyMessage}
@@ -189,7 +189,7 @@ export function DataTable<T>({
           </CardContent>
         </Card>
       ) : (
-        <Card>
+        <Card className="shadow-none">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -198,7 +198,7 @@ export function DataTable<T>({
                     {columns.map((col) => (
                       <th
                         key={col.key}
-                        className={`px-3 h-[42px] font-medium text-xs text-muted-foreground ${
+                        className={`px-3 h-[42px] font-medium text-xs text-[#171717] ${
                           col.align === "right" ? "text-right" : ""
                         } ${col.headerClassName || ""}`}
                       >
@@ -336,11 +336,10 @@ function MultiSelectFilterPill({
   const selectedValues = value ? value.split(",") : [];
   const [pending, setPending] = useState<Set<string>>(new Set(selectedValues));
 
-  // Sync pending state when dropdown opens or committed value changes
+  // Sync pending state whenever committed value changes (e.g. filter cleared)
+  // or when the dropdown opens (to reset uncommitted selections)
   useEffect(() => {
-    if (isOpen) {
-      setPending(new Set(value ? value.split(",") : []));
-    }
+    setPending(new Set(value ? value.split(",") : []));
   }, [isOpen, value]);
 
   const toggleOption = (optValue: string) => {

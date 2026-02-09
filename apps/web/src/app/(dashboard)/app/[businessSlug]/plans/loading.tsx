@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader } from "@wine-club/ui";
+import { Card, CardContent } from "@wine-club/ui";
 
 function Skeleton({ className = "" }: { className?: string }) {
   return <div className={`animate-pulse rounded bg-muted ${className}`} />;
@@ -6,49 +6,51 @@ function Skeleton({ className = "" }: { className?: string }) {
 
 export default function PlansLoading() {
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="mb-6 flex justify-end">
-        <Skeleton className="h-9 w-40" />
+    <>
+      {/* Sticky header skeleton */}
+      <div className="sticky top-0 z-10 -mx-3 px-3 pt-3 flex items-center gap-2 pb-3 mb-3 border-b border-[#eaeaea] bg-[#fafafa]">
+        <Skeleton className="h-4 w-[120px] shrink-0" />
+        <div className="flex items-center gap-1.5">
+          <Skeleton className="h-6 w-16 rounded-full" />
+          <Skeleton className="h-6 w-20 rounded-full" />
+        </div>
+        <div className="flex-1" />
+        <Skeleton className="h-9 w-24 rounded-md" />
       </div>
 
-      {/* Membership group */}
-      <div className="space-y-8">
-        {[...Array(2)].map((_, g) => (
-          <div key={g}>
-            <div className="flex items-center justify-between mb-4">
-              <Skeleton className="h-7 w-40" />
-              <Skeleton className="h-9 w-24" />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(3)].map((_, i) => (
-                <Card key={i}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between mb-2">
-                      <Skeleton className="h-6 w-32" />
-                      <Skeleton className="h-5 w-16 rounded-full" />
-                    </div>
-                    <Skeleton className="h-4 w-full" />
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex justify-between">
-                      <Skeleton className="h-4 w-12" />
-                      <Skeleton className="h-5 w-16" />
-                    </div>
-                    <div className="flex justify-between">
-                      <Skeleton className="h-4 w-20" />
-                      <Skeleton className="h-4 w-24" />
-                    </div>
-                    <div className="pt-3 border-t flex justify-between">
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-4 w-8" />
-                    </div>
-                  </CardContent>
-                </Card>
+      {/* Table skeleton */}
+      <Card>
+        <CardContent className="p-0">
+          <table className="w-full">
+            <thead className="border-b">
+              <tr>
+                {["Name", "Membership", "Price", "Interval", "Status", "Subscribers"].map((h) => (
+                  <th key={h} className="px-3 h-[42px] text-left">
+                    <Skeleton className="h-3 w-14" />
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {[...Array(6)].map((_, i) => (
+                <tr key={i} className="h-[42px]">
+                  <td className="px-3"><Skeleton className="h-3.5 w-32" /></td>
+                  <td className="px-3"><Skeleton className="h-3.5 w-24" /></td>
+                  <td className="px-3"><Skeleton className="h-3.5 w-16" /></td>
+                  <td className="px-3"><Skeleton className="h-3.5 w-16" /></td>
+                  <td className="px-3"><Skeleton className="h-5 w-16 rounded" /></td>
+                  <td className="px-3"><Skeleton className="h-3.5 w-8" /></td>
+                </tr>
               ))}
-            </div>
-          </div>
-        ))}
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
+
+      {/* Footer skeleton */}
+      <div className="sticky bottom-0 -mx-3 px-3 mt-3 flex items-center h-10 border-t border-[#eaeaea] bg-[#fafafa]">
+        <Skeleton className="h-3 w-16" />
       </div>
-    </div>
+    </>
   );
 }

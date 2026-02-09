@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { formatCurrency } from "@wine-club/ui";
 import { Plus } from "lucide-react";
-import Link from "next/link";
 import {
   DataTable,
   useDataTable,
@@ -10,6 +11,8 @@ import {
   type Column,
   type FilterConfig,
 } from "@/components/ui/data-table";
+import { Drawer } from "@/components/ui/drawer";
+import { PlanForm } from "./PlanForm";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -64,15 +67,29 @@ function filterFn(p: Plan, filters: Record<string, string>): boolean {
 // Component
 // ---------------------------------------------------------------------------
 
+interface Membership {
+  id: string;
+  name: string;
+  billingAnchor: string;
+  cohortBillingDay?: number | null;
+  status: string;
+}
+
 export function PlansTable({
   plans,
   allMembershipNames,
+  businessId,
   businessSlug,
+  memberships,
 }: {
   plans: Plan[];
   allMembershipNames: string[];
+  businessId: string;
   businessSlug: string;
+  memberships: Membership[];
 }) {
+  const router = useRouter();
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const filterConfigs = buildFilterConfigs(allMembershipNames);
 
   const table = useDataTable({
@@ -123,6 +140,7 @@ export function PlansTable({
   ];
 
   return (
+  <>
     <DataTable
       title="Plans"
       columns={columns}
@@ -146,14 +164,26 @@ export function PlansTable({
       emptyMessage="No plans yet. Create a membership first, then add plans."
       filteredEmptyMessage="No plans match filters"
       actions={
-        <Link
-          href={`/app/${businessSlug}/plans/create`}
+        <button
+          onClick={() => setDrawerOpen(true)}
           className="inline-flex items-center gap-1.5 px-3 h-9 rounded-md text-sm font-medium border border-[#e0e0e0] bg-white text-[#171717] hover:border-[#ccc] transition-colors"
         >
           <Plus className="h-3.5 w-3.5" />
           Create plan
-        </Link>
+        </button>
       }
     />
+
+    <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} title="Create plan">
+      <PlanForm
+        businessId={businessId}
+        memberships={memberships}
+        onSuccess={() => {
+          setDrawerOpen(false);
+          router.refresh();
+        }}
+      />
+    </Drawer>
+  </>
   );
 }

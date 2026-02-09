@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { Plus, X } from "lucide-react";
+import Image from "next/image";
 
 interface FilterPillProps {
   /** The base label that always stays visible (e.g., "Name") */
@@ -31,17 +31,20 @@ export function FilterPill({ label, activeValue, active, onToggle, children, isO
     <div className="relative" ref={ref}>
       <button
         onClick={onToggle}
-        className={`inline-flex items-center gap-1.5 px-2 h-6 rounded-full text-xs font-medium border transition-colors ${
+        className={`group inline-flex items-center gap-1.5 px-2 h-6 rounded-full text-xs font-medium border transition-colors ${
           active
             ? "bg-[#171717] text-white border-[#171717]"
             : "bg-white text-[#666] border-[#e0e0e0] hover:border-[#ccc] hover:text-[#171717]"
         }`}
       >
-        {active ? (
-          <X className="h-3 w-3 opacity-70" />
-        ) : (
-          <Plus className="h-3.5 w-3.5" />
-        )}
+        {/* Fixed 12x12 icon container so label never shifts */}
+        <span className="flex items-center justify-center w-3 h-3 shrink-0">
+          {active ? (
+            <Image src="/filter-x.svg" alt="" width={12} height={12} className="brightness-0 invert" />
+          ) : (
+            <Image src="/filter-plus.svg" alt="" width={12} height={12} className="brightness-50 transition-all group-hover:brightness-0" />
+          )}
+        </span>
         <span>{label}</span>
         {active && activeValue && (
           <>
