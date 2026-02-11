@@ -116,7 +116,7 @@ export function CheckoutModal({
               {plan.pricingType === "FIXED" && plan.basePrice ? (
                 <div className="bg-background/80 rounded-lg p-6 mb-6">
                   <div className="flex items-baseline gap-2 mb-2">
-                    <span className="text-4xl font-semibold tracking-tight">
+                    <span className="text-4xl font-semibold">
                       {formatCurrency(plan.basePrice, plan.currency)}
                     </span>
                     <span className="text-lg text-muted-foreground">

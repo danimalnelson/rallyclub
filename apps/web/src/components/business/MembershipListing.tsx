@@ -98,7 +98,7 @@ export function MembershipListing({
                   >
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-2xl font-semibold tracking-tight truncate">{plan.name}</h4>
+                        <h4 className="text-2xl font-semibold truncate">{plan.name}</h4>
                       </div>
                       
                       {/* Stock Status Badge */}

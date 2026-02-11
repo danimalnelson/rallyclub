@@ -2,11 +2,19 @@
 
 import { useCallback } from "react";
 import { formatCurrency } from "@wine-club/ui";
-import { Download } from "lucide-react";
+import {
+  Download,
+  DollarSign,
+  UserPlus,
+  XCircle,
+  Clock,
+  RotateCcw,
+  Receipt,
+  type LucideIcon,
+} from "lucide-react";
 import {
   DataTable,
   useDataTable,
-  StatusBadge,
   type Column,
   type FilterConfig,
 } from "@/components/ui/data-table";
@@ -67,7 +75,42 @@ function PaymentMethod({ brand, last4 }: { brand: string | null; last4: string |
   return (
     <span className="inline-flex items-center gap-2">
       <CardBrandIcon brand={brand} />
-      <span className="text-sm text-muted-foreground tracking-wide">•••• {last4}</span>
+      <span className="text-sm text-muted-foreground">•••• {last4}</span>
+    </span>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Transaction type icons
+// ---------------------------------------------------------------------------
+
+const TYPE_ICON_CONFIG: Record<string, { icon: LucideIcon; color: string; bg: string }> = {
+  PAYMENT:              { icon: DollarSign, color: "#16a34a", bg: "rgba(22, 163, 74, 0.1)" },
+  CHARGE:               { icon: DollarSign, color: "#16a34a", bg: "rgba(22, 163, 74, 0.1)" },
+  SUBSCRIPTION_CREATED: { icon: UserPlus,   color: "#2563eb", bg: "rgba(37, 99, 235, 0.1)" },
+  VOIDED:               { icon: XCircle,    color: "#dc2626", bg: "rgba(220, 38, 38, 0.1)" },
+  PENDING:              { icon: Clock,      color: "#d97706", bg: "rgba(217, 119, 6, 0.1)" },
+  REFUND:               { icon: RotateCcw,  color: "#9333ea", bg: "rgba(147, 51, 234, 0.1)" },
+  PAYOUT_FEE:           { icon: Receipt,    color: "#666666", bg: "rgba(102, 102, 102, 0.1)" },
+};
+
+const DEFAULT_TYPE_ICON = { icon: DollarSign, color: "#666666", bg: "rgba(102, 102, 102, 0.1)" };
+
+function TransactionTypeLabel({ type }: { type: string }) {
+  const config = TYPE_ICON_CONFIG[type] || DEFAULT_TYPE_ICON;
+  const Icon = config.icon;
+  const raw = type.replace(/_/g, " ");
+  const label = raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
+
+  return (
+    <span className="inline-flex items-center gap-2">
+      <span
+        className="inline-flex items-center justify-center rounded shrink-0"
+        style={{ width: 16, height: 16, backgroundColor: config.bg }}
+      >
+        <Icon style={{ width: 10, height: 10, color: config.color }} strokeWidth={2.5} />
+      </span>
+      <span>{label}</span>
     </span>
   );
 }
@@ -144,14 +187,24 @@ export function TransactionTable({ transactions, timeZone }: { transactions: Tra
 
   const columns: Column<Transaction>[] = [
     {
-      key: "date",
-      label: "Date",
-      render: (t) => formatTransactionDate(t.date, timeZone),
+      key: "type",
+      label: "Type",
+      cellClassName: "font-medium text-[#171717]",
+      render: (t) => <TransactionTypeLabel type={t.type} />,
+    },
+    {
+      key: "amount",
+      label: "Amount",
+      render: (t) => (t.amount > 0 ? formatCurrency(t.amount, t.currency) : "—"),
+    },
+    {
+      key: "plan",
+      label: "Plan",
+      render: (t) => t.description,
     },
     {
       key: "customer",
       label: "Customer",
-      cellClassName: "font-medium",
       render: (t) => t.customerName || t.customerEmail.split("@")[0],
     },
     {
@@ -161,26 +214,14 @@ export function TransactionTable({ transactions, timeZone }: { transactions: Tra
       render: (t) => t.customerEmail,
     },
     {
-      key: "plan",
-      label: "Plan",
-      render: (t) => t.description,
-    },
-    {
-      key: "type",
-      label: "Type",
-      render: (t) => <StatusBadge status={t.type} />,
-    },
-    {
       key: "paymentMethod",
       label: "Payment method",
       render: (t) => <PaymentMethod brand={t.paymentMethodBrand} last4={t.paymentMethodLast4} />,
     },
     {
-      key: "amount",
-      label: "Amount",
-      align: "right",
-      cellClassName: "font-medium",
-      render: (t) => (t.amount > 0 ? formatCurrency(t.amount, t.currency) : "—"),
+      key: "date",
+      label: "Date",
+      render: (t) => formatTransactionDate(t.date, timeZone),
     },
   ];
 

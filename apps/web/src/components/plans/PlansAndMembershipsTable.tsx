@@ -392,7 +392,7 @@ function MembershipSection({
     <>
       {/* Membership row */}
       <tr
-        className="h-[42px] bg-white border-b cursor-pointer hover:bg-muted/50 transition-colors"
+        className="h-[42px] bg-white border-b cursor-pointer hover:bg-[#f5f5f5] active:bg-[#ebebeb] transition-colors"
         onClick={onMembershipClick}
       >
         <td colSpan={colCount} className="px-3">
@@ -413,7 +413,7 @@ function MembershipSection({
       {group.plans.map((plan) => (
         <tr
           key={plan.id}
-          className="h-[42px] hover:bg-muted/50 cursor-pointer border-b"
+          className="h-[42px] hover:bg-[#f5f5f5] active:bg-[#ebebeb] cursor-pointer border-b transition-colors"
           onClick={() => onPlanClick(plan)}
         >
           <td className="pl-3 pr-3 text-sm font-medium">

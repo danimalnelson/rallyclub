@@ -210,13 +210,13 @@ export function DataTable<T>({
                   {paginated.map((item) => (
                     <tr
                       key={keyExtractor(item)}
-                      className={`hover:bg-muted/50 h-[42px] ${onRowClick ? "cursor-pointer" : ""}`}
+                      className={`hover:bg-muted/50 ${onRowClick ? "cursor-pointer" : ""}`}
                       onClick={onRowClick ? () => onRowClick(item) : undefined}
                     >
                       {columns.map((col) => (
                         <td
                           key={col.key}
-                          className={`px-3 text-sm ${
+                          className={`px-3 py-2.5 text-sm align-middle ${
                             col.align === "right" ? "text-right" : ""
                           } ${col.cellClassName || ""}`}
                         >
