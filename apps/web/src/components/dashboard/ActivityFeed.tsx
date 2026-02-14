@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, formatCurrency } from "@wine-club/ui";
 import { UserPlus, UserMinus, CreditCard, Warning } from "geist-icons";
+import { DataView } from "@/components/ui/data-view";
 
 export type ActivityType = "new_member" | "cancellation" | "payment" | "failed_payment";
 
@@ -66,24 +67,16 @@ export function ActivityFeed({
         </div>
       </CardHeader>
       <CardContent>
-        {displayActivities.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">No recent activity</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Activity will appear here when members join or make payments
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {displayActivities.map((activity) => (
-              <ActivityRow
-                key={activity.id}
-                activity={activity}
-                businessSlug={slugOrId}
-              />
-            ))}
-          </div>
-        )}
+        <DataView
+          items={displayActivities}
+          renderItem={(activity) => (
+            <ActivityRow activity={activity} businessSlug={slugOrId} />
+          )}
+          keyExtractor={(a) => a.id}
+          variant="spaced"
+          emptyMessage="No recent activity"
+          emptyDescription="Activity will appear here when members join or make payments"
+        />
       </CardContent>
     </Card>
   );

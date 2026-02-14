@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Card, CardContent, CardHeader, CardTitle } from "@wine-club/ui";
+import { Button } from "@wine-club/ui";
 import { formatDate } from "@wine-club/ui";
 import { Plus, Trash } from "geist-icons";
+import { SectionCard } from "@/components/ui/section-card";
 
 interface Note {
   id: string;
@@ -72,24 +73,23 @@ export function MemberNotes({ consumerId, notes: initialNotes }: MemberNotesProp
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Internal Notes</CardTitle>
-          {!showAddNote && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowAddNote(true)}
-              className="gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Add Note
-            </Button>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <SectionCard
+      title="Internal Notes"
+      actions={
+        !showAddNote && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAddNote(true)}
+            className="gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Add Note
+          </Button>
+        )
+      }
+    >
+      <div className="space-y-4">
         {showAddNote && (
           <form onSubmit={handleAddNote} className="space-y-3">
             <textarea
@@ -148,8 +148,8 @@ export function MemberNotes({ consumerId, notes: initialNotes }: MemberNotesProp
             </div>
           </div>
         ))}
-      </CardContent>
-    </Card>
+      </div>
+    </SectionCard>
   );
 }
 
