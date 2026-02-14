@@ -39,12 +39,12 @@ export default async function CancelPage({
           </div>
 
           <div className="space-y-2">
-            <Button asChild className="w-full" size="lg">
+            <Button asChild className="w-full" size="large">
               <Link href={`/${slug}`}>
                 Browse Plans
               </Link>
             </Button>
-            <Button asChild variant="outline" className="w-full">
+            <Button asChild type="secondary" className="w-full">
               <Link href={`/${slug}/portal`}>
                 Member Portal
               </Link>

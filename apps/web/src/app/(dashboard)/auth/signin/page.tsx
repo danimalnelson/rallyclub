@@ -46,7 +46,7 @@ function SignInForm() {
                 placeholder="you@example.com"
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button htmlType="submit" className="w-full" disabled={loading}>
               {loading ? "Sending magic link..." : "Send Magic Link"}
             </Button>
             <p className="text-xs text-center text-muted-foreground">

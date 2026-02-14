@@ -70,7 +70,7 @@ export default function ConsumerSignInPage() {
                 Click the link in the email to sign in to your member portal. The link expires in 15 minutes.
               </p>
               <Button
-                variant="outline"
+                type="secondary"
                 className="w-full"
                 onClick={() => {
                   setSent(false);
@@ -118,7 +118,7 @@ export default function ConsumerSignInPage() {
               </div>
             )}
 
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button htmlType="submit" className="w-full" disabled={loading}>
               {loading ? "Sending..." : "Send Magic Link"}
             </Button>
 

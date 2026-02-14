@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatCurrency } from "@wine-club/ui";
-import { Card, CardContent } from "@wine-club/ui";
+import { Button, Card, CardContent } from "@wine-club/ui";
 import { Plus } from "geist-icons";
 import { CornerDownRight } from "@/components/icons/CornerDownRight";
 import {
@@ -232,20 +232,19 @@ export function PlansAndMembershipsTable({
         </div>
         <div className="flex-1" />
         <div className="flex items-center gap-1.5">
-          <button
+          <Button
+            type="secondary"
             onClick={() => setMembershipDrawerOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 h-9 rounded-md text-sm font-medium border border-neutral-500 bg-white text-neutral-950 hover:border-neutral-700 transition-colors"
+            prefix={<Plus className="h-3.5 w-3.5" />}
           >
-            <Plus className="h-3.5 w-3.5" />
             Create membership
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setPlanDrawerOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 h-9 rounded-md text-sm font-medium bg-neutral-950 text-white hover:bg-neutral-925 transition-colors"
+            prefix={<Plus className="h-3.5 w-3.5" />}
           >
-            <Plus className="h-3.5 w-3.5" />
             Create plan
-          </button>
+          </Button>
         </div>
       </div>
 

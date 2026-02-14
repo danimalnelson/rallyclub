@@ -168,10 +168,11 @@ export function MembershipListing({
                       
                       {/* Button on the right */}
                       <Button
+                        shape="rounded"
                         className={
                           plan.stockStatus === "AVAILABLE"
-                            ? "rounded-full w-[36px] h-[36px] p-0 text-[1.5rem] leading-none"
-                            : "rounded-full h-10 px-6"
+                            ? "w-[36px] h-[36px] p-0 text-[1.5rem] leading-none"
+                            : "h-10 px-6"
                         }
                         onClick={(e) => {
                           e.stopPropagation();

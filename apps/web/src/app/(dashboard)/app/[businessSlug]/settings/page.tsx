@@ -307,20 +307,17 @@ export default function SettingsPage() {
                     <MagnifyingGlassPlus className="h-3.5 w-3.5 text-neutral-800 shrink-0" />
                   </div>
                   <div className="px-4 py-3 border-t border-neutral-400 flex items-center justify-between">
-                    <button
-                      type="button"
+                    <Button
+                      type="tertiary"
                       onClick={cancelCrop}
-                      className="text-sm font-medium text-neutral-900 hover:text-neutral-950 transition-colors"
                     >
                       Cancel
-                    </button>
-                    <button
-                      type="button"
+                    </Button>
+                    <Button
                       onClick={handleCropConfirm}
-                      className="px-4 h-9 rounded-lg bg-neutral-950 text-white text-sm font-medium hover:bg-neutral-925 transition-colors"
                     >
                       Set Logo
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -464,7 +461,7 @@ export default function SettingsPage() {
 
         {/* Save Button */}
         <div className="flex justify-end">
-          <Button type="submit" disabled={saving} className="min-w-32">
+          <Button htmlType="submit" disabled={saving} className="min-w-32">
             {saving ? "Saving..." : "Save Changes"}
           </Button>
         </div>

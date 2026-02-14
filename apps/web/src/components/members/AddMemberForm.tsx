@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@wine-club/ui";
 
 interface AddMemberFormProps {
   businessId: string;
@@ -92,20 +93,18 @@ export function AddMemberForm({ businessId, onSuccess, onCancel }: AddMemberForm
       </div>
 
       <div className="flex items-center justify-end gap-2 pt-2">
-        <button
-          type="button"
+        <Button
+          type="secondary"
           onClick={onCancel}
-          className="px-3 h-9 rounded-md text-sm font-medium border border-neutral-500 bg-white text-neutral-900 hover:border-neutral-700 hover:text-neutral-950 transition-colors"
         >
           Cancel
-        </button>
-        <button
-          type="submit"
+        </Button>
+        <Button
+          htmlType="submit"
           disabled={loading || !email.trim()}
-          className="px-3 h-9 rounded-md text-sm font-medium bg-neutral-950 text-white hover:bg-neutral-925 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {loading ? "Adding..." : "Add customer"}
-        </button>
+        </Button>
       </div>
     </form>
   );

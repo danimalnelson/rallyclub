@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent } from "@wine-club/ui";
+import { Button, Card, CardContent } from "@wine-club/ui";
 import { FilterPillFromConfig } from "./filter-popover";
 import type { FilterConfig } from "./use-data-table";
 
@@ -84,23 +84,27 @@ function DataTableFooter({
       </span>
       {totalPages > 1 && (
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            type="secondary"
+            size="small"
             onClick={() => setPage((p: number) => Math.max(0, p - 1))}
             disabled={page === 0}
-            className="px-2 h-7 rounded-md border border-neutral-500 bg-white text-neutral-950 text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:border-neutral-700 transition-colors"
+            className="px-2 h-7 text-xs"
           >
             Previous
-          </button>
+          </Button>
           <span>
             {page + 1} / {totalPages}
           </span>
-          <button
+          <Button
+            type="secondary"
+            size="small"
             onClick={() => setPage((p: number) => Math.min(totalPages - 1, p + 1))}
             disabled={page >= totalPages - 1}
-            className="px-2 h-7 rounded-md border border-neutral-500 bg-white text-neutral-950 text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:border-neutral-700 transition-colors"
+            className="px-2 h-7 text-xs"
           >
             Next
-          </button>
+          </Button>
         </div>
       )}
     </div>

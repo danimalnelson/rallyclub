@@ -168,7 +168,7 @@ export function EventTimeline({ testClockId, frozenTime }: EventTimelineProps) {
     return (
       <div className="text-center py-4">
         <p className="text-red-500 text-sm mb-2">{error}</p>
-        <Button variant="outline" size="sm" onClick={fetchDetails}>
+        <Button type="secondary" size="small" onClick={fetchDetails}>
           Retry
         </Button>
       </div>
@@ -185,8 +185,7 @@ export function EventTimeline({ testClockId, frozenTime }: EventTimelineProps) {
     <div className="space-y-6">
       {/* Refresh Button */}
       <div className="flex justify-end">
-        <Button variant="ghost" size="sm" onClick={fetchDetails} disabled={loading}>
-          <RefreshClockwise className={`w-4 h-4 mr-1 ${loading ? "animate-spin" : ""}`} />
+        <Button type="tertiary" size="small" onClick={fetchDetails} disabled={loading} prefix={<RefreshClockwise className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />}>
           Refresh
         </Button>
       </div>

@@ -672,9 +672,8 @@ export const MembershipForm = React.memo(
                   placeholder="e.g., 10% off store purchases"
                 />
                 <Button
-                  type="button"
+                  type="secondary"
                   onClick={handleAddBenefit}
-                  variant="outline"
                 >
                   Add
                 </Button>
@@ -705,14 +704,13 @@ export const MembershipForm = React.memo(
           {/* Actions */}
           <div className="flex items-center justify-between pt-6 border-t">
             <Button
-              type="button"
-              variant="outline"
+              type="secondary"
               onClick={() => onCancel ? onCancel() : router.push(`/app/${businessSlug}/memberships`)}
               disabled={isSubmitting}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button htmlType="submit" disabled={isSubmitting}>
               {isSubmitting
                 ? "Saving..."
                 : isEdit

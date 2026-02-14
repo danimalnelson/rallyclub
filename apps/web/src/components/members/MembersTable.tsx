@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@wine-club/ui";
 import { Download, Plus } from "geist-icons";
 import {
   DataTable,
@@ -185,20 +186,19 @@ export function MembersTable({
       filteredEmptyMessage="No members match filters"
       actions={
         <div className="flex items-center gap-1.5">
-          <button
+          <Button
+            type="secondary"
             onClick={exportCsv}
-            className="inline-flex items-center gap-1.5 px-3 h-9 rounded-md text-sm font-medium border border-neutral-500 bg-white text-neutral-950 hover:border-neutral-700 transition-colors"
+            prefix={<Download className="h-3.5 w-3.5" />}
           >
-            <Download className="h-3.5 w-3.5" />
             Export
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setDrawerOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 h-9 rounded-md text-sm font-medium bg-neutral-950 text-white hover:bg-neutral-925 transition-colors"
+            prefix={<Plus className="h-3.5 w-3.5" />}
           >
-            <Plus className="h-3.5 w-3.5" />
             Add customer
-          </button>
+          </Button>
         </div>
       }
     />

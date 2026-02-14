@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
+import { Button } from "@wine-club/ui";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@wine-club/db";
 import { getBusinessBySlug } from "@/lib/data/business";
@@ -52,9 +53,9 @@ export default async function CreatePlanPage({
             Plans create products and prices in your Stripe account.
           </p>
           <Link href={`/app/${business.slug}/settings`}>
-            <button className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700">
+            <Button type="warning">
               Go to Settings
-            </button>
+            </Button>
           </Link>
         </div>
       </div>
@@ -74,9 +75,9 @@ export default async function CreatePlanPage({
             membership before adding plans.
           </p>
           <Link href={`/app/${business.slug}/memberships/create`}>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+            <Button>
               Create Membership
-            </button>
+            </Button>
           </Link>
         </div>
       </div>

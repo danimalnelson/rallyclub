@@ -55,7 +55,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                   Refresh Page
                 </Button>
                 <Button
-                  variant="outline"
+                  type="secondary"
                   onClick={() => (window.location.href = "/")}
                   className="flex-1"
                 >

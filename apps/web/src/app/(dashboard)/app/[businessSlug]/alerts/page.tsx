@@ -163,16 +163,16 @@ export default function AlertsPage() {
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
           <Button
-            variant={filter === "unresolved" ? "default" : "outline"}
+            type={filter === "unresolved" ? "default" : "secondary"}
             onClick={() => setFilter("unresolved")}
-            size="sm"
+            size="small"
           >
             Unresolved
           </Button>
           <Button
-            variant={filter === "all" ? "default" : "outline"}
+            type={filter === "all" ? "default" : "secondary"}
             onClick={() => setFilter("all")}
-            size="sm"
+            size="small"
           >
             All
           </Button>
@@ -180,9 +180,9 @@ export default function AlertsPage() {
         
         {typeFilter && (
           <Button
-            variant="ghost"
+            type="tertiary"
             onClick={() => setTypeFilter(null)}
-            size="sm"
+            size="small"
           >
             Clear filter ✕
           </Button>
@@ -251,7 +251,7 @@ export default function AlertsPage() {
                 {alert.type === "MISSING_DYNAMIC_PRICE" && !alert.resolved && (
                   <Button
                     onClick={() => handleNavigate(alert)}
-                    size="sm"
+                    size="small"
                   >
                     Set Price
                   </Button>
@@ -260,8 +260,8 @@ export default function AlertsPage() {
                 {!alert.resolved && (
                   <Button
                     onClick={() => handleResolve(alert.id)}
-                    variant="outline"
-                    size="sm"
+                    type="secondary"
+                    size="small"
                   >
                     Resolve
                   </Button>

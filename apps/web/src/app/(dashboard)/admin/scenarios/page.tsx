@@ -206,7 +206,7 @@ export default function ScenariosPage() {
                 <CardTitle className="flex items-center justify-between">
                   {scenario.name}
                   <Button
-                    size="sm"
+                    size="small"
                     onClick={() => runScenario(scenario.type)}
                     disabled={loading}
                   >
@@ -331,11 +331,10 @@ export default function ScenariosPage() {
         {activeScenario && (
           <div className="flex justify-center">
             <Button
-              variant="outline"
+              type="error"
               onClick={cleanupAllTestClocks}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              prefix={<Trash className="w-4 h-4" />}
             >
-              <Trash className="w-4 h-4 mr-2" />
               End Test & Clean Up
             </Button>
           </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@wine-club/ui";
 import { useSession } from "next-auth/react";
 
 interface OnboardingStatus {
@@ -170,19 +171,21 @@ export default function OnboardingReturnPage() {
                 {nextAction.message}
               </p>
               <div className="space-y-3">
-                <button
+                <Button
+                  type="warning"
+                  className="w-full"
                   onClick={() => checkStatus()}
                   disabled={checking}
-                  className="w-full bg-yellow-600 text-white px-4 py-3 rounded-lg hover:bg-yellow-700 disabled:opacity-50 font-medium"
                 >
                   {checking ? "Checking..." : "Check Status"}
-                </button>
-                <button
+                </Button>
+                <Button
+                  type="secondary"
+                  className="w-full"
                   onClick={handleResumeOnboarding}
-                  className="w-full bg-white text-yellow-700 border border-yellow-300 px-4 py-3 rounded-lg hover:bg-yellow-50 font-medium"
                 >
                   Open Stripe Dashboard
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -196,12 +199,13 @@ export default function OnboardingReturnPage() {
               <p className="text-red-700 mb-6 text-center">
                 {nextAction.message}
               </p>
-              <button
+              <Button
+                type="error"
+                className="w-full"
                 onClick={handleResumeOnboarding}
-                className="w-full bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 font-medium"
               >
                 Complete Requirements
-              </button>
+              </Button>
             </div>
           )}
 
@@ -216,12 +220,12 @@ export default function OnboardingReturnPage() {
               <p className="text-blue-700 mb-6 text-center">
                 {nextAction.message}
               </p>
-              <button
+              <Button
+                className="w-full"
                 onClick={handleResumeOnboarding}
-                className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 font-medium"
               >
                 Continue Onboarding
-              </button>
+              </Button>
             </div>
           )}
 

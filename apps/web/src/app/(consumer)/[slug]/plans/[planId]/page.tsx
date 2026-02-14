@@ -69,7 +69,7 @@ export default async function PlanDetailsPage({
               <h1 className="text-2xl font-bold">{business.name}</h1>
             </div>
             <Link href={`/${slug}/portal`}>
-              <Button variant="outline">Member Portal</Button>
+              <Button type="secondary">Member Portal</Button>
             </Link>
           </div>
         </div>
@@ -251,7 +251,7 @@ export default async function PlanDetailsPage({
 
                 {/* CTA Button */}
                 <Button 
-                  size="lg"
+                  size="large"
                   className="w-full text-lg h-14"
                   disabled={plan.stockStatus === "SOLD_OUT" || plan.stockStatus === "COMING_SOON"}
                   asChild={plan.stockStatus === "AVAILABLE" || plan.stockStatus === "WAITLIST"}

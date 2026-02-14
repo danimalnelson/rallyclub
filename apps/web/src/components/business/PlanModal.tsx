@@ -220,9 +220,9 @@ export function PlanModal({
 
             {/* CTA */}
             <Button
-              type="submit"
-              className="w-full h-12 text-base hover:bg-primary/90 transition-colors"
-              size="lg"
+              htmlType="submit"
+              className="w-full h-12 text-base"
+              size="large"
               disabled={isDisabled || !email}
             >
               {plan.stockStatus === "SOLD_OUT"

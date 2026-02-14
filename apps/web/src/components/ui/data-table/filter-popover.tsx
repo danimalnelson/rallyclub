@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { Button } from "@wine-club/ui";
 import { Check } from "geist-icons";
 import { FilterPill } from "./filter-pill";
 import type { FilterConfig, TextFilterConfig, SelectFilterConfig } from "./use-data-table";
@@ -79,12 +80,12 @@ export function FilterPillFromConfig({
             />
           </div>
           <div className="p-3 border-t border-neutral-400">
-            <button
+            <Button
+              className="w-full"
               onClick={onApplyText}
-              className="w-full px-3 h-9 text-sm font-medium text-white bg-neutral-950 rounded-md hover:bg-neutral-925 transition-colors"
             >
               Apply
-            </button>
+            </Button>
           </div>
         </div>
       </FilterPill>
@@ -190,12 +191,12 @@ function MultiSelectFilterPill({
           </div>
         </div>
         <div className="p-3 border-t border-neutral-400 shrink-0">
-          <button
+          <Button
+            className="w-full"
             onClick={applySelection}
-            className="w-full px-3 h-9 text-sm font-medium text-white bg-neutral-950 rounded-md hover:bg-neutral-925 transition-colors"
           >
             Apply
-          </button>
+          </Button>
         </div>
       </div>
     </FilterPill>

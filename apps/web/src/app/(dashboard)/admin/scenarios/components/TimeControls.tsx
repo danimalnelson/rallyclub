@@ -179,12 +179,12 @@ export function TimeControls({ testClockId, currentTime, onTimeAdvanced }: TimeC
           {PRESETS.map((preset) => (
             <Button
               key={preset.label}
-              variant="outline"
-              size="sm"
+              type="secondary"
+              size="small"
               onClick={() => advanceByDuration(preset.seconds)}
               disabled={loading}
+              prefix={<Forward10Seconds className="w-3 h-3" />}
             >
-              <Forward10Seconds className="w-3 h-3 mr-1" />
               {preset.label}
             </Button>
           ))}
@@ -195,12 +195,12 @@ export function TimeControls({ testClockId, currentTime, onTimeAdvanced }: TimeC
       <div>
         <p className="text-sm font-medium mb-2">Cohort Billing Day</p>
         <Button
-          variant="outline"
+          type="secondary"
           className="w-full"
           onClick={advanceToNextFirst}
           disabled={loading}
+          prefix={<Calendar className="w-4 h-4" />}
         >
-          <Calendar className="w-4 h-4 mr-2" />
           Advance to {getNextFirstOfMonth()} (1st of month)
         </Button>
       </div>
@@ -217,7 +217,7 @@ export function TimeControls({ testClockId, currentTime, onTimeAdvanced }: TimeC
             min={new Date(currentTime * 1000).toISOString().slice(0, 16)}
           />
           <Button
-            variant="outline"
+            type="secondary"
             onClick={advanceToDate}
             disabled={loading || !customDate}
           >

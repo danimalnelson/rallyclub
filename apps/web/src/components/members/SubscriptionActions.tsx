@@ -246,16 +246,16 @@ export function SubscriptionActions({
 
                 <div className="flex gap-3 justify-end">
                   <Button
-                    variant="outline"
+                    type="secondary"
                     onClick={() => setShowCancelDialog(false)}
                     disabled={loading}
                   >
                     Keep Subscription
                   </Button>
                   <Button
+                    type="error"
                     onClick={handleCancel}
                     disabled={loading}
-                    className="bg-red-600 hover:bg-red-700"
                   >
                     {loading ? "Cancelling..." : "Cancel Subscription"}
                   </Button>
@@ -272,39 +272,36 @@ export function SubscriptionActions({
     <div className="flex gap-2">
       {canPause && (
         <Button
-          variant="outline"
-          size="sm"
+          type="secondary"
+          size="small"
           onClick={handlePause}
           disabled={loading}
-          className="gap-2"
+          prefix={<PauseCircle size={16} className="h-4 w-4" />}
         >
-          <PauseCircle size={16} className="h-4 w-4" />
           {loading ? "Pausing..." : "Pause"}
         </Button>
       )}
 
       {canResume && (
         <Button
-          variant="outline"
-          size="sm"
+          type="secondary"
+          size="small"
           onClick={handleResume}
           disabled={loading}
-          className="gap-2"
+          prefix={<Play className="h-4 w-4" />}
         >
-          <Play className="h-4 w-4" />
           {loading ? "Resuming..." : "Resume"}
         </Button>
       )}
 
       {canCancel && (
         <Button
-          variant="outline"
-          size="sm"
+          type="error"
+          size="small"
           onClick={() => setShowCancelDialog(true)}
           disabled={loading}
-          className="gap-2 text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-950"
+          prefix={<Cross size={16} className="h-4 w-4" />}
         >
-          <Cross size={16} className="h-4 w-4" />
           Cancel
         </Button>
       )}
@@ -345,16 +342,16 @@ export function SubscriptionActions({
 
               <div className="flex gap-3 justify-end">
                 <Button
-                  variant="outline"
+                  type="secondary"
                   onClick={() => setShowCancelDialog(false)}
                   disabled={loading}
                 >
                   Keep Subscription
                 </Button>
                 <Button
+                  type="error"
                   onClick={handleCancel}
                   disabled={loading}
-                  className="bg-red-600 hover:bg-red-700"
                 >
                   {loading ? "Cancelling..." : "Cancel Subscription"}
                 </Button>

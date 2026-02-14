@@ -162,8 +162,7 @@ function ConnectContent() {
 
             <div className="flex justify-between items-center pt-4">
               <Button
-                type="button"
-                variant="ghost"
+                type="tertiary"
                 onClick={() => router.push("/onboarding/details")}
               >
                 Back

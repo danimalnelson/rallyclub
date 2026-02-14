@@ -12,7 +12,7 @@ export default function HomePage() {
             <Button>Business Dashboard</Button>
           </Link>
           <Link href="/rubytap">
-            <Button variant="outline">View Sample Business</Button>
+            <Button type="secondary">View Sample Business</Button>
           </Link>
         </div>
       </div>

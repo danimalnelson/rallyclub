@@ -4,7 +4,7 @@ import Link from "next/link";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@wine-club/db";
 import { getBusinessBySlug } from "@/lib/data/business";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, formatCurrency } from "@wine-club/ui";
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, formatCurrency } from "@wine-club/ui";
 import { CopyButton } from "@/components/copy-button";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { ActivityFeed, createActivityFromSubscription, createActivityFromTransaction, type ActivityItem } from "@/components/dashboard/ActivityFeed";
@@ -304,9 +304,9 @@ export default async function BusinessDashboardPage({
             <CardContent>
               <div className="flex gap-3">
                 <Link href="/onboarding/return">
-                  <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                  <Button>
                     Check Status
-                  </button>
+                  </Button>
                 </Link>
                 <a 
                   href={`https://dashboard.stripe.com/${business.stripeAccountId}`}

@@ -62,12 +62,12 @@ export default async function SuccessPage({
           </div>
 
           <div className="space-y-2">
-            <Button asChild className="w-full" size="lg">
+            <Button asChild className="w-full" size="large">
               <Link href={`/${slug}/portal`}>
                 Go to Member Portal
               </Link>
             </Button>
-            <Button asChild variant="outline" className="w-full">
+            <Button asChild type="secondary" className="w-full">
               <Link href={`/${slug}`}>
                 Back to {business.name}
               </Link>

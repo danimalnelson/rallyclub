@@ -78,12 +78,11 @@ export function MemberNotes({ consumerId, notes: initialNotes }: MemberNotesProp
       actions={
         !showAddNote && (
           <Button
-            variant="outline"
-            size="sm"
+            type="secondary"
+            size="small"
             onClick={() => setShowAddNote(true)}
-            className="gap-2"
+            prefix={<Plus className="h-4 w-4" />}
           >
-            <Plus className="h-4 w-4" />
             Add Note
           </Button>
         )
@@ -103,9 +102,8 @@ export function MemberNotes({ consumerId, notes: initialNotes }: MemberNotesProp
             />
             <div className="flex gap-2 justify-end">
               <Button
-                type="button"
-                variant="outline"
-                size="sm"
+                type="secondary"
+                size="small"
                 onClick={() => {
                   setShowAddNote(false);
                   setNewNote("");
@@ -114,7 +112,7 @@ export function MemberNotes({ consumerId, notes: initialNotes }: MemberNotesProp
               >
                 Cancel
               </Button>
-              <Button type="submit" size="sm" disabled={loading || !newNote.trim()}>
+              <Button htmlType="submit" size="small" disabled={loading || !newNote.trim()}>
                 {loading ? "Adding..." : "Add Note"}
               </Button>
             </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useStripe, useElements, PaymentElement } from "@stripe/react-stripe-js";
+import { Button } from "@wine-club/ui";
 
 interface PaymentMethodFormProps {
   slug: string;
@@ -88,13 +89,13 @@ export function PaymentMethodForm({ slug, email, onSuccess }: PaymentMethodFormP
         </div>
       )}
 
-      <button
-        type="submit"
+      <Button
+        htmlType="submit"
         disabled={!stripe || isProcessing || success}
-        className="mt-6 w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+        className="mt-6 w-full"
       >
         {isProcessing ? "Processing..." : success ? "Added!" : "Add Payment Method"}
-      </button>
+      </Button>
     </form>
   );
 }
