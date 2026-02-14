@@ -4,92 +4,283 @@
 
 @layer base {
   :root {
-    /* ========== Primitive color tokens (solid baseline) ========== */
-    --color-red: #eb3b5a;
-    --color-orange: #fa8231;
-    --color-yellow: #f7b731;
-    --color-green: #20bf6b;
-    --color-blue: #3867d6;
-    --color-purple: #8854d0;
+    /* Geist Design System (https://vercel.com/geist/colors) */
+    --ds-gray-100-value: 0, 0%, 95%;
+    --ds-gray-200-value: 0, 0%, 92%;
+    --ds-gray-300-value: 0, 0%, 90%;
+    --ds-gray-400-value: 0, 0%, 92%;
+    --ds-gray-500-value: 0, 0%, 79%;
+    --ds-gray-600-value: 0, 0%, 66%;
+    --ds-gray-700-value: 0, 0%, 56%;
+    --ds-gray-800-value: 0, 0%, 49%;
+    --ds-gray-900-value: 0, 0%, 40%;
+    --ds-gray-1000-value: 0, 0%, 9%;
+    --ds-blue-100-value: 212, 100%, 97%;
+    --ds-blue-200-value: 210, 100%, 96%;
+    --ds-blue-300-value: 210, 100%, 94%;
+    --ds-blue-400-value: 209, 100%, 90%;
+    --ds-blue-500-value: 209, 100%, 80%;
+    --ds-blue-600-value: 208, 100%, 66%;
+    --ds-blue-700-value: 212, 100%, 48%;
+    --ds-blue-800-value: 212, 100%, 41%;
+    --ds-blue-900-value: 211, 100%, 42%;
+    --ds-blue-1000-value: 211, 100%, 15%;
+    --ds-red-100-value: 0, 100%, 97%;
+    --ds-red-200-value: 0, 100%, 96%;
+    --ds-red-300-value: 0, 100%, 95%;
+    --ds-red-400-value: 0, 90%, 92%;
+    --ds-red-500-value: 0, 82%, 85%;
+    --ds-red-600-value: 359, 90%, 71%;
+    --ds-red-700-value: 358, 75%, 59%;
+    --ds-red-800-value: 358, 70%, 52%;
+    --ds-red-900-value: 358, 66%, 48%;
+    --ds-red-1000-value: 355, 49%, 15%;
+    --ds-amber-100-value: 39, 100%, 95%;
+    --ds-amber-200-value: 44, 100%, 92%;
+    --ds-amber-300-value: 43, 96%, 90%;
+    --ds-amber-400-value: 42, 100%, 78%;
+    --ds-amber-500-value: 38, 100%, 71%;
+    --ds-amber-600-value: 36, 90%, 62%;
+    --ds-amber-700-value: 39, 100%, 57%;
+    --ds-amber-800-value: 35, 100%, 52%;
+    --ds-amber-900-value: 30, 100%, 32%;
+    --ds-amber-1000-value: 20, 79%, 17%;
+    --ds-green-100-value: 120, 60%, 96%;
+    --ds-green-200-value: 120, 60%, 95%;
+    --ds-green-300-value: 120, 60%, 91%;
+    --ds-green-400-value: 122, 60%, 86%;
+    --ds-green-500-value: 124, 60%, 75%;
+    --ds-green-600-value: 125, 60%, 64%;
+    --ds-green-700-value: 131, 41%, 46%;
+    --ds-green-800-value: 132, 43%, 39%;
+    --ds-green-900-value: 133, 50%, 32%;
+    --ds-green-1000-value: 128, 29%, 15%;
+    --ds-teal-100-value: 169, 70%, 96%;
+    --ds-teal-200-value: 167, 70%, 94%;
+    --ds-teal-300-value: 168, 70%, 90%;
+    --ds-teal-400-value: 170, 70%, 85%;
+    --ds-teal-500-value: 170, 70%, 72%;
+    --ds-teal-600-value: 170, 70%, 57%;
+    --ds-teal-700-value: 173, 80%, 36%;
+    --ds-teal-800-value: 173, 83%, 30%;
+    --ds-teal-900-value: 174, 91%, 25%;
+    --ds-teal-1000-value: 171, 80%, 13%;
+    --ds-purple-100-value: 276, 100%, 97%;
+    --ds-purple-200-value: 277, 87%, 97%;
+    --ds-purple-300-value: 274, 78%, 95%;
+    --ds-purple-400-value: 276, 71%, 92%;
+    --ds-purple-500-value: 274, 70%, 82%;
+    --ds-purple-600-value: 273, 72%, 73%;
+    --ds-purple-700-value: 272, 51%, 54%;
+    --ds-purple-800-value: 272, 47%, 45%;
+    --ds-purple-900-value: 274, 71%, 43%;
+    --ds-purple-1000-value: 276, 100%, 15%;
+    --ds-pink-100-value: 330, 100%, 96%;
+    --ds-pink-200-value: 340, 90%, 96%;
+    --ds-pink-300-value: 340, 82%, 94%;
+    --ds-pink-400-value: 341, 76%, 91%;
+    --ds-pink-500-value: 340, 75%, 84%;
+    --ds-pink-600-value: 341, 75%, 73%;
+    --ds-pink-700-value: 336, 80%, 58%;
+    --ds-pink-800-value: 336, 74%, 51%;
+    --ds-pink-900-value: 336, 65%, 45%;
+    --ds-pink-1000-value: 333, 74%, 15%;
+    --ds-background-100-value: 0, 0%, 100%;
+    --ds-background-200-value: 0, 0%, 98%;
+    --ds-gray-alpha-100: #0000000d;
+    --ds-gray-alpha-200: #00000015;
+    --ds-gray-alpha-300: #0000001a;
+    --ds-gray-alpha-400: #00000014;
+    --ds-gray-alpha-500: #00000036;
+    --ds-gray-alpha-600: #00000057;
+    --ds-gray-alpha-700: #00000070;
+    --ds-gray-alpha-800: #00000082;
+    --ds-gray-alpha-900: #0000009c;
+    --ds-gray-alpha-1000: #000000e8;
 
-    /* Tint scale (color-mix with white) - 100 = base, 75/50/25/10 = lighter */
-    --color-red-100: var(--color-red);
-    --color-red-75: color-mix(in oklch, var(--color-red) 75%, white);
-    --color-red-50: color-mix(in oklch, var(--color-red) 50%, white);
-    --color-red-25: color-mix(in oklch, var(--color-red) 25%, white);
-    --color-red-10: color-mix(in oklch, var(--color-red) 10%, white);
+    /* DS color variables (HSL fallback) */
+    --ds-gray-100: hsl(var(--ds-gray-100-value));
+    --ds-gray-200: hsl(var(--ds-gray-200-value));
+    --ds-gray-300: hsl(var(--ds-gray-300-value));
+    --ds-gray-400: hsl(var(--ds-gray-400-value));
+    --ds-gray-500: hsl(var(--ds-gray-500-value));
+    --ds-gray-600: hsl(var(--ds-gray-600-value));
+    --ds-gray-700: hsl(var(--ds-gray-700-value));
+    --ds-gray-800: hsl(var(--ds-gray-800-value));
+    --ds-gray-900: hsl(var(--ds-gray-900-value));
+    --ds-gray-1000: hsl(var(--ds-gray-1000-value));
+    --ds-blue-100: hsl(var(--ds-blue-100-value));
+    --ds-blue-200: hsl(var(--ds-blue-200-value));
+    --ds-blue-300: hsl(var(--ds-blue-300-value));
+    --ds-blue-400: hsl(var(--ds-blue-400-value));
+    --ds-blue-500: hsl(var(--ds-blue-500-value));
+    --ds-blue-600: hsl(var(--ds-blue-600-value));
+    --ds-blue-700: hsl(var(--ds-blue-700-value));
+    --ds-blue-800: hsl(var(--ds-blue-800-value));
+    --ds-blue-900: hsl(var(--ds-blue-900-value));
+    --ds-blue-1000: hsl(var(--ds-blue-1000-value));
+    --ds-red-100: hsl(var(--ds-red-100-value));
+    --ds-red-200: hsl(var(--ds-red-200-value));
+    --ds-red-300: hsl(var(--ds-red-300-value));
+    --ds-red-400: hsl(var(--ds-red-400-value));
+    --ds-red-500: hsl(var(--ds-red-500-value));
+    --ds-red-600: hsl(var(--ds-red-600-value));
+    --ds-red-700: hsl(var(--ds-red-700-value));
+    --ds-red-800: hsl(var(--ds-red-800-value));
+    --ds-red-900: hsl(var(--ds-red-900-value));
+    --ds-red-1000: hsl(var(--ds-red-1000-value));
+    --ds-amber-100: hsl(var(--ds-amber-100-value));
+    --ds-amber-200: hsl(var(--ds-amber-200-value));
+    --ds-amber-300: hsl(var(--ds-amber-300-value));
+    --ds-amber-400: hsl(var(--ds-amber-400-value));
+    --ds-amber-500: hsl(var(--ds-amber-500-value));
+    --ds-amber-600: hsl(var(--ds-amber-600-value));
+    --ds-amber-700: hsl(var(--ds-amber-700-value));
+    --ds-amber-800: hsl(var(--ds-amber-800-value));
+    --ds-amber-900: hsl(var(--ds-amber-900-value));
+    --ds-amber-1000: hsl(var(--ds-amber-1000-value));
+    --ds-green-100: hsl(var(--ds-green-100-value));
+    --ds-green-200: hsl(var(--ds-green-200-value));
+    --ds-green-300: hsl(var(--ds-green-300-value));
+    --ds-green-400: hsl(var(--ds-green-400-value));
+    --ds-green-500: hsl(var(--ds-green-500-value));
+    --ds-green-600: hsl(var(--ds-green-600-value));
+    --ds-green-700: hsl(var(--ds-green-700-value));
+    --ds-green-800: hsl(var(--ds-green-800-value));
+    --ds-green-900: hsl(var(--ds-green-900-value));
+    --ds-green-1000: hsl(var(--ds-green-1000-value));
+    --ds-teal-100: hsl(var(--ds-teal-100-value));
+    --ds-teal-200: hsl(var(--ds-teal-200-value));
+    --ds-teal-300: hsl(var(--ds-teal-300-value));
+    --ds-teal-400: hsl(var(--ds-teal-400-value));
+    --ds-teal-500: hsl(var(--ds-teal-500-value));
+    --ds-teal-600: hsl(var(--ds-teal-600-value));
+    --ds-teal-700: hsl(var(--ds-teal-700-value));
+    --ds-teal-800: hsl(var(--ds-teal-800-value));
+    --ds-teal-900: hsl(var(--ds-teal-900-value));
+    --ds-teal-1000: hsl(var(--ds-teal-1000-value));
+    --ds-purple-100: hsl(var(--ds-purple-100-value));
+    --ds-purple-200: hsl(var(--ds-purple-200-value));
+    --ds-purple-300: hsl(var(--ds-purple-300-value));
+    --ds-purple-400: hsl(var(--ds-purple-400-value));
+    --ds-purple-500: hsl(var(--ds-purple-500-value));
+    --ds-purple-600: hsl(var(--ds-purple-600-value));
+    --ds-purple-700: hsl(var(--ds-purple-700-value));
+    --ds-purple-800: hsl(var(--ds-purple-800-value));
+    --ds-purple-900: hsl(var(--ds-purple-900-value));
+    --ds-purple-1000: hsl(var(--ds-purple-1000-value));
+    --ds-pink-100: hsl(var(--ds-pink-100-value));
+    --ds-pink-200: hsl(var(--ds-pink-200-value));
+    --ds-pink-300: hsl(var(--ds-pink-300-value));
+    --ds-pink-400: hsl(var(--ds-pink-400-value));
+    --ds-pink-500: hsl(var(--ds-pink-500-value));
+    --ds-pink-600: hsl(var(--ds-pink-600-value));
+    --ds-pink-700: hsl(var(--ds-pink-700-value));
+    --ds-pink-800: hsl(var(--ds-pink-800-value));
+    --ds-pink-900: hsl(var(--ds-pink-900-value));
+    --ds-pink-1000: hsl(var(--ds-pink-1000-value));
+    --ds-background-100: hsl(var(--ds-background-100-value));
+    --ds-background-200: hsl(var(--ds-background-200-value));
 
-    --color-orange-100: var(--color-orange);
-    --color-orange-75: color-mix(in oklch, var(--color-orange) 75%, white);
-    --color-orange-50: color-mix(in oklch, var(--color-orange) 50%, white);
-    --color-orange-25: color-mix(in oklch, var(--color-orange) 25%, white);
-    --color-orange-10: color-mix(in oklch, var(--color-orange) 10%, white);
-
-    --color-yellow-100: var(--color-yellow);
-    --color-yellow-75: color-mix(in oklch, var(--color-yellow) 75%, white);
-    --color-yellow-50: color-mix(in oklch, var(--color-yellow) 50%, white);
-    --color-yellow-25: color-mix(in oklch, var(--color-yellow) 25%, white);
-    --color-yellow-10: color-mix(in oklch, var(--color-yellow) 10%, white);
-
-    --color-green-100: var(--color-green);
-    --color-green-75: color-mix(in oklch, var(--color-green) 75%, white);
-    --color-green-50: color-mix(in oklch, var(--color-green) 50%, white);
-    --color-green-25: color-mix(in oklch, var(--color-green) 25%, white);
-    --color-green-10: color-mix(in oklch, var(--color-green) 10%, white);
-
-    --color-blue-100: var(--color-blue);
-    --color-blue-75: color-mix(in oklch, var(--color-blue) 75%, white);
-    --color-blue-50: color-mix(in oklch, var(--color-blue) 50%, white);
-    --color-blue-25: color-mix(in oklch, var(--color-blue) 25%, white);
-    --color-blue-10: color-mix(in oklch, var(--color-blue) 10%, white);
-
-    --color-purple-100: var(--color-purple);
-    --color-purple-75: color-mix(in oklch, var(--color-purple) 75%, white);
-    --color-purple-50: color-mix(in oklch, var(--color-purple) 50%, white);
-    --color-purple-25: color-mix(in oklch, var(--color-purple) 25%, white);
-    --color-purple-10: color-mix(in oklch, var(--color-purple) 10%, white);
-
-    /* Neutral scale (UI chrome) */
-    --color-neutral-10: color-mix(in oklch, var(--color-neutral-900) 10%, white);
-    --color-neutral-50: #fafafa;
-    --color-neutral-100: #f5f5f5;
-    --color-neutral-200: #f0f0f0;
-    --color-neutral-300: #ebebeb;
-    --color-neutral-400: #eaeaea;
-    --color-neutral-500: #e0e0e0;
-    --color-neutral-600: #d0d0d0;
-    --color-neutral-700: #ccc;
-    --color-neutral-800: #999;
-    --color-neutral-900: #666;
-    --color-neutral-925: #333;
-    --color-neutral-950: #171717;
-
-    /* Semantic aliases */
-    --color-success: var(--color-green);
-    --color-error: var(--color-red);
-    --color-warning: var(--color-yellow);
-
-    /* Vercel-inspired light theme */
-    --background: 0 0% 98%;        /* #fafafa - page background */
-    --foreground: 0 0% 9%;          /* #171717 - primary text */
-    --card: 0 0% 100%;              /* #ffffff - card/content surfaces */
-    --card-foreground: 0 0% 9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 9%;
-    --primary: 0 0% 9%;             /* #171717 - primary actions */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 96%;          /* #f5f5f5 - secondary surfaces */
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96%;              /* #f5f5f5 - muted backgrounds */
-    --muted-foreground: 0 0% 40%;   /* #666666 - muted text */
-    --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 351 77% 58%; /* #eb3b5a - alias to --color-red */
-    --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 92%;             /* #eaeaea - borders */
-    --input: 0 0% 92%;
-    --ring: 0 0% 9%;
+    /* Semantic theme (Geist DS mapping) */
+    --background: var(--ds-background-100-value);   /* page background - white */
+    --foreground: var(--ds-gray-1000-value);        /* primary text */
+    --card: var(--ds-background-100-value);         /* card surfaces */
+    --card-foreground: var(--ds-gray-1000-value);
+    --popover: var(--ds-background-100-value);
+    --popover-foreground: var(--ds-gray-1000-value);
+    --primary: var(--ds-gray-1000-value);            /* primary actions */
+    --primary-foreground: var(--ds-background-100-value);
+    --secondary: var(--ds-background-200-value);    /* secondary surfaces - 98% */
+    --secondary-foreground: var(--ds-gray-1000-value);
+    --muted: var(--ds-background-200-value);        /* muted backgrounds */
+    --muted-foreground: var(--ds-gray-900-value);
+    --accent: var(--ds-background-200-value);
+    --accent-foreground: var(--ds-gray-1000-value);
+    --destructive: var(--ds-red-700-value);
+    --destructive-foreground: var(--ds-background-100-value);
+    --border: var(--ds-gray-400-value);
+    --input: var(--ds-gray-400-value);
+    --ring: var(--ds-gray-1000-value);
     --radius: 0.5rem;
+  }
+}
+
+/* P3 + OKLCH: richer colors on supported displays */
+@media (color-gamut: p3) {
+  @supports (color: oklch(0 0 0)) {
+    :root {
+      --ds-blue-100: oklch(97.32% .0141 251.56);
+      --ds-blue-200: oklch(96.29% .0195 250.59);
+      --ds-blue-300: oklch(94.58% .0293 249.849);
+      --ds-blue-400: oklch(91.58% .0473 245.116);
+      --ds-blue-500: oklch(82.75% .0979 248.48);
+      --ds-blue-600: oklch(73.08% .1583 248.133);
+      --ds-blue-700: oklch(57.61% .2508 258.23);
+      --ds-blue-800: oklch(51.51% .2399 257.85);
+      --ds-blue-900: oklch(53.18% .2399 256.99);
+      --ds-blue-1000: oklch(26.67% .1099 254.34);
+      --ds-red-100: oklch(96.5% .0223 13.09);
+      --ds-red-200: oklch(95.41% .0299 14.2526);
+      --ds-red-300: oklch(94.33% .0369 15.0115);
+      --ds-red-400: oklch(91.51% .0471 19.8);
+      --ds-red-500: oklch(84.47% .1018 17.71);
+      --ds-red-600: oklch(71.12% .1881 21.22);
+      --ds-red-700: oklch(62.56% .2524 23.03);
+      --ds-red-800: oklch(58.19% .2482 25.15);
+      --ds-red-900: oklch(54.99% .232 25.29);
+      --ds-red-1000: oklch(24.8% .1041 18.86);
+      --ds-amber-100: oklch(97.48% .0331 85.79);
+      --ds-amber-200: oklch(96.81% .0495 90.2423);
+      --ds-amber-300: oklch(95.93% .0636 90.52);
+      --ds-amber-400: oklch(91.02% .1322 88.25);
+      --ds-amber-500: oklch(86.55% .1583 79.63);
+      --ds-amber-600: oklch(80.25% .1953 73.59);
+      --ds-amber-700: oklch(81.87% .1969 76.46);
+      --ds-amber-800: oklch(77.21% .1991 64.28);
+      --ds-amber-900: oklch(52.79% .1496 54.65);
+      --ds-amber-1000: oklch(30.83% .099 45.48);
+      --ds-green-100: oklch(97.59% .0289 145.42);
+      --ds-green-200: oklch(96.92% .037 147.15);
+      --ds-green-300: oklch(94.6% .0674 144.23);
+      --ds-green-400: oklch(91.49% .0976 146.24);
+      --ds-green-500: oklch(85.45% .1627 146.3);
+      --ds-green-600: oklch(80.25% .214 145.18);
+      --ds-green-700: oklch(64.58% .1746 147.27);
+      --ds-green-800: oklch(57.81% .1507 147.5);
+      --ds-green-900: oklch(51.75% .1453 147.65);
+      --ds-green-1000: oklch(29.15% .1197 147.38);
+      --ds-teal-100: oklch(97.72% .0359 186.7);
+      --ds-teal-200: oklch(97.06% .0347 180.66);
+      --ds-teal-300: oklch(94.92% .0478 182.07);
+      --ds-teal-400: oklch(92.76% .0718 183.78);
+      --ds-teal-500: oklch(86.88% .1344 182.42);
+      --ds-teal-600: oklch(81.5% .161 178.96);
+      --ds-teal-700: oklch(64.92% .1572 181.95);
+      --ds-teal-800: oklch(57.53% .1392 181.66);
+      --ds-teal-900: oklch(52.08% .1251 182.93);
+      --ds-teal-1000: oklch(32.11% .0788 179.82);
+      --ds-purple-100: oklch(96.65% .0244 312.189);
+      --ds-purple-200: oklch(96.73% .0228 309.8);
+      --ds-purple-300: oklch(94.85% .0364 310.15);
+      --ds-purple-400: oklch(91.77% .0614 312.82);
+      --ds-purple-500: oklch(81.26% .1409 310.8);
+      --ds-purple-600: oklch(72.07% .2083 308.19);
+      --ds-purple-700: oklch(55.5% .3008 306.12);
+      --ds-purple-800: oklch(48.58% .2638 305.73);
+      --ds-purple-900: oklch(47.18% .2579 304);
+      --ds-purple-1000: oklch(23.96% .13 305.66);
+      --ds-pink-100: oklch(95.69% .0359 344.622);
+      --ds-pink-200: oklch(95.71% .0321 353.14);
+      --ds-pink-300: oklch(93.83% .0451 356.29);
+      --ds-pink-400: oklch(91.12% .0573 358.82);
+      --ds-pink-500: oklch(84.28% .0915 356.99);
+      --ds-pink-600: oklch(74.33% .1547 .24);
+      --ds-pink-700: oklch(63.52% .238 1.01);
+      --ds-pink-800: oklch(59.51% .2339 4.21);
+      --ds-pink-900: oklch(53.5% .2058 2.84);
+      --ds-pink-1000: oklch(26% .0977 359);
+    }
   }
 }
 
@@ -122,7 +313,7 @@
   input[type="url"],
   textarea,
   select {
-    border-color: var(--color-neutral-400);
+    border-color: var(--ds-gray-400);
     outline: none;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
@@ -135,7 +326,7 @@
   input[type="url"]:hover,
   textarea:hover,
   select:hover {
-    border-color: var(--color-neutral-700);
+    border-color: var(--ds-gray-600);
   }
   input[type="text"]:focus,
   input[type="email"]:focus,
@@ -146,7 +337,7 @@
   input[type="url"]:focus,
   textarea:focus,
   select:focus {
-    border-color: var(--color-neutral-800);
+    border-color: var(--ds-gray-800);
     box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
   }
 

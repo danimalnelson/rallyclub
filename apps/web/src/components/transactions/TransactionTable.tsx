@@ -87,18 +87,18 @@ function PaymentMethod({ brand, last4 }: { brand: string | null; last4: string |
 // ---------------------------------------------------------------------------
 
 const TYPE_ICON_CONFIG: Record<string, { icon: React.ElementType; color: string; bg: string }> = {
-  PAYMENT:              { icon: Dollar, color: "var(--color-green-100)", bg: "var(--color-green-10)" },
-  CHARGE:               { icon: Dollar, color: "var(--color-green-100)", bg: "var(--color-green-10)" },
-  SUBSCRIPTION_CREATED: { icon: SubscriptionCreated, color: "var(--color-blue-100)", bg: "var(--color-blue-10)" },
-  VOIDED:                   { icon: CrossCircle,    color: "var(--color-red-100)", bg: "var(--color-red-10)" },
-  PENDING:                  { icon: Clock,      color: "var(--color-yellow-100)", bg: "var(--color-yellow-10)" },
-  REFUND:                   { icon: RefreshCounterClockwise,  color: "var(--color-purple-100)", bg: "var(--color-purple-10)" },
-  SUBSCRIPTION_CANCELLED:   { icon: SubscriptionCancelled, color: "var(--color-red-100)", bg: "var(--color-red-10)" },
-  SUBSCRIPTION_PAUSED:      { icon: PauseCircle, color: "var(--color-yellow-100)", bg: "var(--color-yellow-10)" },
-  PAYOUT_FEE:               { icon: FileText,    color: "var(--color-neutral-900)", bg: "var(--color-neutral-10)" },
+  PAYMENT:              { icon: Dollar, color: "var(--ds-green-700)", bg: "var(--ds-green-100)" },
+  CHARGE:               { icon: Dollar, color: "var(--ds-green-700)", bg: "var(--ds-green-100)" },
+  SUBSCRIPTION_CREATED: { icon: SubscriptionCreated, color: "var(--ds-blue-700)", bg: "var(--ds-blue-100)" },
+  VOIDED:               { icon: CrossCircle, color: "var(--ds-red-700)", bg: "var(--ds-red-100)" },
+  PENDING:              { icon: Clock, color: "var(--ds-amber-700)", bg: "var(--ds-amber-100)" },
+  REFUND:               { icon: RefreshCounterClockwise, color: "var(--ds-purple-700)", bg: "var(--ds-purple-100)" },
+  SUBSCRIPTION_CANCELLED:   { icon: SubscriptionCancelled, color: "var(--ds-red-700)", bg: "var(--ds-red-100)" },
+  SUBSCRIPTION_PAUSED:      { icon: PauseCircle, color: "var(--ds-amber-700)", bg: "var(--ds-amber-100)" },
+  PAYOUT_FEE:               { icon: FileText, color: "var(--ds-gray-900)", bg: "var(--ds-gray-100)" },
 };
 
-const DEFAULT_TYPE_ICON = { icon: Dollar, color: "var(--color-neutral-900)", bg: "var(--color-neutral-10)" };
+const DEFAULT_TYPE_ICON = { icon: Dollar, color: "var(--ds-gray-900)", bg: "var(--ds-gray-100)" };
 
 function TypeIcon({ type }: { type: string }) {
   const config = TYPE_ICON_CONFIG[type] || DEFAULT_TYPE_ICON;

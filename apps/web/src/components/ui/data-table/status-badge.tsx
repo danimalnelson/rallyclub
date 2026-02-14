@@ -1,14 +1,14 @@
 "use client";
 
 const STATUS_STYLES: Record<string, { border: string; text: string; bg: string }> = {
-  ACTIVE: { border: "var(--color-green-100)", text: "var(--color-green-100)", bg: "var(--color-green-25)" },
-  PAYMENT: { border: "var(--color-green-100)", text: "var(--color-green-100)", bg: "var(--color-green-25)" },
-  CANCELLED: { border: "var(--color-red-100)", text: "var(--color-red-100)", bg: "var(--color-red-25)" },
-  VOIDED: { border: "var(--color-red-100)", text: "var(--color-red-100)", bg: "var(--color-red-25)" },
-  PENDING: { border: "var(--color-yellow-100)", text: "var(--color-yellow-100)", bg: "var(--color-yellow-25)" },
+  ACTIVE: { border: "var(--ds-green-700)", text: "var(--ds-green-700)", bg: "var(--ds-green-100)" },
+  PAYMENT: { border: "var(--ds-green-700)", text: "var(--ds-green-700)", bg: "var(--ds-green-100)" },
+  CANCELLED: { border: "var(--ds-red-700)", text: "var(--ds-red-700)", bg: "var(--ds-red-100)" },
+  VOIDED: { border: "var(--ds-red-700)", text: "var(--ds-red-700)", bg: "var(--ds-red-100)" },
+  PENDING: { border: "var(--ds-amber-700)", text: "var(--ds-amber-700)", bg: "var(--ds-amber-100)" },
 };
 
-const DEFAULT_STYLE = { border: "var(--color-neutral-800)", text: "var(--color-neutral-800)", bg: "var(--color-neutral-100)" };
+const DEFAULT_STYLE = { border: "var(--ds-gray-800)", text: "var(--ds-gray-800)", bg: "var(--ds-background-200)" };
 
 interface StatusBadgeProps {
   status: string;

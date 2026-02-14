@@ -290,7 +290,7 @@ export default function SettingsPage() {
                       borderRadius={0}
                       scale={zoom}
                       rotate={0}
-                      backgroundColor="var(--color-neutral-100)"
+                      backgroundColor="var(--ds-background-200)"
                     />
                   </div>
                   <div className="px-4 py-3 flex items-center gap-3">

@@ -18,16 +18,16 @@ export default function GlobalError({
             margin: "0 auto",
           }}
         >
-          <h1 style={{ color: "var(--color-red)", marginBottom: "1rem" }}>
+          <h1 style={{ color: "var(--ds-red-700)", marginBottom: "1rem" }}>
             Something went wrong
           </h1>
-          <p style={{ color: "var(--color-neutral-900)", marginBottom: "1rem" }}>
+          <p style={{ color: "var(--ds-gray-900)", marginBottom: "1rem" }}>
             {error.message}
           </p>
           {error.stack && (
             <pre
               style={{
-                background: "var(--color-neutral-100)",
+                background: "var(--ds-background-200)",
                 padding: "1rem",
                 overflow: "auto",
                 fontSize: "12px",
@@ -40,7 +40,7 @@ export default function GlobalError({
           <button
             onClick={reset}
             style={{
-              background: "var(--color-neutral-950)",
+              background: "var(--ds-gray-1000)",
               color: "white",
               border: "none",
               padding: "0.5rem 1rem",
