@@ -44,6 +44,8 @@ interface ListPropsBase<T> {
   headerClassName?: string;
   rowClassName?: string;
   cellClassName?: string;
+  /** Optional actions shown on row hover, fixed on the right */
+  rowActions?: (item: T) => React.ReactNode;
 }
 
 interface ListPropsFlat<T> extends ListPropsBase<T> {
@@ -83,12 +85,14 @@ function renderTableHeader<T>({
   onSort,
   headerHeightRes,
   headerClassNameProp,
+  hasRowActions,
 }: {
   columns: ListColumn<T>[];
   sortState?: SortState;
   onSort?: (key: string) => void;
   headerHeightRes: { className?: string; style?: React.CSSProperties };
   headerClassNameProp?: string;
+  hasRowActions?: boolean;
 }) {
   return (
     <thead className={cn("border-b border-neutral-400 bg-neutral-50", headerClassNameProp)}>
@@ -123,6 +127,13 @@ function renderTableHeader<T>({
             </th>
           );
         })}
+        {hasRowActions && (
+          <th
+            scope="col"
+            className="sticky right-0 z-10 w-[42px] min-w-[42px] shrink-0 bg-neutral-50 px-0 dark:bg-neutral-50"
+            style={{ height: 42 }}
+          />
+        )}
       </tr>
     </thead>
   );
@@ -150,12 +161,12 @@ export function List<T, G = undefined>(
     headerClassName: headerClassNameProp,
     rowClassName: rowClassNameProp,
     cellClassName: cellClassNameProp,
+    rowActions,
   } = props;
 
   const headerHeightRes = resolveHeight(headerHeight, "compact");
-  const rowHeightRes = variableRowHeight
-    ? { className: "min-h-[42px] py-3" }
-    : resolveHeight(rowHeight, "compact");
+  // All rows 42px tall (borders excluded)
+  const rowHeightRes = { className: "!h-[42px]", style: { height: 42, minHeight: 42, maxHeight: 42 } as React.CSSProperties };
 
   const isGrouped = "groups" in props && props.groups;
 
@@ -186,42 +197,43 @@ export function List<T, G = undefined>(
 
     const childRowCn = cn(
       rowHeightRes.className,
-      "hover:bg-muted/50 border-b transition-colors",
+      "hover:bg-muted/50 transition-colors",
       onRowClick && "cursor-pointer",
       childRowClassName ?? rowClassNameProp
     );
 
     const groupRowCn = cn(
-      "h-[42px] bg-white border-b cursor-pointer hover:bg-neutral-100 active:bg-neutral-200 transition-colors",
+      "!h-[42px] bg-white border-b cursor-pointer hover:bg-neutral-100 active:bg-neutral-200 transition-colors",
       groupRowClassName
     );
 
     return (
       <div className={cn("overflow-hidden rounded-lg border bg-card", className)}>
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
+          <table className="w-full min-w-[800px] table-fixed border-collapse">
             {showGroupHeader && renderTableHeader({
               columns,
               sortState,
               onSort,
               headerHeightRes,
               headerClassNameProp,
+              hasRowActions: !!rowActions,
             })}
-            <tbody className="[&>tr:last-child]:border-b-0">
+            <tbody className="[&>tr]:shadow-[inset_0_-1px_0_0_rgb(229_231_235)] dark:[&>tr]:shadow-[inset_0_-1px_0_0_rgb(64_64_64)] [&>tr:last-child]:shadow-none [&>tr:not(:last-child)>td:last-child]:border-b [&>tr:not(:last-child)>td:last-child]:border-neutral-200 dark:[&>tr:not(:last-child)>td:last-child]:border-neutral-700 [&>tr:last-child>td:last-child]:border-b-0">
               {groups.map(({ key, group, items }) => (
                 <React.Fragment key={key}>
                   <tr
                     className={groupRowCn}
                     onClick={onGroupClick ? () => onGroupClick(group) : undefined}
                   >
-                    <td colSpan={columns.length} className="px-3">
+                    <td colSpan={columns.length + (rowActions ? 1 : 0)} className="px-3">
                       {renderGroupHeader(group)}
                     </td>
                   </tr>
                   {items.map((item) => (
                     <tr
                       key={keyExtractor(item)}
-                      className={childRowCn}
+                      className={cn(childRowCn, rowActions && "group")}
                       style={rowHeightRes.style}
                       onClick={onRowClick ? () => onRowClick(item) : undefined}
                     >
@@ -229,15 +241,28 @@ export function List<T, G = undefined>(
                         <td
                           key={col.key}
                           className={cn(
-                            "px-3 text-sm align-middle",
+                            "min-w-0 py-0 px-3 text-sm leading-none align-middle overflow-hidden",
                             col.align === "right" && "text-right",
                             col.cellClassName,
                             cellClassNameProp
                           )}
                         >
-                          {col.render(item)}
+                          <div className="min-w-0 max-h-[42px] leading-none truncate overflow-hidden">
+                            {col.render(item)}
+                          </div>
                         </td>
                       ))}
+                      {rowActions && (
+                        <td
+                          className="sticky right-0 z-10 w-[42px] min-w-[42px] py-0 px-0 align-middle shrink-0 bg-card"
+                          onClick={(e) => e.stopPropagation()}
+                          style={{ height: 42 }}
+                        >
+                          <div className="relative flex h-[42px] w-[42px] items-center justify-center">
+                            {rowActions(item)}
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </React.Fragment>
@@ -269,21 +294,23 @@ export function List<T, G = undefined>(
     rowHeightRes.className,
     "hover:bg-muted/50",
     onRowClick && "cursor-pointer",
+    rowActions && "group",
     rowClassNameProp
   );
 
   return (
     <div className={cn("overflow-hidden rounded-lg border bg-card", className)}>
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
+        <table className="w-full table-fixed border-collapse">
           {renderTableHeader({
             columns,
             sortState,
             onSort,
             headerHeightRes,
             headerClassNameProp,
+            hasRowActions: !!rowActions,
           })}
-          <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
+          <tbody className="[&>tr]:shadow-[inset_0_-1px_0_0_rgb(229_231_235)] dark:[&>tr]:shadow-[inset_0_-1px_0_0_rgb(64_64_64)] [&>tr:last-child]:shadow-none [&>tr:not(:last-child)>td:last-child]:border-b [&>tr:not(:last-child)>td:last-child]:border-neutral-200 dark:[&>tr:not(:last-child)>td:last-child]:border-neutral-700 [&>tr:last-child>td:last-child]:border-b-0">
             {items.map((item) => (
               <tr
                 key={keyExtractor(item)}
@@ -295,15 +322,28 @@ export function List<T, G = undefined>(
                   <td
                     key={col.key}
                     className={cn(
-                      "px-3 text-sm align-middle",
+                      "min-w-0 py-0 px-3 text-sm leading-none align-middle overflow-hidden",
                       col.align === "right" && "text-right",
                       col.cellClassName,
                       cellClassNameProp
                     )}
                   >
-                    {col.render(item)}
+                    <div className="min-w-0 max-h-[42px] truncate overflow-hidden">
+                      {col.render(item)}
+                    </div>
                   </td>
                 ))}
+                {rowActions && (
+                  <td
+                    className="sticky right-0 z-10 w-[42px] min-w-[42px] py-0 px-0 align-middle shrink-0 bg-card"
+                    onClick={(e) => e.stopPropagation()}
+                    style={{ height: 42 }}
+                  >
+                    <div className="relative flex h-[42px] w-[42px] items-center justify-center">
+                      {rowActions(item)}
+                    </div>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

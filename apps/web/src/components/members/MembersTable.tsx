@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/data-table";
 import { Drawer } from "@/components/ui/drawer";
 import { AddMemberForm } from "./AddMemberForm";
+import { MemberActions } from "./MemberActions";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -162,6 +163,13 @@ export function MembersTable({
       onRowClick={(m) => {
         window.location.href = `/app/${businessSlug}/members/${m.id}`;
       }}
+      rowActions={(m) => (
+        <MemberActions
+          memberId={m.id}
+          memberName={m.name}
+          businessSlug={businessSlug}
+        />
+      )}
       filterConfigs={filterConfigs}
       filterValues={table.filterValues}
       inputValues={table.inputValues}

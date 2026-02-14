@@ -34,6 +34,8 @@ interface DataTableProps<T> {
   data: T[];
   keyExtractor: (item: T) => string;
   onRowClick?: (item: T) => void;
+  /** Optional actions shown on row hover, fixed on the right */
+  rowActions?: (item: T) => React.ReactNode;
   /** Filter function applied to each item */
   filterFn: (item: T, activeFilters: Record<string, string>) => boolean;
 
@@ -118,6 +120,7 @@ export function DataTable<T>({
   data,
   keyExtractor,
   onRowClick,
+  rowActions,
   filterFn,
   filterConfigs,
   filterValues,
@@ -191,7 +194,7 @@ export function DataTable<T>({
         <Card className="shadow-none overflow-hidden">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
+              <table className="w-full table-fixed border-collapse">
                 <thead className="border-b bg-neutral-50">
                   <tr className="text-left">
                     {columns.map((col) => (
@@ -205,25 +208,42 @@ export function DataTable<T>({
                         {col.label}
                       </th>
                     ))}
+                    {rowActions && (
+                      <th scope="col" className="sticky right-0 z-10 w-[42px] min-w-[42px] shrink-0 bg-neutral-50 px-0" style={{ height: 42 }} />
+                    )}
                   </tr>
                 </thead>
-                <tbody className="divide-y">
+                <tbody className="[&>tr]:shadow-[inset_0_-1px_0_0_rgb(229_231_235)] dark:[&>tr]:shadow-[inset_0_-1px_0_0_rgb(64_64_64)] [&>tr:last-child]:shadow-none">
                   {paginated.map((item) => (
                     <tr
                       key={keyExtractor(item)}
-                      className={`hover:bg-muted/50 h-[42px] ${onRowClick ? "cursor-pointer" : ""}`}
+                      className={`hover:bg-muted/50 !h-[42px] ${rowActions ? "group" : ""} ${onRowClick ? "cursor-pointer" : ""}`}
+                      style={{ height: 42, minHeight: 42, maxHeight: 42 }}
                       onClick={onRowClick ? () => onRowClick(item) : undefined}
                     >
                       {columns.map((col) => (
                         <td
                           key={col.key}
-                          className={`px-3 text-sm align-middle ${
+                          className={`min-w-0 py-0 px-3 text-sm leading-none align-middle overflow-hidden ${
                             col.align === "right" ? "text-right" : ""
                           } ${col.cellClassName || ""}`}
                         >
-                          {col.render(item)}
+                          <div className="min-w-0 max-h-[42px] leading-none truncate overflow-hidden">
+                            {col.render(item)}
+                          </div>
                         </td>
                       ))}
+                      {rowActions && (
+                        <td
+                          className="sticky right-0 z-10 w-[42px] min-w-[42px] py-0 px-0 align-middle shrink-0 bg-card"
+                          onClick={(e) => e.stopPropagation()}
+                          style={{ height: 42 }}
+                        >
+                          <div className="relative flex h-[42px] w-[42px] items-center justify-center">
+                            {rowActions(item)}
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

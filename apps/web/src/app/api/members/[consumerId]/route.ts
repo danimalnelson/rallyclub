@@ -82,3 +82,52 @@ export async function PATCH(
   }
 }
 
+export async function DELETE(
+  _req: NextRequest,
+  context: { params: Promise<{ consumerId: string }> }
+) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const { consumerId } = await context.params;
+
+    // Find all Member records for this consumer that the user has access to
+    const members = await prisma.member.findMany({
+      where: {
+        consumerId,
+        business: {
+          users: {
+            some: {
+              userId: session.user.id,
+              role: { in: ["OWNER", "ADMIN"] },
+            },
+          },
+        },
+      },
+    });
+
+    if (members.length === 0) {
+      return NextResponse.json({ error: "Member not found" }, { status: 404 });
+    }
+
+    // Delete the Member records (business–consumer link)
+    await prisma.member.deleteMany({
+      where: {
+        id: { in: members.map((m) => m.id) },
+      },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Delete member error:", error);
+    return NextResponse.json(
+      { error: "Failed to delete member" },
+      { status: 500 }
+    );
+  }
+}
+

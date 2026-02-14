@@ -134,6 +134,7 @@ export default async function MemberDetailPage({
           <ActiveSubscriptionsTable
             subscriptions={activeSubscriptions}
             stripeAccountId={business.stripeAccountId}
+            businessSlug={businessSlug}
             emptyMessage={
               subscriptions.length === 0
                 ? "This member has no subscriptions in this business."
