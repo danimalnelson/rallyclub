@@ -1,11 +1,13 @@
+import { Suspense } from "react";
 import { notFound, redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@wine-club/db";
 import { getBusinessBySlug } from "@/lib/data/business";
 import { MembershipsTable } from "@/components/memberships/MembershipsTable";
+import MembershipsLoading from "./loading";
 
-export default async function MembershipsPage({
+async function MembershipsContent({
   params,
 }: {
   params: Promise<{ businessSlug: string }>;
@@ -39,6 +41,7 @@ export default async function MembershipsPage({
       },
     },
     orderBy: [{ displayOrder: "asc" }, { createdAt: "desc" }],
+    take: 200,
   });
 
   const flatMemberships = memberships.map((m) => ({
@@ -54,12 +57,24 @@ export default async function MembershipsPage({
   }));
 
   return (
+    <MembershipsTable
+      memberships={flatMemberships}
+      businessId={business.id}
+      businessSlug={business.slug}
+    />
+  );
+}
+
+export default async function MembershipsPage({
+  params,
+}: {
+  params: Promise<{ businessSlug: string }>;
+}) {
+  return (
     <div className="max-w-7xl mx-auto">
-      <MembershipsTable
-        memberships={flatMemberships}
-        businessId={business.id}
-        businessSlug={business.slug}
-      />
+      <Suspense fallback={<MembershipsLoading />}>
+        <MembershipsContent params={params} />
+      </Suspense>
     </div>
   );
 }

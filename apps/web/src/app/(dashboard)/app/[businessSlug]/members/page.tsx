@@ -1,11 +1,15 @@
+import { Suspense } from "react";
 import { getServerSession } from "next-auth";
 import { redirect, notFound } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@wine-club/db";
 import { getBusinessBySlug } from "@/lib/data/business";
 import { MembersTable } from "@/components/members/MembersTable";
+import MembersLoading from "./loading";
 
-export default async function MembersPage({
+const MEMBERS_PAGE_SIZE = 1000;
+
+async function MembersContent({
   params,
 }: {
   params: Promise<{ businessSlug: string }>;
@@ -23,7 +27,7 @@ export default async function MembersPage({
     notFound();
   }
 
-  // Get all consumers who have subscriptions to this business's plans
+  // Fetch members with a reasonable limit to avoid long page loads
   const planSubscriptions = await prisma.planSubscription.findMany({
     where: {
       plan: {
@@ -37,11 +41,12 @@ export default async function MembersPage({
     orderBy: {
       createdAt: "desc",
     },
+    take: MEMBERS_PAGE_SIZE,
   });
 
   // Group subscriptions by consumer email
   const consumersMap = new Map<string, {
-    consumer: typeof planSubscriptions[0]["consumer"];
+    consumer: (typeof planSubscriptions)[0]["consumer"];
     subscriptions: typeof planSubscriptions;
   }>();
 
@@ -66,31 +71,46 @@ export default async function MembersPage({
   // Shape into flat member objects
   const members = Array.from(consumersMap.values()).map((entry) => {
     const activeStatuses = ["active", "ACTIVE", "trialing"];
-    const activeSubs = entry.subscriptions.filter((s) => activeStatuses.includes(s.status));
+    const activeSubs = entry.subscriptions.filter((s) =>
+      activeStatuses.includes(s.status)
+    );
     const activePlans = [...new Set(activeSubs.map((s) => s.plan.name))];
 
     return {
       id: entry.consumer.id,
       name: entry.consumer.name || entry.consumer.email.split("@")[0],
       email: entry.consumer.email,
-      status: (activeSubs.length > 0 ? "ACTIVE" : "INACTIVE") as "ACTIVE" | "INACTIVE",
+      status: (activeSubs.length > 0 ? "ACTIVE" : "INACTIVE") as
+        | "ACTIVE"
+        | "INACTIVE",
       joinedAt: entry.consumer.createdAt,
       activePlans,
     };
   });
 
-  // Collect all unique plan names for filter dropdown
   const allPlanNames = [...new Set(planSubscriptions.map((s) => s.plan.name))].sort();
 
   return (
+    <MembersTable
+      members={members}
+      allPlanNames={allPlanNames}
+      businessId={business.id}
+      businessSlug={business.slug}
+      timeZone={business.timeZone}
+    />
+  );
+}
+
+export default async function MembersPage({
+  params,
+}: {
+  params: Promise<{ businessSlug: string }>;
+}) {
+  return (
     <div className="max-w-7xl mx-auto">
-      <MembersTable
-        members={members}
-        allPlanNames={allPlanNames}
-        businessId={business.id}
-        businessSlug={business.slug}
-        timeZone={business.timeZone}
-      />
+      <Suspense fallback={<MembersLoading />}>
+        <MembersContent params={params} />
+      </Suspense>
     </div>
   );
 }

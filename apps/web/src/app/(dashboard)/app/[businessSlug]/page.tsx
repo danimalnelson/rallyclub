@@ -143,15 +143,17 @@ export default async function BusinessDashboardPage({
 
   // ── Batch 2: Counts and alerts (4 DB queries) ──
   const [
-    allSubscriptionConsumerIds,
+    totalMembersResult,
     totalPlans,
     dynamicPricingPlans,
     unresolvedAlerts,
   ] = await Promise.all([
-    prisma.planSubscription.findMany({
-      where: { plan: { businessId: business.id } },
-      select: { consumerId: true },
-    }),
+    prisma.$queryRaw<[{ count: bigint }]>`
+      SELECT COUNT(DISTINCT ps."consumerId") as count
+      FROM "PlanSubscription" ps
+      INNER JOIN "Plan" p ON ps."planId" = p.id
+      WHERE p."businessId" = ${business.id}
+    `,
     prisma.plan.count({
       where: { businessId: business.id },
     }),
@@ -230,7 +232,7 @@ export default async function BusinessDashboardPage({
     ? ((activeMembers - weekAgoMembers) / weekAgoMembers) * 100
     : activeMembers > 0 ? 100 : 0;
 
-  const totalMembers = new Set(allSubscriptionConsumerIds.map(s => s.consumerId)).size;
+  const totalMembers = Number(totalMembersResult[0]?.count ?? 0);
 
   // Stripe revenue
   let thisMonthRevenue = 0;

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { getServerSession } from "next-auth";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
@@ -6,49 +7,17 @@ import { prisma } from "@wine-club/db";
 import { getBusinessBySlug } from "@/lib/data/business";
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@wine-club/ui";
 import { PlansAndMembershipsTable } from "@/components/plans/PlansAndMembershipsTable";
+import PlansLoading from "./loading";
 
-export default async function PlansPage({
-  params,
+async function PlansContent({
+  businessId,
+  businessSlug,
 }: {
-  params: Promise<{ businessSlug: string }>;
+  businessId: string;
+  businessSlug: string;
 }) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user) {
-    redirect("/auth/signin");
-  }
-
-  const { businessSlug } = await params;
-  const business = await getBusinessBySlug(businessSlug, session.user.id);
-
-  if (!business) {
-    notFound();
-  }
-
-  // Stripe not connected
-  if (!business.stripeAccountId) {
-    return (
-      <div className="max-w-7xl mx-auto">
-        <Card className="border-yellow-500 bg-yellow-50">
-          <CardHeader>
-            <CardTitle>Connect Stripe First</CardTitle>
-            <CardDescription>
-              You need to connect your Stripe account before creating plans
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href={`/app/${business.slug}/settings`}>
-              <Button>Go to Settings</Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Fetch memberships with their plans
   const memberships = await prisma.membership.findMany({
-    where: { businessId: business.id },
+    where: { businessId },
     include: {
       plans: {
         include: {
@@ -62,9 +31,9 @@ export default async function PlansPage({
       },
     },
     orderBy: [{ displayOrder: "asc" }, { createdAt: "desc" }],
+    take: 200,
   });
 
-  // Shape into MembershipGroup[] with nested plans (includes all fields for edit forms)
   const groups = memberships.map((m) => ({
     id: m.id,
     name: m.name,
@@ -104,12 +73,57 @@ export default async function PlansPage({
   }));
 
   return (
+    <PlansAndMembershipsTable
+      groups={groups}
+      businessId={businessId}
+      businessSlug={businessSlug}
+    />
+  );
+}
+
+export default async function PlansPage({
+  params,
+}: {
+  params: Promise<{ businessSlug: string }>;
+}) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user) {
+    redirect("/auth/signin");
+  }
+
+  const { businessSlug } = await params;
+  const business = await getBusinessBySlug(businessSlug, session.user.id);
+
+  if (!business) {
+    notFound();
+  }
+
+  if (!business.stripeAccountId) {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <Card className="border-yellow-500 bg-yellow-50">
+          <CardHeader>
+            <CardTitle>Connect Stripe First</CardTitle>
+            <CardDescription>
+              You need to connect your Stripe account before creating plans
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href={`/app/${business.slug}/settings`}>
+              <Button>Go to Settings</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
     <div className="max-w-7xl mx-auto">
-      <PlansAndMembershipsTable
-        groups={groups}
-        businessId={business.id}
-        businessSlug={business.slug}
-      />
+      <Suspense fallback={<PlansLoading />}>
+        <PlansContent businessId={business.id} businessSlug={business.slug} />
+      </Suspense>
     </div>
   );
 }

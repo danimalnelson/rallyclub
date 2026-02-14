@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { getServerSession } from "next-auth";
 import { redirect, notFound } from "next/navigation";
 import { prisma, Prisma } from "@wine-club/db";
@@ -6,8 +7,9 @@ import { getStripeClient } from "@wine-club/lib";
 import { Card, CardContent } from "@wine-club/ui";
 import { getBusinessBySlug } from "@/lib/data/business";
 import { TransactionTable } from "@/components/transactions/TransactionTable";
+import TransactionsLoading from "./loading";
 
-export default async function TransactionsPage({
+async function TransactionsContent({
   params,
 }: {
   params: Promise<{ businessSlug: string }>;
@@ -169,6 +171,20 @@ export default async function TransactionsPage({
   return (
     <div className="max-w-7xl mx-auto">
       <TransactionTable transactions={transactions} timeZone={business.timeZone} />
+    </div>
+  );
+}
+
+export default async function TransactionsPage({
+  params,
+}: {
+  params: Promise<{ businessSlug: string }>;
+}) {
+  return (
+    <div className="max-w-7xl mx-auto">
+      <Suspense fallback={<TransactionsLoading />}>
+        <TransactionsContent params={params} />
+      </Suspense>
     </div>
   );
 }
