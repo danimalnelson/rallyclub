@@ -7,7 +7,6 @@ import { Plus } from "geist-icons";
 import {
   DataTable,
   useDataTable,
-  StatusBadge,
   type Column,
   type FilterConfig,
 } from "@/components/ui/data-table";
@@ -108,12 +107,12 @@ export function PlansTable({
     {
       key: "status",
       label: "Status",
-      render: (p) => <StatusBadge status={p.status} />,
+      cellClassName: "capitalize",
+      render: (p) => p.status.toLowerCase(),
     },
     {
       key: "membership",
       label: "Membership",
-      cellClassName: "text-muted-foreground",
       render: (p) => p.membershipName,
     },
     {
@@ -127,7 +126,7 @@ export function PlansTable({
     {
       key: "frequency",
       label: "Frequency",
-      cellClassName: "text-muted-foreground capitalize",
+      cellClassName: "capitalize",
       render: (p) => `${p.frequency.toLowerCase()}ly`,
     },
     {

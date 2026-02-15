@@ -13,7 +13,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-gray-950 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-200",
+          "bg-gray-950 text-white hover:bg-gray-900 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-100",
         secondary:
           "border border-gray-300 bg-white text-gray-950 hover:border-gray-500 dark:border-gray-600 dark:bg-gray-100 dark:text-white dark:hover:border-gray-400",
         tertiary:

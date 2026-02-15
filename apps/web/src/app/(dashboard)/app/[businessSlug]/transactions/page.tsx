@@ -59,7 +59,17 @@ async function TransactionsContent({
     prisma.transaction.findMany({
       where: { businessId: business.id },
       include: {
-        consumer: { select: { email: true, name: true } },
+        consumer: {
+          select: {
+            email: true,
+            name: true,
+            paymentMethods: {
+              orderBy: { createdAt: "desc" },
+              take: 1,
+              select: { brand: true, last4: true },
+            },
+          },
+        },
         subscription: {
           include: { membershipPlan: { select: { name: true } } },
         },
@@ -69,8 +79,18 @@ async function TransactionsContent({
     prisma.planSubscription.findMany({
       where: { plan: { businessId: business.id } },
       include: {
-        consumer: { select: { email: true, name: true } },
-        plan: { select: { name: true } },
+        consumer: {
+          select: {
+            email: true,
+            name: true,
+            paymentMethods: {
+              orderBy: { createdAt: "desc" },
+              take: 1,
+              select: { brand: true, last4: true },
+            },
+          },
+        },
+        plan: { select: { name: true, basePrice: true, currency: true } },
       },
       orderBy: { createdAt: "desc" },
     }),
@@ -95,6 +115,7 @@ async function TransactionsContent({
         consumerToPlanName.get(tx.consumerId) ??
         "–";
 
+      const pm = tx.consumer.paymentMethods[0] ?? null;
       return {
         id: tx.id,
         date: tx.createdAt,
@@ -106,29 +127,48 @@ async function TransactionsContent({
         customerName: tx.consumer.name,
         description: planName,
         stripeId: tx.stripeChargeId || tx.stripePaymentIntentId,
-        paymentMethodBrand: null,
-        paymentMethodLast4: null,
+        paymentMethodBrand: pm?.brand ?? null,
+        paymentMethodLast4: pm?.last4 ?? null,
       };
     }),
 
     // Subscription lifecycle events from PlanSubscription
     ...planSubscriptions.flatMap((sub) => {
+      const pm = sub.consumer.paymentMethods[0] ?? null;
       const items: Transaction[] = [
         {
           id: `sub-created-${sub.id}`,
           date: sub.createdAt,
           dateDisplay: formatDateDisplay(sub.createdAt, business.timeZone),
           type: "SUBSCRIPTION_CREATED",
+          amount: sub.plan.basePrice ?? 0,
+          currency: sub.plan.currency || "usd",
+          customerEmail: sub.consumer.email,
+          customerName: sub.consumer.name,
+          description: sub.plan.name,
+          stripeId: sub.stripeSubscriptionId,
+          paymentMethodBrand: pm?.brand ?? null,
+          paymentMethodLast4: pm?.last4 ?? null,
+        },
+      ];
+
+      // Cancellation scheduled (still active, but will cancel at period end)
+      if (sub.cancelAtPeriodEnd && sub.status !== "canceled") {
+        items.push({
+          id: `sub-cancel-scheduled-${sub.id}`,
+          date: sub.updatedAt,
+          dateDisplay: formatDateDisplay(sub.updatedAt, business.timeZone),
+          type: "CANCELLATION_SCHEDULED",
           amount: 0,
-          currency: "usd",
+          currency: sub.plan.currency || "usd",
           customerEmail: sub.consumer.email,
           customerName: sub.consumer.name,
           description: sub.plan.name,
           stripeId: sub.stripeSubscriptionId,
           paymentMethodBrand: null,
           paymentMethodLast4: null,
-        },
-      ];
+        });
+      }
 
       if (sub.status === "canceled") {
         items.push({
@@ -137,7 +177,7 @@ async function TransactionsContent({
           dateDisplay: formatDateDisplay(sub.updatedAt, business.timeZone),
           type: "SUBSCRIPTION_CANCELLED",
           amount: 0,
-          currency: "usd",
+          currency: sub.plan.currency || "usd",
           customerEmail: sub.consumer.email,
           customerName: sub.consumer.name,
           description: sub.plan.name,
@@ -154,7 +194,7 @@ async function TransactionsContent({
           dateDisplay: formatDateDisplay(sub.pausedAt, business.timeZone),
           type: "SUBSCRIPTION_PAUSED",
           amount: 0,
-          currency: "usd",
+          currency: sub.plan.currency || "usd",
           customerEmail: sub.consumer.email,
           customerName: sub.consumer.name,
           description: sub.plan.name,

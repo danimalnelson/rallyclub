@@ -38,6 +38,13 @@ export default async function MemberDetailPage({
   const [consumer, subscriptions, transactions, note] = await Promise.all([
     prisma.consumer.findUnique({
       where: { id: consumerId },
+      include: {
+        paymentMethods: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: { brand: true, last4: true },
+        },
+      },
     }),
     prisma.planSubscription.findMany({
       where: {
@@ -79,6 +86,9 @@ export default async function MemberDetailPage({
 
   // Build unified activity timeline from subscriptions + transactions
   const activityEvents: MemberActivityEvent[] = [];
+  const pm = consumer.paymentMethods[0] ?? null;
+  const pmBrand = pm?.brand ?? null;
+  const pmLast4 = pm?.last4 ?? null;
 
   // Subscription lifecycle events
   for (const sub of subscriptions) {
@@ -88,8 +98,10 @@ export default async function MemberDetailPage({
       date: sub.createdAt,
       description: sub.plan.name,
       planName: sub.plan.name,
-      amount: null,
-      currency: null,
+      amount: sub.plan.basePrice,
+      currency: sub.plan.currency || "usd",
+      paymentMethodBrand: pmBrand,
+      paymentMethodLast4: pmLast4,
     });
 
     // Cancellation scheduled (still active, but will cancel at period end)
@@ -102,6 +114,8 @@ export default async function MemberDetailPage({
         planName: sub.plan.name,
         amount: null,
         currency: null,
+        paymentMethodBrand: null,
+        paymentMethodLast4: null,
       });
     }
 
@@ -114,6 +128,8 @@ export default async function MemberDetailPage({
         planName: sub.plan.name,
         amount: null,
         currency: null,
+        paymentMethodBrand: null,
+        paymentMethodLast4: null,
       });
     }
 
@@ -126,12 +142,15 @@ export default async function MemberDetailPage({
         planName: sub.plan.name,
         amount: null,
         currency: null,
+        paymentMethodBrand: null,
+        paymentMethodLast4: null,
       });
     }
   }
 
   // Transaction events (payments, refunds)
   for (const tx of transactions) {
+    const showPm = tx.type === "CHARGE" || tx.type === "REFUND";
     activityEvents.push({
       id: `tx-${tx.id}`,
       type: tx.type,
@@ -140,6 +159,8 @@ export default async function MemberDetailPage({
       planName: null,
       amount: tx.amount,
       currency: tx.currency,
+      paymentMethodBrand: showPm ? pmBrand : null,
+      paymentMethodLast4: showPm ? pmLast4 : null,
     });
   }
 

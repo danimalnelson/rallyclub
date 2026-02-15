@@ -110,13 +110,11 @@ export function MembersTable({
     {
       key: "email",
       label: "Email",
-      cellClassName: "text-muted-foreground",
       render: (m) => m.email,
     },
     {
       key: "joined",
-      label: "Created",
-      cellClassName: "text-muted-foreground",
+      label: "Joined",
       render: (m) => formatJoinedDate(m.joinedAt, timeZone),
     },
     {
@@ -135,7 +133,7 @@ export function MembersTable({
   ];
 
   const exportCsv = useCallback(() => {
-    const headers = ["Name", "Email", "Status", "Created", "Active Plans"];
+    const headers = ["Name", "Email", "Status", "Joined", "Active Plans"];
     const rows = table.filtered.map((m) => [
       m.name.replace(/,/g, ""),
       m.email,

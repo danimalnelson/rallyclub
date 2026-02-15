@@ -382,12 +382,20 @@
     stroke-width: 2;
   }
 
-  /* Default icon color: gray-900, darkens to gray-1000 on parent hover */
+  /* Default icon color: gray-900, darkens to gray-1000 on parent hover.
+     Inside buttons, SVGs inherit the button's text color instead. */
   svg {
     color: var(--ds-gray-900);
+  }
+  button svg,
+  [role="button"] svg {
+    color: inherit;
   }
   a:hover svg,
   button:hover svg {
     color: var(--ds-gray-1000);
+  }
+  button:hover svg {
+    color: inherit;
   }
 }

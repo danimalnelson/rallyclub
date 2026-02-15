@@ -5,6 +5,9 @@ import { Button, formatCurrency, formatDate } from "@wine-club/ui";
 import { CrossCircle, FileText } from "geist-icons";
 import { Clock } from "@/components/icons/Clock";
 import { Dollar } from "@/components/icons/Dollar";
+import { Amex } from "@/components/icons/Amex";
+import { Mastercard } from "@/components/icons/Mastercard";
+import { Visa } from "@/components/icons/Visa";
 import { PauseCircle } from "@/components/icons/PauseCircle";
 import { RefreshCounterClockwise } from "@/components/icons/RefreshCounterClockwise";
 import { SubscriptionCancelled } from "@/components/icons/SubscriptionCancelled";
@@ -23,6 +26,8 @@ export interface MemberActivityEvent {
   planName: string | null;
   amount: number | null;
   currency: string | null;
+  paymentMethodBrand: string | null;
+  paymentMethodLast4: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -35,21 +40,21 @@ const TYPE_ICON_CONFIG: Record<
 > = {
   CHARGE: {
     icon: Dollar,
-    color: "var(--ds-green-700)",
-    bg: "var(--ds-green-100)",
-    label: "Payment",
+    color: "var(--ds-gray-900)",
+    bg: "var(--ds-gray-100)",
+    label: "Renewed",
   },
   REFUND: {
     icon: RefreshCounterClockwise,
-    color: "var(--ds-purple-700)",
-    bg: "var(--ds-purple-100)",
-    label: "Refund",
+    color: "var(--ds-amber-700)",
+    bg: "var(--ds-amber-100)",
+    label: "Refunded",
   },
   SUBSCRIPTION_CREATED: {
     icon: SubscriptionCreated,
-    color: "var(--ds-blue-700)",
-    bg: "var(--ds-blue-100)",
-    label: "Subscription started",
+    color: "var(--ds-green-700)",
+    bg: "var(--ds-green-100)",
+    label: "Started",
   },
   CANCELLATION_SCHEDULED: {
     icon: Clock,
@@ -61,19 +66,19 @@ const TYPE_ICON_CONFIG: Record<
     icon: SubscriptionCancelled,
     color: "var(--ds-red-700)",
     bg: "var(--ds-red-100)",
-    label: "Subscription cancelled",
+    label: "Canceled",
   },
   SUBSCRIPTION_PAUSED: {
     icon: PauseCircle,
     color: "var(--ds-amber-700)",
     bg: "var(--ds-amber-100)",
-    label: "Subscription paused",
+    label: "Paused",
   },
   SUBSCRIPTION_RESUMED: {
     icon: SubscriptionCreated,
-    color: "var(--ds-blue-700)",
-    bg: "var(--ds-blue-100)",
-    label: "Subscription resumed",
+    color: "var(--ds-green-700)",
+    bg: "var(--ds-green-100)",
+    label: "Resumed",
   },
   VOIDED: {
     icon: CrossCircle,
@@ -107,13 +112,36 @@ function getTypeConfig(type: string) {
 }
 
 // ---------------------------------------------------------------------------
+// Payment method display
+// ---------------------------------------------------------------------------
+
+function CardBrandIcon({ brand }: { brand: string }) {
+  const key = brand.toLowerCase();
+  if (key === "visa") return <Visa size={16} className="h-4 w-auto" />;
+  if (key === "mastercard") return <Mastercard size={16} className="h-4 w-auto" />;
+  if (key === "amex") return <Amex size={16} className="h-4 w-auto" />;
+  return null;
+}
+
+function PaymentMethod({ brand, last4 }: { brand: string | null; last4: string | null }) {
+  if (!brand || !last4) return <span className="text-muted-foreground">—</span>;
+  return (
+    <div className="flex items-center">
+      <CardBrandIcon brand={brand} />
+      <span className="text-xs ml-2" style={{ letterSpacing: "0.1em" }}>••••</span>
+      <span className="text-sm ml-1">{last4}</span>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Columns
 // ---------------------------------------------------------------------------
 
 const columns: ListColumn<MemberActivityEvent>[] = [
   {
     key: "type",
-    label: "Event",
+    label: "Type",
     cellClassName: "font-medium",
     render: (event) => {
       const config = getTypeConfig(event.type);
@@ -132,22 +160,24 @@ const columns: ListColumn<MemberActivityEvent>[] = [
     },
   },
   {
-    key: "description",
-    label: "Description",
-    render: (event) => (
-      <span className="text-gray-800">
-        {event.description || event.planName || "—"}
-      </span>
-    ),
+    key: "plan",
+    label: "Plan",
+    render: (event) => event.description || event.planName || "—",
   },
   {
     key: "amount",
     label: "Amount",
-    align: "right",
     render: (event) =>
       event.amount && event.currency
         ? formatCurrency(event.amount, event.currency)
         : "—",
+  },
+  {
+    key: "paymentMethod",
+    label: "Payment method",
+    render: (event) => (
+      <PaymentMethod brand={event.paymentMethodBrand} last4={event.paymentMethodLast4} />
+    ),
   },
   {
     key: "date",

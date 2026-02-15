@@ -43,32 +43,12 @@ export function ActiveSubscriptionsTable({
       label: "Plan",
       cellClassName: "font-medium",
       render: (sub) => (
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="truncate">{sub.plan.name}</span>
-          {sub.pausedAt ? (
-            <span className="inline-flex shrink-0 items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300">
-              ⏸ Paused
-            </span>
-          ) : (
-            <span className="inline-flex shrink-0 items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300">
-              {sub.status}
-            </span>
-          )}
-          {sub.cancelAtPeriodEnd && (
-            <span
-              className="shrink-0 text-xs text-yellow-800 dark:text-yellow-200"
-              title="Cancels at end of period"
-            >
-              ⚠️
-            </span>
-          )}
-        </div>
+        <span className="truncate">{sub.plan.name}</span>
       ),
     },
     {
       key: "price",
       label: "Price",
-      cellClassName: "text-muted-foreground",
       render: (sub) =>
         sub.plan.basePrice
           ? formatCurrency(sub.plan.basePrice, sub.plan.currency)
@@ -77,20 +57,24 @@ export function ActiveSubscriptionsTable({
     {
       key: "period",
       label: "Current Period",
-      cellClassName: "text-muted-foreground",
       render: (sub) =>
         `${formatDate(sub.currentPeriodStart)} – ${formatDate(sub.currentPeriodEnd)}`,
     },
     {
       key: "nextBilling",
       label: "Next Billing",
-      cellClassName: "text-muted-foreground",
-      render: (sub) => formatDate(sub.currentPeriodEnd),
+      render: (sub) =>
+        sub.cancelAtPeriodEnd ? (
+          <span className="text-red-600">Cancels {formatDate(sub.currentPeriodEnd)}</span>
+        ) : sub.pausedAt ? (
+          <span className="text-amber-600">Paused</span>
+        ) : (
+          formatDate(sub.currentPeriodEnd)
+        ),
     },
     {
       key: "created",
-      label: "Created",
-      cellClassName: "text-muted-foreground",
+      label: "Started",
       render: (sub) => formatDate(sub.createdAt),
     },
     {

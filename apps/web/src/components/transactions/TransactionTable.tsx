@@ -87,12 +87,13 @@ function PaymentMethod({ brand, last4 }: { brand: string | null; last4: string |
 // ---------------------------------------------------------------------------
 
 const TYPE_ICON_CONFIG: Record<string, { icon: React.ElementType; color: string; bg: string }> = {
-  PAYMENT:              { icon: Dollar, color: "var(--ds-green-700)", bg: "var(--ds-green-100)" },
-  CHARGE:               { icon: Dollar, color: "var(--ds-green-700)", bg: "var(--ds-green-100)" },
-  SUBSCRIPTION_CREATED: { icon: SubscriptionCreated, color: "var(--ds-blue-700)", bg: "var(--ds-blue-100)" },
+  PAYMENT:              { icon: Dollar, color: "var(--ds-gray-900)", bg: "var(--ds-gray-100)" },
+  CHARGE:               { icon: Dollar, color: "var(--ds-gray-900)", bg: "var(--ds-gray-100)" },
+  SUBSCRIPTION_CREATED: { icon: SubscriptionCreated, color: "var(--ds-green-700)", bg: "var(--ds-green-100)" },
   VOIDED:               { icon: CrossCircle, color: "var(--ds-red-700)", bg: "var(--ds-red-100)" },
   PENDING:              { icon: Clock, color: "var(--ds-amber-700)", bg: "var(--ds-amber-100)" },
-  REFUND:               { icon: RefreshCounterClockwise, color: "var(--ds-purple-700)", bg: "var(--ds-purple-100)" },
+  REFUND:               { icon: RefreshCounterClockwise, color: "var(--ds-amber-700)", bg: "var(--ds-amber-100)" },
+  CANCELLATION_SCHEDULED:   { icon: Clock, color: "var(--ds-amber-700)", bg: "var(--ds-amber-100)" },
   SUBSCRIPTION_CANCELLED:   { icon: SubscriptionCancelled, color: "var(--ds-red-700)", bg: "var(--ds-red-100)" },
   SUBSCRIPTION_PAUSED:      { icon: PauseCircle, color: "var(--ds-amber-700)", bg: "var(--ds-amber-100)" },
   PAYOUT_FEE:               { icon: FileText, color: "var(--ds-gray-900)", bg: "var(--ds-gray-100)" },
@@ -114,12 +115,13 @@ function TypeIcon({ type }: { type: string }) {
 }
 
 const TYPE_LABELS: Record<string, string> = {
-  CHARGE: "Payment",
-  REFUND: "Refund",
+  CHARGE: "Renewed",
+  REFUND: "Refunded",
   PAYOUT_FEE: "Payout fee",
-  SUBSCRIPTION_CREATED: "Subscription started",
-  SUBSCRIPTION_CANCELLED: "Subscription cancelled",
-  SUBSCRIPTION_PAUSED: "Subscription paused",
+  SUBSCRIPTION_CREATED: "Started",
+  CANCELLATION_SCHEDULED: "Canceling",
+  SUBSCRIPTION_CANCELLED: "Canceled",
+  SUBSCRIPTION_PAUSED: "Paused",
 };
 
 function TransactionTypeLabel({ type }: { type: string }) {
@@ -155,11 +157,12 @@ const FILTER_CONFIGS: FilterConfig[] = [
     key: "type",
     label: "Type",
     options: [
-      { value: "CHARGE", label: "Payment", icon: <TypeIcon type="CHARGE" /> },
-      { value: "REFUND", label: "Refund", icon: <TypeIcon type="REFUND" /> },
-      { value: "SUBSCRIPTION_CREATED", label: "Subscription started", icon: <TypeIcon type="SUBSCRIPTION_CREATED" /> },
-      { value: "SUBSCRIPTION_CANCELLED", label: "Subscription canceled", icon: <TypeIcon type="SUBSCRIPTION_CANCELLED" /> },
-      { value: "SUBSCRIPTION_PAUSED", label: "Subscription paused", icon: <TypeIcon type="SUBSCRIPTION_PAUSED" /> },
+      { value: "CHARGE", label: "Renewed", icon: <TypeIcon type="CHARGE" /> },
+      { value: "REFUND", label: "Refunded", icon: <TypeIcon type="REFUND" /> },
+      { value: "SUBSCRIPTION_CREATED", label: "Started", icon: <TypeIcon type="SUBSCRIPTION_CREATED" /> },
+      { value: "CANCELLATION_SCHEDULED", label: "Canceling", icon: <TypeIcon type="CANCELLATION_SCHEDULED" /> },
+      { value: "SUBSCRIPTION_CANCELLED", label: "Canceled", icon: <TypeIcon type="SUBSCRIPTION_CANCELLED" /> },
+      { value: "SUBSCRIPTION_PAUSED", label: "Paused", icon: <TypeIcon type="SUBSCRIPTION_PAUSED" /> },
     ],
   },
   { type: "text", key: "name", label: "Name" },

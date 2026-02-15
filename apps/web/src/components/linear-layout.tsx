@@ -54,7 +54,7 @@ export function LinearLayout({
 
       {/* Main Content Area */}
       <main className="lg:pl-[241px] min-h-screen">
-        <div className="px-3 pb-3">
+        <div className="px-3">
           {children}
         </div>
       </main>
