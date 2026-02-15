@@ -603,6 +603,8 @@ model PlanSubscription {
   @@index([stripeSubscriptionId])
   @@index([consumerId, status])
   @@index([planId, status])
+  @@index([planId, createdAt])            // Dashboard: "new subs in last 7 days"
+  @@index([planId, status, updatedAt])    // Dashboard: "cancellations in last 7 days"
   @@map("plan_subscriptions")
 }
 

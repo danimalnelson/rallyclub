@@ -5,7 +5,7 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ["@wine-club/ui", "@wine-club/lib", "@wine-club/db", "@wine-club/emails"],
-  serverExternalPackages: ["@prisma/client", "prisma", "svix", "resend"],
+  serverExternalPackages: ["@prisma/client", ".prisma/client", "prisma", "svix", "resend"],
   experimental: {
     serverActions: {
       bodySizeLimit: "2mb",
