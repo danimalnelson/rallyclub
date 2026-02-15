@@ -44,7 +44,7 @@ export default async function CancelPage({
                 Browse Plans
               </Link>
             </Button>
-            <Button asChild type="secondary" className="w-full">
+            <Button asChild variant="secondary" className="w-full">
               <Link href={`/${slug}/portal`}>
                 Member Portal
               </Link>

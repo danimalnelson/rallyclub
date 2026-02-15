@@ -102,7 +102,7 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
-                <Button htmlType="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Processing..." : "Continue to Payment"}
                 </Button>
 

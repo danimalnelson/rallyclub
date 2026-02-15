@@ -1,6 +1,6 @@
 import { PAGE_HEADER_BAR_CLASSES } from "./page-header";
 
-const SKELETON_CLASS = "animate-pulse rounded bg-neutral-400";
+const SKELETON_CLASS = "animate-pulse rounded bg-gray-400";
 
 /**
  * Filter pill skeletons for use in ListView loading state.

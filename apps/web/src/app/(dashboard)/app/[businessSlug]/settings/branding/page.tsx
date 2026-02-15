@@ -183,7 +183,7 @@ export default function BrandingPage() {
 
         {/* Save Button */}
         <div className="flex justify-end">
-          <Button htmlType="submit" disabled={saving} className="min-w-32">
+          <Button type="submit" disabled={saving} className="min-w-32">
             {saving ? "Saving..." : "Save Changes"}
           </Button>
         </div>

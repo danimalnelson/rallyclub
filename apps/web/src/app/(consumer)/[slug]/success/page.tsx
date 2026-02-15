@@ -67,7 +67,7 @@ export default async function SuccessPage({
                 Go to Member Portal
               </Link>
             </Button>
-            <Button asChild type="secondary" className="w-full">
+            <Button asChild variant="secondary" className="w-full">
               <Link href={`/${slug}`}>
                 Back to {business.name}
               </Link>

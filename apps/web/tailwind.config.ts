@@ -96,6 +96,7 @@ const config: Config = {
           900: "var(--ds-purple-900)",
           950: "var(--ds-purple-1000)",
         },
+        /* Unified gray scale — maps 1:1 to Geist DS gray tokens */
         gray: {
           50: "var(--ds-gray-100)",
           100: "var(--ds-gray-100)",
@@ -107,21 +108,6 @@ const config: Config = {
           700: "var(--ds-gray-700)",
           800: "var(--ds-gray-800)",
           900: "var(--ds-gray-900)",
-          950: "var(--ds-gray-1000)",
-        },
-        /* Neutral scale (Geist DS - lightest use Background 2) */
-        neutral: {
-          50: "var(--ds-background-200)",
-          100: "var(--ds-background-200)",
-          200: "var(--ds-gray-200)",
-          300: "var(--ds-gray-300)",
-          400: "var(--ds-gray-400)",
-          500: "var(--ds-gray-500)",
-          600: "var(--ds-gray-600)",
-          700: "var(--ds-gray-700)",
-          800: "var(--ds-gray-800)",
-          900: "var(--ds-gray-900)",
-          925: "var(--ds-gray-900)",
           950: "var(--ds-gray-1000)",
         },
         border: "hsl(var(--border))",
@@ -157,20 +143,8 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        /* Geist Design System scales (gray, background, teal, pink — chromatic red/blue/green via top-level keys) */
+        /* Geist Design System extended scales (background, teal, pink) */
         ds: {
-          gray: {
-            100: "var(--ds-gray-100)",
-            200: "var(--ds-gray-200)",
-            300: "var(--ds-gray-300)",
-            400: "var(--ds-gray-400)",
-            500: "var(--ds-gray-500)",
-            600: "var(--ds-gray-600)",
-            700: "var(--ds-gray-700)",
-            800: "var(--ds-gray-800)",
-            900: "var(--ds-gray-900)",
-            1000: "var(--ds-gray-1000)",
-          },
           background: {
             100: "var(--ds-background-100)",
             200: "var(--ds-background-200)",

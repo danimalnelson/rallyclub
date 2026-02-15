@@ -614,13 +614,13 @@ export function PlanForm({
       {/* Actions */}
       <div className="flex justify-end gap-3">
         <Button
-          type="secondary"
+          variant="secondary"
           onClick={() => onCancel ? onCancel() : router.back()}
           disabled={loading}
         >
           Cancel
         </Button>
-        <Button htmlType="submit" disabled={loading}>
+        <Button type="submit" disabled={loading}>
           {loading ? "Saving..." : planId ? "Update Plan" : "Create Plan"}
         </Button>
       </div>

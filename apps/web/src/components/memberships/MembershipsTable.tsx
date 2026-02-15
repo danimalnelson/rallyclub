@@ -11,7 +11,7 @@ import {
   type Column,
   type FilterConfig,
 } from "@/components/ui/data-table";
-import { Drawer } from "@/components/ui/drawer";
+import { Drawer } from "@wine-club/ui";
 import { MembershipForm } from "./MembershipForm";
 
 // ---------------------------------------------------------------------------
@@ -131,26 +131,15 @@ export function MembershipsTable({
       columns={columns}
       data={memberships}
       keyExtractor={(m) => m.id}
-      filterFn={filterFn}
       onRowClick={(m) => {
         window.location.href = `/app/${businessSlug}/memberships/${m.id}/edit`;
       }}
-      filterConfigs={FILTER_CONFIGS}
-      filterValues={table.filterValues}
-      inputValues={table.inputValues}
-      openFilter={table.openFilter}
-      toggleFilter={table.toggleFilter}
-      applyTextFilter={table.applyTextFilter}
-      applySelectFilter={table.applySelectFilter}
-      clearFilter={table.clearFilter}
-      setInput={table.setInput}
-      page={table.page}
-      setPage={table.setPage}
+      table={table}
       emptyMessage="No memberships yet. Create your first membership to start offering subscription plans."
       filteredEmptyMessage="No memberships match filters"
       actions={
         <Button
-          type="secondary"
+          variant="secondary"
           onClick={() => setDrawerOpen(true)}
           prefix={<Plus className="h-3.5 w-3.5" />}
         >

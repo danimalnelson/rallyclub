@@ -331,7 +331,7 @@ export default function ScenariosPage() {
         {activeScenario && (
           <div className="flex justify-center">
             <Button
-              type="error"
+              variant="error"
               onClick={cleanupAllTestClocks}
               prefix={<Trash className="w-4 h-4" />}
             >

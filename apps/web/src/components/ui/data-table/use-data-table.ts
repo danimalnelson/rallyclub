@@ -28,6 +28,25 @@ export type FilterConfig = TextFilterConfig | SelectFilterConfig;
 
 const PAGE_SIZE = 100;
 
+/** Return type of useDataTable — pass this as the `table` prop to DataTable. */
+export interface UseDataTableReturn<T> {
+  filterConfigs: FilterConfig[];
+  filterValues: Record<string, string>;
+  inputValues: Record<string, string>;
+  openFilter: string | null;
+  toggleFilter: (key: string) => void;
+  applyTextFilter: (key: string) => void;
+  applySelectFilter: (key: string, value: string) => void;
+  clearFilter: (key: string) => void;
+  setInput: (key: string, value: string) => void;
+  filtered: T[];
+  paginated: T[];
+  page: number;
+  setPage: (page: number | ((p: number) => number)) => void;
+  totalPages: number;
+  pageSize: number;
+}
+
 export function useDataTable<T>({
   data,
   filters: filterConfigs,
@@ -36,7 +55,7 @@ export function useDataTable<T>({
   data: T[];
   filters: FilterConfig[];
   filterFn: (item: T, activeFilters: Record<string, string>) => boolean;
-}) {
+}): UseDataTableReturn<T> {
   // Committed filter values — empty string means inactive
   const [filterValues, setFilterValues] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
@@ -107,7 +126,7 @@ export function useDataTable<T>({
   const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   return {
-    // Filter state
+    filterConfigs,
     filterValues,
     inputValues,
     openFilter,
@@ -116,10 +135,8 @@ export function useDataTable<T>({
     applySelectFilter,
     clearFilter,
     setInput,
-    // Data
     filtered,
     paginated,
-    // Pagination
     page,
     setPage,
     totalPages,

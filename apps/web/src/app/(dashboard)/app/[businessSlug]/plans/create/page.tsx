@@ -53,7 +53,7 @@ export default async function CreatePlanPage({
             Plans create products and prices in your Stripe account.
           </p>
           <Link href={`/app/${business.slug}/settings`}>
-            <Button type="warning">
+            <Button variant="warning">
               Go to Settings
             </Button>
           </Link>

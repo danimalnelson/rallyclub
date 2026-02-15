@@ -24,7 +24,7 @@ export function ListView({ title, filters, actions, children, footer }: ListView
   return (
     <>
       <div className={`${PAGE_HEADER_BAR_CLASSES} gap-2`}>
-        <h1 className="text-sm font-semibold text-foreground w-[120px] shrink-0">{title}</h1>
+        <h1 className="text-sm font-semibold text-gray-950 dark:text-white w-[120px] shrink-0">{title}</h1>
         {filters && <div className="flex items-center gap-1">{filters}</div>}
         <div className="flex-1" />
         {actions}

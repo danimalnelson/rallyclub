@@ -23,7 +23,7 @@ export const AppHeader = memo(function AppHeader({ userEmail }: AppHeaderProps) 
               {userEmail}
             </div>
           )}
-          <Button type="secondary" size="small" onClick={handleSignOut}>
+          <Button variant="secondary" size="small" onClick={handleSignOut}>
             Sign Out
           </Button>
         </div>

@@ -12,7 +12,7 @@ import {
   FilterPillFromConfig,
   type FilterConfig,
 } from "@/components/ui/data-table";
-import { Drawer } from "@/components/ui/drawer";
+import { Drawer } from "@wine-club/ui";
 import { PlanForm } from "./PlanForm";
 import { MembershipForm } from "@/components/memberships/MembershipForm";
 
@@ -132,7 +132,7 @@ function TableFooter({ count }: { count: number }) {
   return (
     <div
       key={count}
-      className="sticky bottom-0 -mx-3 px-3 mt-3 flex items-center justify-between h-10 border-t border-neutral-400 bg-neutral-50 text-xs text-muted-foreground"
+      className="sticky bottom-0 -mx-3 px-3 mt-3 flex items-center justify-between h-10 border-t border-gray-400 bg-ds-background-200 text-xs text-muted-foreground"
     >
       <span>{`${count} ${count === 1 ? "plan" : "plans"}`}</span>
     </div>
@@ -206,7 +206,7 @@ export function PlansAndMembershipsTable({
   return (
     <>
       {/* Sticky header */}
-      <div className="sticky top-0 z-10 -mx-3 px-3 pt-3 flex items-center gap-2 pb-3 mb-3 border-b border-neutral-400 bg-neutral-50">
+      <div className="sticky top-0 z-10 -mx-3 px-3 pt-3 flex items-center gap-2 pb-3 mb-3 border-b border-gray-400 bg-ds-background-200">
         <h1 className="text-sm font-medium text-foreground w-[120px] shrink-0">Plans</h1>
         <div className="flex items-center gap-1">
           {filterConfigs.map((config) => (
@@ -233,7 +233,7 @@ export function PlansAndMembershipsTable({
         <div className="flex-1" />
         <div className="flex items-center gap-1.5">
           <Button
-            type="secondary"
+            variant="secondary"
             onClick={() => setMembershipDrawerOpen(true)}
             prefix={<Plus className="h-3.5 w-3.5" />}
           >
@@ -392,7 +392,7 @@ function MembershipSection({
     <>
       {/* Membership row */}
       <tr
-        className="h-[42px] bg-white border-b cursor-pointer hover:bg-neutral-100 active:bg-neutral-300 transition-colors"
+        className="h-[42px] bg-white border-b cursor-pointer hover:bg-gray-100 active:bg-gray-300 transition-colors"
         onClick={onMembershipClick}
       >
         <td colSpan={colCount} className="px-3">
@@ -413,12 +413,12 @@ function MembershipSection({
       {group.plans.map((plan) => (
         <tr
           key={plan.id}
-          className="h-[42px] hover:bg-neutral-100 active:bg-neutral-300 cursor-pointer border-b transition-colors"
+          className="h-[42px] hover:bg-gray-100 active:bg-gray-300 cursor-pointer border-b transition-colors"
           onClick={() => onPlanClick(plan)}
         >
           <td className="pl-3 pr-3 text-sm font-medium">
             <div className="flex items-center gap-2">
-              <CornerDownRight size={16} className="shrink-0 text-neutral-700" />
+              <CornerDownRight size={16} className="shrink-0 text-gray-700" />
               {plan.name}
               <StatusBadge status={plan.status} />
             </div>

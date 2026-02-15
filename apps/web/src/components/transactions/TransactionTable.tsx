@@ -273,23 +273,12 @@ export function TransactionTable({ transactions }: { transactions: Transaction[]
       columns={columns}
       data={transactions}
       keyExtractor={(t) => t.id}
-      filterFn={filterFn}
-      filterConfigs={FILTER_CONFIGS}
-      filterValues={table.filterValues}
-      inputValues={table.inputValues}
-      openFilter={table.openFilter}
-      toggleFilter={table.toggleFilter}
-      applyTextFilter={table.applyTextFilter}
-      applySelectFilter={table.applySelectFilter}
-      clearFilter={table.clearFilter}
-      setInput={table.setInput}
-      page={table.page}
-      setPage={table.setPage}
+      table={table}
       emptyMessage="No transactions yet"
       filteredEmptyMessage="No transactions match filters"
       actions={
         <Button
-          type="secondary"
+          variant="secondary"
           onClick={exportCsv}
           prefix={<Download className="h-3.5 w-3.5" />}
         >

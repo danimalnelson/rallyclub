@@ -1,14 +1,16 @@
 "use client";
 
-const STATUS_STYLES: Record<string, { border: string; text: string; bg: string }> = {
-  ACTIVE: { border: "var(--ds-green-700)", text: "var(--ds-green-700)", bg: "var(--ds-green-100)" },
-  PAYMENT: { border: "var(--ds-green-700)", text: "var(--ds-green-700)", bg: "var(--ds-green-100)" },
-  CANCELLED: { border: "var(--ds-red-700)", text: "var(--ds-red-700)", bg: "var(--ds-red-100)" },
-  VOIDED: { border: "var(--ds-red-700)", text: "var(--ds-red-700)", bg: "var(--ds-red-100)" },
-  PENDING: { border: "var(--ds-amber-700)", text: "var(--ds-amber-700)", bg: "var(--ds-amber-100)" },
+import { cn } from "@wine-club/ui";
+
+const STATUS_STYLES: Record<string, string> = {
+  ACTIVE: "border-green-700 text-green-700 bg-green-100",
+  PAYMENT: "border-green-700 text-green-700 bg-green-100",
+  CANCELLED: "border-red-700 text-red-700 bg-red-100",
+  VOIDED: "border-red-700 text-red-700 bg-red-100",
+  PENDING: "border-orange-700 text-orange-700 bg-orange-100",
 };
 
-const DEFAULT_STYLE = { border: "var(--ds-gray-800)", text: "var(--ds-gray-800)", bg: "var(--ds-background-200)" };
+const DEFAULT_STYLE = "border-gray-600 text-gray-600 bg-gray-50 dark:border-gray-700 dark:text-gray-800 dark:bg-gray-200";
 
 interface StatusBadgeProps {
   status: string;
@@ -23,13 +25,12 @@ export function StatusBadge({ status, label }: StatusBadgeProps) {
 
   return (
     <span
-      className="inline-flex items-center rounded px-1.5 h-5 font-medium"
-      style={{
-        fontSize: 12,
-        color: style.text,
-        backgroundColor: style.bg,
-        border: `1px solid ${style.border}`,
-      }}
+      role="status"
+      aria-label={`Status: ${displayLabel}`}
+      className={cn(
+        "inline-flex items-center rounded px-1.5 h-5 text-xs font-medium border",
+        style,
+      )}
     >
       {displayLabel}
     </span>

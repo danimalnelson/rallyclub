@@ -8,10 +8,10 @@ interface FloatingManageButtonProps {
 export function FloatingManageButton({ businessSlug }: FloatingManageButtonProps) {
   return (
     <Button
-      type="tertiary"
+      variant="tertiary"
       shape="rounded"
       asChild
-      className="bg-neutral-100 hover:bg-neutral-200 text-foreground h-10 px-6 shrink-0"
+      className="bg-gray-100 hover:bg-gray-200 text-foreground h-10 px-6 shrink-0"
     >
       <Link href={`/${businessSlug}/portal`}>Manage membership</Link>
     </Button>

@@ -88,7 +88,7 @@ export default async function MemberDetailPage({
           >
             Members
           </Link>
-          <ChevronBreadcrumb size={14} className="text-neutral-500 shrink-0" />
+          <ChevronBreadcrumb size={14} className="text-gray-500 shrink-0" />
           <span className="truncate">{memberName}</span>
         </div>
       </PageHeader>

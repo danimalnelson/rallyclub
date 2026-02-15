@@ -163,14 +163,14 @@ export default function AlertsPage() {
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
           <Button
-            type={filter === "unresolved" ? "default" : "secondary"}
+            variant={filter === "unresolved" ? "default" : "secondary"}
             onClick={() => setFilter("unresolved")}
             size="small"
           >
             Unresolved
           </Button>
           <Button
-            type={filter === "all" ? "default" : "secondary"}
+            variant={filter === "all" ? "default" : "secondary"}
             onClick={() => setFilter("all")}
             size="small"
           >
@@ -180,7 +180,7 @@ export default function AlertsPage() {
         
         {typeFilter && (
           <Button
-            type="tertiary"
+            variant="tertiary"
             onClick={() => setTypeFilter(null)}
             size="small"
           >
@@ -260,7 +260,7 @@ export default function AlertsPage() {
                 {!alert.resolved && (
                   <Button
                     onClick={() => handleResolve(alert.id)}
-                    type="secondary"
+                    variant="secondary"
                     size="small"
                   >
                     Resolve

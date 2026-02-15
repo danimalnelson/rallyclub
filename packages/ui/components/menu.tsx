@@ -316,7 +316,7 @@ function MenuPanel({ children, width, align = "start", footer, className }: Menu
       ref={menuRef}
       role="menu"
       className={cn(
-        "fixed z-[100] rounded-lg border border-neutral-300 bg-white shadow-lg dark:border-neutral-600 dark:bg-neutral-100",
+        "fixed z-[100] rounded-lg border border-gray-300 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-100",
         !pos && "opacity-0",
         footer ? undefined : "p-2",
         className,
@@ -333,7 +333,7 @@ function MenuPanel({ children, width, align = "start", footer, className }: Menu
           <div className="max-h-[min(320px,50vh)] overflow-y-auto p-2">
             {children}
           </div>
-          <div className="border-t border-neutral-300 dark:border-neutral-600 p-2 shrink-0">
+          <div className="border-t border-gray-300 dark:border-gray-600 p-2 shrink-0">
             {footer}
           </div>
         </>
@@ -381,10 +381,10 @@ function MenuItem({
 
   const baseClasses = cn(
     "group w-full flex items-center gap-2 px-2 h-9 text-left text-sm rounded-md transition-colors outline-none",
-    "focus-visible:bg-neutral-100 dark:focus-visible:bg-neutral-200",
+    "focus-visible:bg-gray-100",
     type === "error"
       ? "text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950"
-      : "text-neutral-950 hover:bg-neutral-100 dark:text-white dark:hover:bg-neutral-200",
+      : "text-gray-950 hover:bg-gray-100 dark:text-white",
     disabled && "opacity-50 pointer-events-none",
     className,
   );
@@ -436,7 +436,7 @@ function MenuItem({
 // ---------------------------------------------------------------------------
 
 function MenuDivider() {
-  return <div className="my-2 -mx-2 border-t border-neutral-300 dark:border-neutral-600" role="separator" />;
+  return <div className="my-2 -mx-2 border-t border-gray-300 dark:border-gray-600" role="separator" />;
 }
 
 // ---------------------------------------------------------------------------
@@ -453,6 +453,66 @@ function MenuSection({ children, className }: MenuSectionProps) {
 }
 
 // ---------------------------------------------------------------------------
+// MenuIconTrigger (pre-built icon-only trigger, e.g. "three-dot" menu)
+// ---------------------------------------------------------------------------
+
+interface MenuIconTriggerProps {
+  /** The icon element to render (e.g., <MoreVertical />) */
+  children: React.ReactNode;
+  /** Accessible label for the trigger button */
+  label?: string;
+  /** Additional className */
+  className?: string;
+}
+
+/**
+ * Pre-built icon-only menu trigger. Use inside a MenuContainer.
+ *
+ * @example
+ * <MenuContainer>
+ *   <MenuIconTrigger><MoreVertical className="h-4 w-4" /></MenuIconTrigger>
+ *   <Menu width={192} align="end">
+ *     <MenuItem>Edit</MenuItem>
+ *   </Menu>
+ * </MenuContainer>
+ */
+const MenuIconTrigger = React.forwardRef<HTMLButtonElement, MenuIconTriggerProps>(
+  ({ children, label = "More actions", className }, forwardedRef) => {
+    const { toggle, triggerRef } = useMenuContext();
+
+    const mergedRef = React.useCallback(
+      (node: HTMLButtonElement | null) => {
+        (triggerRef as React.MutableRefObject<HTMLButtonElement | null>).current = node;
+        if (typeof forwardedRef === "function") forwardedRef(node);
+        else if (forwardedRef) (forwardedRef as React.MutableRefObject<HTMLButtonElement | null>).current = node;
+      },
+      [forwardedRef, triggerRef],
+    );
+
+    return (
+      <button
+        ref={mergedRef}
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          toggle();
+        }}
+        title={label}
+        aria-label={label}
+        aria-haspopup="menu"
+        className={cn(
+          "flex h-[30px] w-[30px] shrink-0 items-center justify-center text-gray-600 hover:bg-gray-100 hover:text-gray-950 dark:text-gray-700 dark:hover:text-white",
+          className,
+        )}
+      >
+        {children}
+      </button>
+    );
+  },
+);
+MenuIconTrigger.displayName = "MenuIconTrigger";
+
+// ---------------------------------------------------------------------------
 // Exports
 // ---------------------------------------------------------------------------
 
@@ -463,7 +523,8 @@ export {
   MenuItem,
   MenuDivider,
   MenuSection,
+  MenuIconTrigger,
   useMenuContext,
 };
 
-export type { MenuContainerProps, MenuButtonProps, MenuProps, MenuItemProps, MenuSectionProps };
+export type { MenuContainerProps, MenuButtonProps, MenuProps, MenuItemProps, MenuSectionProps, MenuIconTriggerProps };

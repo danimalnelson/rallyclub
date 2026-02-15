@@ -53,7 +53,7 @@ export function AddMemberForm({ businessId, onSuccess, onCancel }: AddMemberForm
       )}
 
       <div>
-        <label className="block text-sm font-medium text-neutral-950 mb-1.5">
+        <label className="block text-sm font-medium text-gray-950 mb-1.5">
           Email <span className="text-red-500">*</span>
         </label>
         <input
@@ -62,12 +62,12 @@ export function AddMemberForm({ businessId, onSuccess, onCancel }: AddMemberForm
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="customer@example.com"
-          className="w-full px-3 py-2 text-sm border border-neutral-500 rounded-md focus:outline-none focus:border-neutral-950 focus:ring-1 focus:ring-neutral-950"
+          className="w-full px-3 py-2 text-sm border border-gray-500 rounded-md focus:outline-none focus:border-gray-950 focus:ring-1 focus:ring-gray-950"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-neutral-950 mb-1.5">
+        <label className="block text-sm font-medium text-gray-950 mb-1.5">
           Name
         </label>
         <input
@@ -75,12 +75,12 @@ export function AddMemberForm({ businessId, onSuccess, onCancel }: AddMemberForm
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Jane Doe"
-          className="w-full px-3 py-2 text-sm border border-neutral-500 rounded-md focus:outline-none focus:border-neutral-950 focus:ring-1 focus:ring-neutral-950"
+          className="w-full px-3 py-2 text-sm border border-gray-500 rounded-md focus:outline-none focus:border-gray-950 focus:ring-1 focus:ring-gray-950"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-neutral-950 mb-1.5">
+        <label className="block text-sm font-medium text-gray-950 mb-1.5">
           Phone
         </label>
         <input
@@ -88,19 +88,19 @@ export function AddMemberForm({ businessId, onSuccess, onCancel }: AddMemberForm
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           placeholder="(555) 123-4567"
-          className="w-full px-3 py-2 text-sm border border-neutral-500 rounded-md focus:outline-none focus:border-neutral-950 focus:ring-1 focus:ring-neutral-950"
+          className="w-full px-3 py-2 text-sm border border-gray-500 rounded-md focus:outline-none focus:border-gray-950 focus:ring-1 focus:ring-gray-950"
         />
       </div>
 
       <div className="flex items-center justify-end gap-2 pt-2">
         <Button
-          type="secondary"
+          variant="secondary"
           onClick={onCancel}
         >
           Cancel
         </Button>
         <Button
-          htmlType="submit"
+          type="submit"
           disabled={loading || !email.trim()}
         >
           {loading ? "Adding..." : "Add customer"}

@@ -11,7 +11,7 @@ import {
   type Column,
   type FilterConfig,
 } from "@/components/ui/data-table";
-import { Drawer } from "@/components/ui/drawer";
+import { Drawer } from "@wine-club/ui";
 import { PlanForm } from "./PlanForm";
 
 // ---------------------------------------------------------------------------
@@ -146,26 +146,15 @@ export function PlansTable({
       columns={columns}
       data={plans}
       keyExtractor={(p) => p.id}
-      filterFn={filterFn}
       onRowClick={(p) => {
         window.location.href = `/app/${businessSlug}/plans/${p.id}/edit`;
       }}
-      filterConfigs={filterConfigs}
-      filterValues={table.filterValues}
-      inputValues={table.inputValues}
-      openFilter={table.openFilter}
-      toggleFilter={table.toggleFilter}
-      applyTextFilter={table.applyTextFilter}
-      applySelectFilter={table.applySelectFilter}
-      clearFilter={table.clearFilter}
-      setInput={table.setInput}
-      page={table.page}
-      setPage={table.setPage}
+      table={table}
       emptyMessage="No plans yet. Create a membership first, then add plans."
       filteredEmptyMessage="No plans match filters"
       actions={
         <Button
-          type="secondary"
+          variant="secondary"
           onClick={() => setDrawerOpen(true)}
           prefix={<Plus className="h-3.5 w-3.5" />}
         >

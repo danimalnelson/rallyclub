@@ -220,7 +220,7 @@ export function PlanModal({
 
             {/* CTA */}
             <Button
-              htmlType="submit"
+              type="submit"
               className="w-full h-12 text-base"
               size="large"
               disabled={isDisabled || !email}

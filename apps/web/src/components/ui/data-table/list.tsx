@@ -95,7 +95,7 @@ function renderTableHeader<T>({
   hasRowActions?: boolean;
 }) {
   return (
-    <thead className={cn("border-b border-neutral-400 bg-neutral-50", headerClassNameProp)}>
+    <thead className={cn("border-b border-gray-400 dark:border-gray-600 bg-ds-background-200 dark:bg-gray-100", headerClassNameProp)}>
       <tr className="text-left">
         {columns.map((col) => {
           const isSorted = sortState?.key === col.key;
@@ -105,11 +105,20 @@ function renderTableHeader<T>({
             <th
               key={col.key}
               scope="col"
+              aria-sort={
+                isSorted
+                  ? sortState!.direction === "asc"
+                    ? "ascending"
+                    : "descending"
+                  : canSort
+                    ? "none"
+                    : undefined
+              }
               className={cn(
-                "px-3 align-middle font-medium text-sm text-muted-foreground",
+                "px-3 align-middle font-medium text-sm text-gray-800 dark:text-gray-800",
                 headerHeightRes.className,
                 col.align === "right" && "text-right",
-                canSort && "cursor-pointer select-none hover:text-foreground",
+                canSort && "cursor-pointer select-none hover:text-gray-950 dark:hover:text-white",
                 col.headerClassName
               )}
               style={headerHeightRes.style}
@@ -130,7 +139,7 @@ function renderTableHeader<T>({
         {hasRowActions && (
           <th
             scope="col"
-            className="sticky right-0 z-10 w-[42px] min-w-[42px] shrink-0 bg-neutral-50 px-0 dark:bg-neutral-50"
+            className="sticky right-0 z-10 w-[42px] min-w-[42px] shrink-0 bg-ds-background-200 dark:bg-gray-100 px-0"
             style={{ height: 42 }}
           />
         )}
@@ -185,7 +194,7 @@ export function List<T, G = undefined>(
 
     if (totalItems === 0 && groups.length === 0 && emptyMessage) {
       return (
-        <div className={cn("rounded-lg border bg-card py-12 text-center", className)}>
+        <div className={cn("rounded-lg border bg-white dark:bg-gray-100 py-12 text-center", className)}>
           <EmptyState message={emptyMessage} description={emptyDescription} />
         </div>
       );
@@ -197,18 +206,18 @@ export function List<T, G = undefined>(
 
     const childRowCn = cn(
       rowHeightRes.className,
-      "hover:bg-muted/50 transition-colors",
+      "transition-colors",
       onRowClick && "cursor-pointer",
       childRowClassName ?? rowClassNameProp
     );
 
     const groupRowCn = cn(
-      "!h-[42px] bg-white border-b cursor-pointer hover:bg-neutral-100 active:bg-neutral-200 transition-colors",
+      "!h-[42px] bg-white dark:bg-gray-100 border-b cursor-pointer active:bg-gray-200 dark:active:bg-gray-300 transition-colors",
       groupRowClassName
     );
 
     return (
-      <div className={cn("overflow-hidden rounded-lg border bg-card", className)}>
+      <div className={cn("overflow-hidden rounded-lg border bg-white dark:bg-gray-100", className)}>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[800px] table-fixed border-collapse">
             {showGroupHeader && renderTableHeader({
@@ -219,7 +228,7 @@ export function List<T, G = undefined>(
               headerClassNameProp,
               hasRowActions: !!rowActions,
             })}
-            <tbody className="[&>tr]:shadow-[inset_0_-1px_0_0_rgb(229_231_235)] dark:[&>tr]:shadow-[inset_0_-1px_0_0_rgb(64_64_64)] [&>tr:last-child]:shadow-none [&>tr:not(:last-child)>td:last-child]:border-b [&>tr:not(:last-child)>td:last-child]:border-neutral-200 dark:[&>tr:not(:last-child)>td:last-child]:border-neutral-700 [&>tr:last-child>td:last-child]:border-b-0">
+            <tbody className="[&>tr]:border-b [&>tr]:border-gray-200 dark:[&>tr]:border-gray-700 [&>tr:last-child]:border-b-0">
               {groups.map(({ key, group, items }) => (
                 <React.Fragment key={key}>
                   <tr
@@ -254,7 +263,7 @@ export function List<T, G = undefined>(
                       ))}
                       {rowActions && (
                         <td
-                          className="sticky right-0 z-10 w-[42px] min-w-[42px] py-0 px-0 align-middle shrink-0 bg-card"
+                          className="sticky right-0 z-10 w-[42px] min-w-[42px] py-0 px-0 align-middle shrink-0 bg-white dark:bg-gray-100"
                           onClick={(e) => e.stopPropagation()}
                           style={{ height: 42 }}
                         >
@@ -280,7 +289,7 @@ export function List<T, G = undefined>(
 
   if (items.length === 0 && emptyMessage) {
     return (
-      <div className={cn("rounded-lg border bg-card py-12 text-center", className)}>
+      <div className={cn("rounded-lg border bg-white dark:bg-gray-100 py-12 text-center", className)}>
         <EmptyState message={emptyMessage} description={emptyDescription} />
       </div>
     );
@@ -292,14 +301,14 @@ export function List<T, G = undefined>(
 
   const rowClassName = cn(
     rowHeightRes.className,
-    "hover:bg-muted/50",
+    "",
     onRowClick && "cursor-pointer",
     rowActions && "group",
     rowClassNameProp
   );
 
   return (
-    <div className={cn("overflow-hidden rounded-lg border bg-card", className)}>
+    <div className={cn("overflow-hidden rounded-lg border bg-white dark:bg-gray-100", className)}>
       <div className="overflow-x-auto">
         <table className="w-full table-fixed border-collapse">
           {renderTableHeader({
@@ -310,7 +319,7 @@ export function List<T, G = undefined>(
             headerClassNameProp,
             hasRowActions: !!rowActions,
           })}
-          <tbody className="[&>tr]:shadow-[inset_0_-1px_0_0_rgb(229_231_235)] dark:[&>tr]:shadow-[inset_0_-1px_0_0_rgb(64_64_64)] [&>tr:last-child]:shadow-none [&>tr:not(:last-child)>td:last-child]:border-b [&>tr:not(:last-child)>td:last-child]:border-neutral-200 dark:[&>tr:not(:last-child)>td:last-child]:border-neutral-700 [&>tr:last-child>td:last-child]:border-b-0">
+          <tbody className="[&>tr]:border-b [&>tr]:border-gray-200 dark:[&>tr]:border-gray-700 [&>tr:last-child]:border-b-0">
             {items.map((item) => (
               <tr
                 key={keyExtractor(item)}
@@ -335,7 +344,7 @@ export function List<T, G = undefined>(
                 ))}
                 {rowActions && (
                   <td
-                    className="sticky right-0 z-10 w-[42px] min-w-[42px] py-0 px-0 align-middle shrink-0 bg-card"
+                    className="sticky right-0 z-10 w-[42px] min-w-[42px] py-0 px-0 align-middle shrink-0 bg-white dark:bg-gray-100"
                     onClick={(e) => e.stopPropagation()}
                     style={{ height: 42 }}
                   >

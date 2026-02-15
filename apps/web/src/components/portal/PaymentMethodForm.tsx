@@ -90,7 +90,7 @@ export function PaymentMethodForm({ slug, email, onSuccess }: PaymentMethodFormP
       )}
 
       <Button
-        htmlType="submit"
+        type="submit"
         disabled={!stripe || isProcessing || success}
         className="mt-6 w-full"
       >

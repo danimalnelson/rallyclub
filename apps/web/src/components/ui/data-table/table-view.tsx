@@ -40,7 +40,7 @@ export function TableView<T>({
 }: TableViewProps<T>) {
   if (items.length === 0 && emptyMessage) {
     return (
-      <div className={cn("rounded-lg border bg-card py-12 text-center", className)}>
+      <div className={cn("rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-100 py-12 text-center", className)}>
         <EmptyState message={emptyMessage} description={emptyDescription} />
       </div>
     );
@@ -51,21 +51,21 @@ export function TableView<T>({
   }
 
   const rowClassName = variableRowHeight
-    ? "min-h-[42px] py-3 hover:bg-muted/50"
-    : "hover:bg-muted/50 h-[42px]";
+    ? "min-h-[42px] py-3"
+    : "h-[42px]";
 
   return (
-    <div className={cn("overflow-hidden rounded-lg border bg-card", className)}>
+    <div className={cn("overflow-hidden rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-100", className)}>
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
-          <thead className="border-b border-neutral-400 bg-neutral-50">
+          <thead className="border-b border-gray-400 dark:border-gray-600 bg-ds-background-200 dark:bg-gray-100">
             <tr className="text-left">
               {columns.map((col) => (
                 <th
                   key={col.key}
                   scope="col"
                   className={cn(
-                    "px-3 h-[42px] align-middle font-medium text-sm text-muted-foreground",
+                    "px-3 h-[42px] align-middle font-medium text-sm text-gray-800 dark:text-gray-800",
                     col.align === "right" && "text-right",
                     col.headerClassName
                   )}
@@ -75,7 +75,7 @@ export function TableView<T>({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
             {items.map((item) => (
               <tr
                 key={keyExtractor(item)}

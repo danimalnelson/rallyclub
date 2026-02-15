@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { Button, Card, CardContent } from "@wine-club/ui";
 import { FilterPillFromConfig } from "./filter-popover";
-import type { FilterConfig } from "./use-data-table";
+import type { UseDataTableReturn } from "./use-data-table";
 
 // ---------------------------------------------------------------------------
 // Column definition
@@ -31,28 +30,15 @@ interface DataTableProps<T> {
   actions?: React.ReactNode;
 
   // --- Data ---
+  /** Full (unfiltered) data array — used only for empty-state detection */
   data: T[];
   keyExtractor: (item: T) => string;
   onRowClick?: (item: T) => void;
   /** Optional actions shown on row hover, fixed on the right */
   rowActions?: (item: T) => React.ReactNode;
-  /** Filter function applied to each item */
-  filterFn: (item: T, activeFilters: Record<string, string>) => boolean;
 
-  // --- Filter state (from useDataTable) ---
-  filterConfigs: FilterConfig[];
-  filterValues: Record<string, string>;
-  inputValues: Record<string, string>;
-  openFilter: string | null;
-  toggleFilter: (key: string) => void;
-  applyTextFilter: (key: string) => void;
-  applySelectFilter: (key: string, value: string) => void;
-  clearFilter: (key: string) => void;
-  setInput: (key: string, value: string) => void;
-
-  // --- Pagination (from useDataTable) ---
-  page: number;
-  setPage: (page: number | ((p: number) => number)) => void;
+  // --- Table state (from useDataTable) ---
+  table: UseDataTableReturn<T>;
 
   // --- Empty states ---
   emptyMessage: string;
@@ -77,7 +63,7 @@ function DataTableFooter({
   return (
     <div
       key={count}
-      className="sticky bottom-0 -mx-3 px-3 mt-3 flex items-center justify-between h-10 border-t border-neutral-300 bg-neutral-50 text-xs text-muted-foreground"
+      className="sticky bottom-0 -mx-3 px-3 mt-3 flex items-center justify-between h-10 border-t border-gray-300 dark:border-gray-600 bg-ds-background-200 dark:bg-gray-100 text-xs text-gray-600 dark:text-gray-800"
     >
       <span>
         {`${count} ${count === 1 ? "result" : "results"}`}
@@ -85,7 +71,7 @@ function DataTableFooter({
       {totalPages > 1 && (
         <div className="flex items-center gap-2">
           <Button
-            type="secondary"
+            variant="secondary"
             size="small"
             onClick={() => setPage((p: number) => Math.max(0, p - 1))}
             disabled={page === 0}
@@ -97,7 +83,7 @@ function DataTableFooter({
             {page + 1} / {totalPages}
           </span>
           <Button
-            type="secondary"
+            variant="secondary"
             size="small"
             onClick={() => setPage((p: number) => Math.min(totalPages - 1, p + 1))}
             disabled={page >= totalPages - 1}
@@ -115,8 +101,6 @@ function DataTableFooter({
 // Component
 // ---------------------------------------------------------------------------
 
-const PAGE_SIZE = 100;
-
 export function DataTable<T>({
   title,
   columns,
@@ -125,38 +109,32 @@ export function DataTable<T>({
   keyExtractor,
   onRowClick,
   rowActions,
-  filterFn,
-  filterConfigs,
-  filterValues,
-  inputValues,
-  openFilter,
-  toggleFilter,
-  applyTextFilter,
-  applySelectFilter,
-  clearFilter,
-  setInput,
-  page,
-  setPage,
+  table,
   emptyMessage,
   filteredEmptyMessage,
 }: DataTableProps<T>) {
-  // Compute filtered/paginated directly from data + filterValues
-  const activeFilters: Record<string, string> = {};
-  for (const [k, v] of Object.entries(filterValues)) {
-    if (v) activeFilters[k] = v;
-  }
-  const hasActiveFilters = Object.keys(activeFilters).length > 0;
-  const filtered = hasActiveFilters
-    ? data.filter((item) => filterFn(item, activeFilters))
-    : data;
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const {
+    filterConfigs,
+    filterValues,
+    inputValues,
+    openFilter,
+    toggleFilter,
+    applyTextFilter,
+    applySelectFilter,
+    clearFilter,
+    setInput,
+    filtered,
+    paginated,
+    page,
+    setPage,
+    totalPages,
+  } = table;
 
   return (
     <>
       {/* Sticky header: title + filters + actions */}
-      <div className="sticky top-0 z-10 -mx-3 px-3 pt-3 flex items-center gap-2 pb-3 mb-3 border-b border-neutral-300 bg-neutral-50">
-        <h1 className="text-sm font-semibold text-foreground w-[120px] shrink-0">{title}</h1>
+      <div className="sticky top-0 z-10 -mx-3 px-3 pt-3 flex items-center gap-2 pb-3 mb-3 border-b border-gray-300 dark:border-gray-600 bg-ds-background-200 dark:bg-gray-100">
+        <h1 className="text-sm font-semibold text-gray-950 dark:text-white w-[120px] shrink-0">{title}</h1>
         <div className="flex items-center gap-1">
           {filterConfigs.map((config) => (
             <FilterPillFromConfig
@@ -189,7 +167,7 @@ export function DataTable<T>({
       {filtered.length === 0 ? (
         <Card className="shadow-none">
           <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">
+            <p className="text-gray-600 dark:text-gray-800">
               {data.length === 0 ? emptyMessage : filteredEmptyMessage}
             </p>
           </CardContent>
@@ -199,13 +177,13 @@ export function DataTable<T>({
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full table-fixed border-collapse">
-                <thead className="border-b bg-neutral-50">
+                <thead className="border-b border-gray-200 dark:border-gray-700 bg-ds-background-200 dark:bg-gray-100">
                   <tr className="text-left">
                     {columns.map((col) => (
                       <th
                         key={col.key}
                         scope="col"
-                        className={`px-3 h-[42px] align-middle font-medium text-sm text-muted-foreground ${
+                        className={`px-3 h-[42px] align-middle font-medium text-sm text-gray-800 dark:text-gray-800 ${
                           col.align === "right" ? "text-right" : ""
                         } ${col.headerClassName || ""}`}
                       >
@@ -213,15 +191,15 @@ export function DataTable<T>({
                       </th>
                     ))}
                     {rowActions && (
-                      <th scope="col" className="sticky right-0 z-10 w-[42px] min-w-[42px] shrink-0 bg-neutral-50 px-0" style={{ height: 42 }} />
+                      <th scope="col" className="sticky right-0 z-10 w-[42px] min-w-[42px] shrink-0 bg-ds-background-200 dark:bg-gray-100 px-0" style={{ height: 42 }} />
                     )}
                   </tr>
                 </thead>
-                <tbody className="[&>tr]:shadow-[inset_0_-1px_0_0_rgb(229_231_235)] dark:[&>tr]:shadow-[inset_0_-1px_0_0_rgb(64_64_64)] [&>tr:last-child]:shadow-none">
+                <tbody className="[&>tr]:border-b [&>tr]:border-gray-200 dark:[&>tr]:border-gray-700 [&>tr:last-child]:border-b-0">
                   {paginated.map((item) => (
                     <tr
                       key={keyExtractor(item)}
-                      className={`hover:bg-muted/50 !h-[42px] ${rowActions ? "group" : ""} ${onRowClick ? "cursor-pointer" : ""}`}
+                      className={`!h-[42px] ${rowActions ? "group" : ""} ${onRowClick ? "cursor-pointer" : ""}`}
                       style={{ height: 42, minHeight: 42, maxHeight: 42 }}
                       onClick={onRowClick ? () => onRowClick(item) : undefined}
                     >
@@ -239,7 +217,7 @@ export function DataTable<T>({
                       ))}
                       {rowActions && (
                         <td
-                          className="sticky right-0 z-10 w-[42px] min-w-[42px] py-0 px-0 align-middle shrink-0 bg-card"
+                          className="sticky right-0 z-10 w-[42px] min-w-[42px] py-0 px-0 align-middle shrink-0 bg-white dark:bg-gray-100"
                           onClick={(e) => e.stopPropagation()}
                           style={{ height: 42 }}
                         >
@@ -267,4 +245,3 @@ export function DataTable<T>({
     </>
   );
 }
-

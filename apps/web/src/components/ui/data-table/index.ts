@@ -7,7 +7,7 @@ export { ListSkeleton } from "./list-skeleton";
 export { TableView } from "./table-view";
 export type { TableColumn } from "./table-view";
 export { useDataTable } from "./use-data-table";
-export type { FilterConfig, TextFilterConfig, SelectFilterConfig } from "./use-data-table";
+export type { FilterConfig, TextFilterConfig, SelectFilterConfig, UseDataTableReturn } from "./use-data-table";
 export { FilterPill } from "./filter-pill";
 export { FilterPillFromConfig } from "./filter-popover";
 export { StatusBadge } from "./status-badge";

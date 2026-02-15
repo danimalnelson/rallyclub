@@ -69,7 +69,7 @@ export default async function PlanDetailsPage({
               <h1 className="text-2xl font-bold">{business.name}</h1>
             </div>
             <Link href={`/${slug}/portal`}>
-              <Button type="secondary">Member Portal</Button>
+              <Button variant="secondary">Member Portal</Button>
             </Link>
           </div>
         </div>

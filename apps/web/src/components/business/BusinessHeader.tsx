@@ -17,11 +17,11 @@ export function BusinessHeader({
           {businessName}
         </h1>
         <Button
-          type="tertiary"
+          variant="tertiary"
           size="small"
           shape="rounded"
           asChild
-          className="bg-neutral-100 hover:bg-neutral-200 shrink-0 px-4"
+          className="bg-gray-100 hover:bg-gray-200 shrink-0 px-4"
         >
           <Link href={`/${businessSlug}/portal`}>Manage membership</Link>
         </Button>

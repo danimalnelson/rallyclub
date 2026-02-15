@@ -12,7 +12,7 @@ interface ListSkeletonProps {
 function SkeletonBox({ className = "" }: { className?: string }) {
   return (
     <div
-      className={`animate-pulse rounded-md bg-neutral-400 h-3.5 ${className}`}
+      className={`animate-pulse rounded-md bg-gray-400 h-3.5 ${className}`}
     />
   );
 }

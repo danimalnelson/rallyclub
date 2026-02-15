@@ -25,7 +25,7 @@ function DelayedFocusInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
       ref={inputRef}
       type="text"
       {...props}
-      className="w-full px-3 py-2 text-sm border rounded-md outline-none ring-0 ring-neutral-950/0 focus:ring-2 focus:ring-neutral-950/20 focus:border-neutral-800 transition-all duration-1000"
+      className="w-full px-3 py-2 text-sm border rounded-md outline-none ring-0 ring-gray-950/0 focus:ring-2 focus:ring-gray-950/20 focus:border-gray-800 transition-all duration-1000"
     />
   );
 }
@@ -175,13 +175,13 @@ function MultiSelectFilterPill({
               <button
                 key={opt.value}
                 onClick={() => toggleOption(opt.value)}
-                className="flex items-center gap-2.5 px-2 h-9 rounded-md text-sm font-medium text-neutral-900 hover:text-neutral-950 hover:bg-neutral-100 transition-colors"
+                className="flex items-center gap-2.5 px-2 h-9 rounded-md text-sm font-medium text-gray-900 hover:text-gray-950 hover:bg-gray-100 transition-colors"
               >
                 <span
                   className={`flex items-center justify-center h-4 w-4 rounded border transition-colors shrink-0 ${
                     checked
-                      ? "bg-neutral-950 border-neutral-950"
-                      : "border-neutral-600 bg-white"
+                      ? "bg-gray-950 border-gray-950"
+                      : "border-gray-600 bg-white dark:bg-gray-100"
                   }`}
                 >
                   {checked && <Check className="h-3 w-3 text-white" />}

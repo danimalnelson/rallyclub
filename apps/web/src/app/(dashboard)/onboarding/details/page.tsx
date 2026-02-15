@@ -224,12 +224,12 @@ export default function OnboardingDetailsPage() {
 
               <div className="flex justify-between items-center pt-4">
                 <Button
-                  type="tertiary"
+                  variant="tertiary"
                   onClick={() => signOut({ callbackUrl: "/" })}
                 >
                   Sign Out
                 </Button>
-                <Button htmlType="submit" disabled={loading} className="min-w-32">
+                <Button type="submit" disabled={loading} className="min-w-32">
                   {loading ? "Creating..." : "Continue"}
                 </Button>
               </div>

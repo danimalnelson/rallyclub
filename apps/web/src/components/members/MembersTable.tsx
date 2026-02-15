@@ -10,7 +10,7 @@ import {
   type Column,
   type FilterConfig,
 } from "@/components/ui/data-table";
-import { Drawer } from "@/components/ui/drawer";
+import { Drawer } from "@wine-club/ui";
 import { AddMemberForm } from "./AddMemberForm";
 import { MemberActions } from "./MemberActions";
 
@@ -160,7 +160,6 @@ export function MembersTable({
       columns={columns}
       data={members}
       keyExtractor={(m) => m.id}
-      filterFn={filterFn}
       onRowClick={(m) => {
         window.location.href = `/app/${businessSlug}/members/${m.id}`;
       }}
@@ -171,23 +170,13 @@ export function MembersTable({
           businessSlug={businessSlug}
         />
       )}
-      filterConfigs={filterConfigs}
-      filterValues={table.filterValues}
-      inputValues={table.inputValues}
-      openFilter={table.openFilter}
-      toggleFilter={table.toggleFilter}
-      applyTextFilter={table.applyTextFilter}
-      applySelectFilter={table.applySelectFilter}
-      clearFilter={table.clearFilter}
-      setInput={table.setInput}
-      page={table.page}
-      setPage={table.setPage}
+      table={table}
       emptyMessage="No members yet. Members will appear here when they subscribe to your plans."
       filteredEmptyMessage="No members match filters"
       actions={
         <div className="flex items-center gap-1.5">
           <Button
-            type="secondary"
+            variant="secondary"
             onClick={exportCsv}
             prefix={<Download className="h-3.5 w-3.5" />}
           >

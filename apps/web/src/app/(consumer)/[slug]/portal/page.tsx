@@ -387,10 +387,10 @@ export default function MemberPortalPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button type="secondary" asChild>
+            <Button variant="secondary" asChild>
               <Link href={`/${params.slug}`}>Browse Plans</Link>
             </Button>
-            <Button type="secondary" onClick={handleSignOut}>
+            <Button variant="secondary" onClick={handleSignOut}>
               Sign Out
             </Button>
           </div>
@@ -445,7 +445,7 @@ export default function MemberPortalPage() {
                     {subscription.stripeDetails && !subscription.stripeDetails.cancelAtPeriodEnd && (
                       subscription.status === "active" ? (
                         <Button 
-                          type="secondary" 
+                          variant="secondary" 
                           size="small"
                           onClick={() => handlePauseSubscription(subscription.id)}
                           disabled={actionLoading === subscription.id}
@@ -455,7 +455,7 @@ export default function MemberPortalPage() {
                         </Button>
                       ) : subscription.status === "paused" ? (
                         <Button 
-                          type="secondary" 
+                          variant="secondary" 
                           size="small"
                           onClick={() => handleResumeSubscription(subscription.id)}
                           disabled={actionLoading === subscription.id}
@@ -469,7 +469,7 @@ export default function MemberPortalPage() {
                     {/* Cancel Button */}
                     {subscription.stripeDetails && !subscription.stripeDetails.cancelAtPeriodEnd && (
                       <Button 
-                        type="error" 
+                        variant="error" 
                         size="small"
                         onClick={() => setShowCancelDialog(subscription.id)}
                         disabled={actionLoading === subscription.id}
@@ -538,7 +538,7 @@ export default function MemberPortalPage() {
               </div>
               {!showAddPaymentMethod && paymentMethods.length > 0 && (
                 <Button 
-                  type="secondary" 
+                  variant="secondary" 
                   size="small"
                   onClick={handleShowAddPaymentMethod}
                   prefix={<Plus className="h-4 w-4" />}
@@ -560,7 +560,7 @@ export default function MemberPortalPage() {
               <div className="text-center py-6">
                 <p className="text-muted-foreground mb-4">No payment methods saved yet</p>
                 <Button 
-                  type="secondary" 
+                  variant="secondary" 
                   size="small"
                   onClick={handleShowAddPaymentMethod}
                   prefix={<Plus className="h-4 w-4" />}
@@ -576,7 +576,7 @@ export default function MemberPortalPage() {
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold">Add New Payment Method</h3>
                   <Button 
-                    type="tertiary" 
+                    variant="tertiary" 
                     size="small"
                     onClick={() => setShowAddPaymentMethod(false)}
                   >
@@ -629,14 +629,14 @@ export default function MemberPortalPage() {
 
               <div className="flex gap-3 justify-end">
                 <Button
-                  type="secondary"
+                  variant="secondary"
                   onClick={() => setShowCancelDialog(null)}
                   disabled={actionLoading === showCancelDialog}
                 >
                   Keep Subscription
                 </Button>
                 <Button
-                  type="error"
+                  variant="error"
                   onClick={() => handleCancelSubscription(showCancelDialog)}
                   disabled={actionLoading === showCancelDialog}
                 >

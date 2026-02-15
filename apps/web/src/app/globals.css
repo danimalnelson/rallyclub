@@ -204,6 +204,42 @@
     --ring: var(--ds-gray-1000-value);
     --radius: 0.5rem;
   }
+
+  .dark {
+    --ds-gray-100-value: 0, 0%, 10%;
+    --ds-gray-200-value: 0, 0%, 12%;
+    --ds-gray-300-value: 0, 0%, 16%;
+    --ds-gray-400-value: 0, 0%, 20%;
+    --ds-gray-500-value: 0, 0%, 27%;
+    --ds-gray-600-value: 0, 0%, 37%;
+    --ds-gray-700-value: 0, 0%, 47%;
+    --ds-gray-800-value: 0, 0%, 55%;
+    --ds-gray-900-value: 0, 0%, 65%;
+    --ds-gray-1000-value: 0, 0%, 93%;
+    --ds-background-100-value: 0, 0%, 0%;
+    --ds-background-200-value: 0, 0%, 4%;
+
+    /* Semantic theme — dark overrides */
+    --background: var(--ds-background-100-value);
+    --foreground: var(--ds-gray-1000-value);
+    --card: var(--ds-background-200-value);
+    --card-foreground: var(--ds-gray-1000-value);
+    --popover: var(--ds-background-200-value);
+    --popover-foreground: var(--ds-gray-1000-value);
+    --primary: var(--ds-gray-1000-value);
+    --primary-foreground: var(--ds-background-100-value);
+    --secondary: var(--ds-gray-200-value);
+    --secondary-foreground: var(--ds-gray-1000-value);
+    --muted: var(--ds-gray-200-value);
+    --muted-foreground: var(--ds-gray-800-value);
+    --accent: var(--ds-gray-200-value);
+    --accent-foreground: var(--ds-gray-1000-value);
+    --destructive: var(--ds-red-700-value);
+    --destructive-foreground: var(--ds-background-100-value);
+    --border: var(--ds-gray-300-value);
+    --input: var(--ds-gray-300-value);
+    --ring: var(--ds-gray-1000-value);
+  }
 }
 
 /* P3 + OKLCH: richer colors on supported displays */
@@ -344,5 +380,14 @@
   /* Slightly bolder stroke for geist-icons (and other line-based icon SVGs) */
   svg[stroke="currentColor"] {
     stroke-width: 2;
+  }
+
+  /* Default icon color: gray-900, darkens to gray-1000 on parent hover */
+  svg {
+    color: var(--ds-gray-900);
+  }
+  a:hover svg,
+  button:hover svg {
+    color: var(--ds-gray-1000);
   }
 }

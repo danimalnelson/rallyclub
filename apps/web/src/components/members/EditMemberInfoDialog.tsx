@@ -60,7 +60,7 @@ export function EditMemberInfoDialog({
   if (!isOpen) {
     return (
       <Button
-        type="secondary"
+        variant="secondary"
         size="small"
         onClick={() => setIsOpen(true)}
         prefix={<Pencil size={16} />}
@@ -130,13 +130,13 @@ export function EditMemberInfoDialog({
 
           <div className="flex gap-3 justify-end">
             <Button
-              type="secondary"
+              variant="secondary"
               onClick={() => setIsOpen(false)}
               disabled={loading}
             >
               Cancel
             </Button>
-            <Button htmlType="submit" disabled={loading}>
+            <Button type="submit" disabled={loading}>
               {loading ? "Saving..." : "Save Changes"}
             </Button>
           </div>

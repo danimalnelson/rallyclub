@@ -231,7 +231,7 @@ export default function SettingsPage() {
                     <img
                       src={formData.logoUrl}
                       alt="Logo preview"
-                      className="h-20 w-20 rounded-lg object-cover border border-neutral-400"
+                      className="h-20 w-20 rounded-lg object-cover border border-gray-400"
                     />
                     <button
                       type="button"
@@ -247,7 +247,7 @@ export default function SettingsPage() {
                   <button
                     type="button"
                     onClick={removeLogo}
-                    className="inline-flex items-center gap-1 text-xs text-neutral-800 hover:text-neutral-950 transition-colors"
+                    className="inline-flex items-center gap-1 text-xs text-gray-800 hover:text-gray-950 transition-colors"
                   >
                     <Cross size={12} className="h-3 w-3" />
                     Remove
@@ -258,12 +258,12 @@ export default function SettingsPage() {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
-                  className="flex items-center justify-center gap-2 w-20 h-20 rounded-lg border border-dashed border-neutral-700 hover:border-neutral-800 bg-neutral-50 hover:bg-neutral-100 transition-colors cursor-pointer"
+                  className="flex items-center justify-center gap-2 w-20 h-20 rounded-lg border border-dashed border-gray-700 hover:border-gray-800 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
                 >
                   {uploading ? (
-                    <div className="h-5 w-5 border-2 border-neutral-700 border-t-neutral-950 rounded-full animate-spin" />
+                    <div className="h-5 w-5 border-2 border-gray-700 border-t-gray-950 rounded-full animate-spin" />
                   ) : (
-                    <CloudUpload className="h-5 w-5 text-neutral-800" />
+                    <CloudUpload className="h-5 w-5 text-gray-800" />
                   )}
                 </button>
               )}
@@ -280,7 +280,7 @@ export default function SettingsPage() {
             {cropFile && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
                 <div className="bg-white rounded-xl shadow-xl w-[420px] overflow-hidden">
-                  <div className="flex items-center justify-center bg-neutral-100 p-4">
+                  <div className="flex items-center justify-center bg-gray-100 p-4">
                     <AvatarEditor
                       ref={editorRef}
                       image={cropFile}
@@ -294,7 +294,7 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div className="px-4 py-3 flex items-center gap-3">
-                    <MagnifyingGlassMinus className="h-3.5 w-3.5 text-neutral-800 shrink-0" />
+                    <MagnifyingGlassMinus className="h-3.5 w-3.5 text-gray-800 shrink-0" />
                     <input
                       type="range"
                       min={1}
@@ -302,13 +302,13 @@ export default function SettingsPage() {
                       step={0.05}
                       value={zoom}
                       onChange={(e) => setZoom(Number(e.target.value))}
-                      className="flex-1 accent-neutral-950"
+                      className="flex-1 accent-gray-950"
                     />
-                    <MagnifyingGlassPlus className="h-3.5 w-3.5 text-neutral-800 shrink-0" />
+                    <MagnifyingGlassPlus className="h-3.5 w-3.5 text-gray-800 shrink-0" />
                   </div>
-                  <div className="px-4 py-3 border-t border-neutral-400 flex items-center justify-between">
+                  <div className="px-4 py-3 border-t border-gray-400 flex items-center justify-between">
                     <Button
-                      type="tertiary"
+                      variant="tertiary"
                       onClick={cancelCrop}
                     >
                       Cancel
@@ -461,7 +461,7 @@ export default function SettingsPage() {
 
         {/* Save Button */}
         <div className="flex justify-end">
-          <Button htmlType="submit" disabled={saving} className="min-w-32">
+          <Button type="submit" disabled={saving} className="min-w-32">
             {saving ? "Saving..." : "Save Changes"}
           </Button>
         </div>

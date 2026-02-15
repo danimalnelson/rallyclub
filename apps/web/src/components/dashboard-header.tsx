@@ -42,11 +42,11 @@ export const DashboardHeader = memo(function DashboardHeader({ business, userEma
               </span>
             )}
             <Link href="/app">
-              <Button type="tertiary" size="small">
+              <Button variant="tertiary" size="small">
                 ← Back to Businesses
               </Button>
             </Link>
-            <Button type="secondary" size="small" onClick={handleSignOut}>
+            <Button variant="secondary" size="small" onClick={handleSignOut}>
               Sign Out
             </Button>
           </div>

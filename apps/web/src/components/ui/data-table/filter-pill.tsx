@@ -32,7 +32,7 @@ function PlusIcon({ active, className }: { active?: boolean; className?: string 
 }
 
 function FilterPillTrigger({ label, activeValue, active }: { label: string; activeValue?: string; active: boolean }) {
-  const { toggle, triggerRef } = useMenuContext();
+  const { isOpen, toggle, triggerRef } = useMenuContext();
 
   // Defer active styling briefly on mount so the transition is visible
   const [showActive, setShowActive] = useState(false);
@@ -48,17 +48,19 @@ function FilterPillTrigger({ label, activeValue, active }: { label: string; acti
     <button
       ref={triggerRef}
       onClick={toggle}
+      aria-expanded={isOpen}
+      aria-haspopup="listbox"
       className={`group inline-flex items-center gap-1.5 px-2 h-6 rounded-full text-xs font-medium border transition-all duration-300 ${
         showActive
-          ? "bg-neutral-950 text-white border-neutral-950"
-          : "bg-white text-neutral-900 border-neutral-300 hover:border-neutral-700 hover:text-neutral-950"
+          ? "bg-gray-950 text-white border-gray-950 dark:bg-white dark:text-gray-950 dark:border-white"
+          : "bg-white text-gray-900 border-gray-300 hover:border-gray-700 hover:text-gray-950 dark:bg-gray-100 dark:text-gray-800 dark:border-gray-600 dark:hover:border-gray-400 dark:hover:text-white"
       }`}
     >
       {/* Fixed 12x12 icon container — rotate + to × when active */}
       <span className="flex items-center justify-center w-3 h-3 shrink-0">
         <PlusIcon
           active={showActive}
-          className={showActive ? "" : "group-hover:text-neutral-950"}
+          className={showActive ? "" : "group-hover:text-gray-950"}
         />
       </span>
       <span>{label}</span>

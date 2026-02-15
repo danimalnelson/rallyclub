@@ -172,7 +172,7 @@ export default function OnboardingReturnPage() {
               </p>
               <div className="space-y-3">
                 <Button
-                  type="warning"
+                  variant="warning"
                   className="w-full"
                   onClick={() => checkStatus()}
                   disabled={checking}
@@ -180,7 +180,7 @@ export default function OnboardingReturnPage() {
                   {checking ? "Checking..." : "Check Status"}
                 </Button>
                 <Button
-                  type="secondary"
+                  variant="secondary"
                   className="w-full"
                   onClick={handleResumeOnboarding}
                 >
@@ -200,7 +200,7 @@ export default function OnboardingReturnPage() {
                 {nextAction.message}
               </p>
               <Button
-                type="error"
+                variant="error"
                 className="w-full"
                 onClick={handleResumeOnboarding}
               >

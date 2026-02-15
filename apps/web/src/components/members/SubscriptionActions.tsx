@@ -2,30 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, MenuContainer, Menu, MenuItem, useMenuContext } from "@wine-club/ui";
-import { Play, Pencil, MoreVertical } from "geist-icons";
+import { Button, Dialog, MenuContainer, Menu, MenuItem, MenuIconTrigger } from "@wine-club/ui";
+import { Play, MoreVertical } from "geist-icons";
 import { PauseCircle } from "@/components/icons/PauseCircle";
 import { CrossCircle } from "geist-icons";
 import { Cross } from "@/components/icons/Cross";
 
 // ---------------------------------------------------------------------------
-// Compact three-dot menu for row actions (uses Menu components)
+// Compact three-dot menu for row actions
 // ---------------------------------------------------------------------------
-
-function CompactMoreMenuTrigger() {
-  const { toggle, triggerRef } = useMenuContext();
-  return (
-    <button
-      ref={triggerRef}
-      type="button"
-      onClick={(e) => { e.stopPropagation(); toggle(); }}
-      title="More actions"
-      className="flex h-[30px] w-[30px] shrink-0 items-center justify-center border-l border-transparent text-muted-foreground group-hover:border-neutral-200 hover:bg-neutral-100 hover:text-foreground dark:group-hover:border-neutral-600 dark:hover:bg-neutral-800"
-    >
-      <MoreVertical className="h-4 w-4" />
-    </button>
-  );
-}
 
 function CompactMoreMenu({
   canPause,
@@ -46,7 +31,9 @@ function CompactMoreMenu({
 }) {
   return (
     <MenuContainer>
-      <CompactMoreMenuTrigger />
+      <MenuIconTrigger className="border-l border-transparent group-hover:border-gray-200 dark:group-hover:border-gray-600">
+        <MoreVertical className="h-4 w-4" />
+      </MenuIconTrigger>
       <Menu width={160} align="end">
         {canPause && (
           <MenuItem onClick={onPause} disabled={loading}>
@@ -70,6 +57,72 @@ function CompactMoreMenu({
         )}
       </Menu>
     </MenuContainer>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Cancel Dialog (shared between compact and full modes)
+// ---------------------------------------------------------------------------
+
+function CancelDialog({
+  open,
+  onClose,
+  onConfirm,
+  loading,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onConfirm: (reason: string) => void;
+  loading: boolean;
+}) {
+  const [cancelReason, setCancelReason] = useState("");
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      title="Cancel Subscription"
+      footer={
+        <>
+          <Button
+            variant="secondary"
+            onClick={onClose}
+            disabled={loading}
+          >
+            Keep Subscription
+          </Button>
+          <Button
+            variant="error"
+            onClick={() => onConfirm(cancelReason)}
+            disabled={loading}
+          >
+            {loading ? "Cancelling..." : "Cancel Subscription"}
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <p className="text-sm text-gray-600 dark:text-gray-800">
+          This will cancel the subscription at the end of the current billing period.
+          The member will retain access until then.
+        </p>
+
+        <div>
+          <label htmlFor="cancelReason" className="block text-sm font-medium mb-2">
+            Reason for Cancellation (Optional)
+          </label>
+          <textarea
+            id="cancelReason"
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+            placeholder="e.g., Customer requested, payment issues, etc."
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-100"
+            disabled={loading}
+          />
+        </div>
+      </div>
+    </Dialog>
   );
 }
 
@@ -102,7 +155,6 @@ export function SubscriptionActions({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [cancelReason, setCancelReason] = useState("");
 
   const isPaused = pausedAt !== null;
   const coerceCancel = !!cancelAtPeriodEnd;
@@ -160,13 +212,13 @@ export function SubscriptionActions({
     }
   };
 
-  const handleCancel = async () => {
+  const handleCancel = async (reason: string) => {
     setLoading(true);
     try {
       const response = await fetch(`/api/subscriptions/${subscriptionId}/cancel`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason: cancelReason }),
+        body: JSON.stringify({ reason }),
       });
 
       if (!response.ok) {
@@ -186,15 +238,15 @@ export function SubscriptionActions({
     return (
       <>
         {/* Combined actions bar - hover actions + three-dot, one unit on row hover */}
-        <div className="absolute right-1.5 top-1/2 flex -translate-y-1/2 items-stretch gap-0 overflow-hidden rounded-lg border border-transparent bg-transparent transition-[border-color,background-color,box-shadow] group-hover:border-neutral-300 group-hover:bg-white group-hover:shadow-sm dark:group-hover:border-neutral-600 dark:group-hover:bg-neutral-100">
-          <div className="pointer-events-none flex items-center opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 [&>button:not(:first-child)]:border-l [&>button:not(:first-child)]:border-neutral-200 dark:[&>button:not(:first-child)]:border-neutral-600">
+        <div className="absolute right-1.5 top-1/2 flex -translate-y-1/2 items-stretch gap-0 overflow-hidden rounded-lg border border-transparent bg-transparent transition-[border-color,background-color,box-shadow] group-hover:border-gray-300 group-hover:bg-white group-hover:shadow-sm dark:group-hover:border-gray-600 dark:group-hover:bg-gray-100">
+          <div className="pointer-events-none flex items-center opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 [&>button:not(:first-child)]:border-l [&>button:not(:first-child)]:border-gray-200 dark:[&>button:not(:first-child)]:border-gray-600">
             {canPause && (
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); handlePause(); }}
                 disabled={loading}
                 title="Pause"
-                className="flex h-[30px] w-[30px] shrink-0 items-center justify-center text-muted-foreground hover:bg-neutral-100 hover:text-foreground disabled:opacity-50 dark:hover:bg-neutral-700"
+                className="flex h-[30px] w-[30px] shrink-0 items-center justify-center text-gray-600 hover:bg-gray-100 hover:text-gray-950 disabled:opacity-50 dark:text-gray-700 dark:hover:bg-gray-200 dark:hover:text-white"
               >
                 <PauseCircle size={16} className="h-4 w-4" />
               </button>
@@ -205,7 +257,7 @@ export function SubscriptionActions({
                 onClick={(e) => { e.stopPropagation(); handleResume(); }}
                 disabled={loading}
                 title="Resume"
-                className="flex h-[30px] w-[30px] shrink-0 items-center justify-center text-muted-foreground hover:bg-neutral-100 hover:text-foreground disabled:opacity-50 dark:hover:bg-neutral-700"
+                className="flex h-[30px] w-[30px] shrink-0 items-center justify-center text-gray-600 hover:bg-gray-100 hover:text-gray-950 disabled:opacity-50 dark:text-gray-700 dark:hover:bg-gray-200 dark:hover:text-white"
               >
                 <Play className="h-4 w-4" />
               </button>
@@ -216,7 +268,7 @@ export function SubscriptionActions({
                 onClick={(e) => { e.stopPropagation(); setShowCancelDialog(true); }}
                 disabled={loading}
                 title="Cancel"
-                className="flex h-[30px] w-[30px] shrink-0 items-center justify-center text-muted-foreground hover:bg-neutral-100 hover:text-foreground disabled:opacity-50 dark:hover:bg-neutral-700"
+                className="flex h-[30px] w-[30px] shrink-0 items-center justify-center text-gray-600 hover:bg-gray-100 hover:text-gray-950 disabled:opacity-50 dark:text-gray-700 dark:hover:bg-gray-200 dark:hover:text-white"
               >
                 <CrossCircle className="h-4 w-4" />
               </button>
@@ -232,60 +284,12 @@ export function SubscriptionActions({
             onCancel={() => setShowCancelDialog(true)}
           />
         </div>
-        {showCancelDialog && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-background rounded-lg shadow-lg max-w-md w-full p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold">Cancel Subscription</h2>
-                <button
-                  onClick={() => setShowCancelDialog(false)}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <Cross size={20} className="h-5 w-5" />
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  This will cancel the subscription at the end of the current billing period.
-                  The member will retain access until then.
-                </p>
-
-                <div>
-                  <label htmlFor="cancelReason" className="block text-sm font-medium mb-2">
-                    Reason for Cancellation (Optional)
-                  </label>
-                  <textarea
-                    id="cancelReason"
-                    value={cancelReason}
-                    onChange={(e) => setCancelReason(e.target.value)}
-                    placeholder="e.g., Customer requested, payment issues, etc."
-                    rows={3}
-                    className="w-full px-3 py-2 border rounded-md"
-                    disabled={loading}
-                  />
-                </div>
-
-                <div className="flex gap-3 justify-end">
-                  <Button
-                    type="secondary"
-                    onClick={() => setShowCancelDialog(false)}
-                    disabled={loading}
-                  >
-                    Keep Subscription
-                  </Button>
-                  <Button
-                    type="error"
-                    onClick={handleCancel}
-                    disabled={loading}
-                  >
-                    {loading ? "Cancelling..." : "Cancel Subscription"}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        <CancelDialog
+          open={showCancelDialog}
+          onClose={() => setShowCancelDialog(false)}
+          onConfirm={handleCancel}
+          loading={loading}
+        />
       </>
     );
   }
@@ -294,7 +298,7 @@ export function SubscriptionActions({
     <div className="flex gap-2">
       {canPause && (
         <Button
-          type="secondary"
+          variant="secondary"
           size="small"
           onClick={handlePause}
           disabled={loading}
@@ -306,7 +310,7 @@ export function SubscriptionActions({
 
       {canResume && (
         <Button
-          type="secondary"
+          variant="secondary"
           size="small"
           onClick={handleResume}
           disabled={loading}
@@ -318,7 +322,7 @@ export function SubscriptionActions({
 
       {canCancel && (
         <Button
-          type="error"
+          variant="error"
           size="small"
           onClick={() => setShowCancelDialog(true)}
           disabled={loading}
@@ -328,61 +332,12 @@ export function SubscriptionActions({
         </Button>
       )}
 
-      {showCancelDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-background rounded-lg shadow-lg max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold">Cancel Subscription</h2>
-              <button
-                onClick={() => setShowCancelDialog(false)}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <Cross size={20} className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                This will cancel the subscription at the end of the current billing period.
-                The member will retain access until then.
-              </p>
-
-              <div>
-                <label htmlFor="cancelReason" className="block text-sm font-medium mb-2">
-                  Reason for Cancellation (Optional)
-                </label>
-                <textarea
-                  id="cancelReason"
-                  value={cancelReason}
-                  onChange={(e) => setCancelReason(e.target.value)}
-                  placeholder="e.g., Customer requested, payment issues, etc."
-                  rows={3}
-                  className="w-full px-3 py-2 border rounded-md"
-                  disabled={loading}
-                />
-              </div>
-
-              <div className="flex gap-3 justify-end">
-                <Button
-                  type="secondary"
-                  onClick={() => setShowCancelDialog(false)}
-                  disabled={loading}
-                >
-                  Keep Subscription
-                </Button>
-                <Button
-                  type="error"
-                  onClick={handleCancel}
-                  disabled={loading}
-                >
-                  {loading ? "Cancelling..." : "Cancel Subscription"}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <CancelDialog
+        open={showCancelDialog}
+        onClose={() => setShowCancelDialog(false)}
+        onConfirm={handleCancel}
+        loading={loading}
+      />
     </div>
   );
 }
-

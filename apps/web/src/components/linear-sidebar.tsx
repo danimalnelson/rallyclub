@@ -58,7 +58,7 @@ function WorkspaceTrigger({ business }: { business: Business }) {
     <button
       ref={triggerRef}
       onClick={toggle}
-      className="group w-full flex items-center gap-1.5 px-2 h-9 rounded-md hover:bg-[var(--ds-gray-100)] transition-colors"
+      className="group w-full flex items-center gap-1.5 px-2 h-9 rounded-md hover:bg-gray-100 transition-colors"
     >
       {business.logoUrl ? (
         <img src={business.logoUrl} alt={business.name} className="h-5 w-5 rounded object-cover" />
@@ -67,8 +67,8 @@ function WorkspaceTrigger({ business }: { business: Business }) {
           <span className="text-white font-semibold text-[10px]">{business.name.charAt(0).toUpperCase()}</span>
         </div>
       )}
-      <span className="text-sm font-semibold text-neutral-950 truncate flex-1 text-left">{business.name}</span>
-      <ChevronUpDown size={14} className="text-neutral-800 group-hover:text-neutral-950 shrink-0" />
+      <span className="text-sm font-semibold text-gray-950 truncate flex-1 text-left">{business.name}</span>
+      <ChevronUpDown size={14} className="text-gray-800 group-hover:text-gray-950 shrink-0" />
     </button>
   );
 }
@@ -83,7 +83,7 @@ function WorkspaceUserSection({
   return (
     <MenuItem
       href={`${basePath}/account`}
-      suffix={<ChevronRight size={16} className="text-neutral-800 group-hover:text-neutral-950" />}
+      suffix={<ChevronRight size={16} className="text-gray-800 group-hover:text-gray-950" />}
     >
       <span className="truncate">{userEmail}</span>
     </MenuItem>
@@ -94,8 +94,8 @@ function BusinessLogo({ business, className }: { business: Business; className?:
   return business.logoUrl ? (
     <img src={business.logoUrl} alt={business.name} className={cn("rounded object-cover", className)} />
   ) : (
-    <div className={cn("rounded bg-neutral-400 flex items-center justify-center", className)}>
-      <span className="text-neutral-900 font-semibold text-[10px]">{business.name.charAt(0).toUpperCase()}</span>
+    <div className={cn("rounded bg-gray-400 flex items-center justify-center", className)}>
+      <span className="text-gray-900 font-semibold text-[10px]">{business.name.charAt(0).toUpperCase()}</span>
     </div>
   );
 }
@@ -147,7 +147,7 @@ export const LinearSidebar = memo(function LinearSidebar({
   const otherBusinesses = allBusinesses.filter(b => b.id !== businessId);
 
   return (
-    <aside className="fixed left-0 top-0 bottom-0 z-40 w-[241px] flex flex-col bg-neutral-50 border-r border-neutral-300 overflow-hidden">
+    <aside className="fixed left-0 top-0 bottom-0 z-40 w-[241px] flex flex-col bg-ds-background-200 border-r border-gray-300 overflow-hidden">
       {/* Workspace Header — stays fixed at top */}
       <div className="px-3 py-3 shrink-0">
         <MenuContainer>
@@ -164,7 +164,7 @@ export const LinearSidebar = memo(function LinearSidebar({
             {/* Businesses */}
             <MenuItem
               disabled
-              className="bg-neutral-200 opacity-100"
+              className="bg-gray-200 opacity-100"
               prefix={
                 business.logoUrl ? (
                   <img src={business.logoUrl} alt={business.name} className="h-5 w-5 rounded object-cover" />
@@ -224,8 +224,8 @@ export const LinearSidebar = memo(function LinearSidebar({
                   className={cn(
                     "flex items-center gap-2.5 px-2 h-9 rounded-md text-sm font-medium transition-colors",
                     active
-                      ? "bg-neutral-200 text-neutral-950"
-                      : "text-neutral-900 hover:text-neutral-950 hover:bg-[var(--ds-gray-100)]"
+                      ? "bg-gray-200 text-gray-950"
+                      : "text-gray-900 hover:text-gray-950 hover:bg-gray-100"
                   )}
                 >
                   <Icon className="h-4 w-4" />
@@ -234,24 +234,24 @@ export const LinearSidebar = memo(function LinearSidebar({
               );
             })}
 
-            <div className="border-t border-neutral-300 mt-[4px] mb-[4px]" />
+            <div className="border-t border-gray-300 mt-[4px] mb-[4px]" />
 
             <button
               onClick={() => setShowSettingsNav(true)}
               className={cn(
                 "group flex items-center gap-2.5 px-2 h-9 rounded-md text-sm font-medium transition-colors w-full",
                 isOnSettingsPage
-                  ? "bg-neutral-200 text-neutral-950"
-                  : "text-neutral-900 hover:text-neutral-950 hover:bg-[var(--ds-gray-100)]"
+                  ? "bg-gray-200 text-gray-950"
+                  : "text-gray-900 hover:text-gray-950 hover:bg-gray-100"
               )}
             >
               <SettingsGear className="h-4 w-4" />
               <span className="flex-1 text-left">Settings</span>
-              <ChevronRight size={16} className="text-neutral-800 group-hover:text-neutral-950" />
+              <ChevronRight size={16} className="text-gray-800 group-hover:text-gray-950" />
             </button>
             <a
               href="mailto:support@example.com"
-              className="flex items-center gap-2.5 px-2 h-9 rounded-md text-sm font-medium text-neutral-900 hover:text-neutral-950 hover:bg-[var(--ds-gray-100)] transition-colors"
+              className="flex items-center gap-2.5 px-2 h-9 rounded-md text-sm font-medium text-gray-900 hover:text-gray-950 hover:bg-gray-100 transition-colors"
             >
               <Lifebuoy className="h-4 w-4" />
               <span>Help & Support</span>
@@ -274,9 +274,9 @@ export const LinearSidebar = memo(function LinearSidebar({
           <div className="px-2 pt-1 pb-1">
             <button
               onClick={() => setShowSettingsNav(false)}
-              className="group w-full flex items-center px-2 h-9 rounded-md hover:bg-[var(--ds-gray-100)] transition-colors text-sm font-medium text-neutral-950 relative"
+              className="group w-full flex items-center px-2 h-9 rounded-md hover:bg-gray-100 transition-colors text-sm font-medium text-gray-950 relative"
             >
-              <ChevronLeft size={16} className="text-neutral-800 group-hover:text-neutral-950 absolute left-2" />
+              <ChevronLeft size={16} className="text-gray-800 group-hover:text-gray-950 absolute left-2" />
               <span className="flex-1 text-center">Settings</span>
             </button>
           </div>
@@ -292,8 +292,8 @@ export const LinearSidebar = memo(function LinearSidebar({
                   className={cn(
                     "flex items-center px-2 h-9 rounded-md text-sm font-medium transition-colors",
                     active
-                      ? "bg-neutral-200 text-neutral-950"
-                      : "text-neutral-900 hover:text-neutral-950 hover:bg-[var(--ds-gray-100)]"
+                      ? "bg-gray-200 text-gray-950"
+                      : "text-gray-900 hover:text-gray-950 hover:bg-gray-100"
                   )}
                 >
                   <span>{item.label}</span>

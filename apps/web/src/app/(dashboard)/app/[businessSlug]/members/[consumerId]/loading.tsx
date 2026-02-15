@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { SectionCard } from "@/components/ui/section-card";
 
 function Skeleton({ className = "" }: { className?: string }) {
-  return <div className={`animate-pulse rounded bg-neutral-300/70 ${className}`} />;
+  return <div className={`animate-pulse rounded bg-gray-300/70 ${className}`} />;
 }
 
 export default function MemberDetailLoading() {
@@ -18,7 +18,7 @@ export default function MemberDetailLoading() {
           >
             Members
           </Link>
-          <ChevronBreadcrumb size={14} className="text-neutral-500 shrink-0" />
+          <ChevronBreadcrumb size={14} className="text-gray-500 shrink-0" />
           <Skeleton className="h-4 w-32" />
         </div>
       </PageHeader>

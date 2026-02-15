@@ -6,7 +6,7 @@ export default function DashboardLoading() {
   return (
     <>
       {/* Sticky header skeleton */}
-      <div className="sticky top-0 z-10 -mx-3 px-3 pt-3 flex items-center gap-2 pb-3 mb-3 border-b border-neutral-400 bg-neutral-50">
+      <div className="sticky top-0 z-10 -mx-3 px-3 pt-3 flex items-center gap-2 pb-3 mb-3 border-b border-gray-400 bg-ds-background-200">
         <Skeleton className="h-4 w-[120px] shrink-0" />
         <div className="flex items-center gap-1.5">
           <Skeleton className="h-6 w-16 rounded-full" />
@@ -45,7 +45,7 @@ export default function DashboardLoading() {
       </div>
 
       {/* Footer skeleton */}
-      <div className="sticky bottom-0 -mx-3 px-3 mt-3 flex items-center h-10 border-t border-neutral-400 bg-neutral-50">
+      <div className="sticky bottom-0 -mx-3 px-3 mt-3 flex items-center h-10 border-t border-gray-400 bg-ds-background-200">
         <Skeleton className="h-3 w-16" />
       </div>
     </>

@@ -8,16 +8,16 @@ import { cn } from "../lib/utils";
 // ---------------------------------------------------------------------------
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
-      type: {
+      variant: {
         default:
-          "bg-neutral-950 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-200",
+          "bg-gray-950 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-200",
         secondary:
-          "border border-neutral-300 bg-white text-neutral-950 hover:border-neutral-500 dark:border-neutral-600 dark:bg-neutral-100 dark:text-white dark:hover:border-neutral-400",
+          "border border-gray-300 bg-white text-gray-950 hover:border-gray-500 dark:border-gray-600 dark:bg-gray-100 dark:text-white dark:hover:border-gray-400",
         tertiary:
-          "bg-transparent text-neutral-950 hover:bg-neutral-100 dark:text-white dark:hover:bg-neutral-800",
+          "bg-transparent text-gray-950 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800",
         error:
           "bg-red-600 text-white hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700",
         warning:
@@ -34,7 +34,7 @@ const buttonVariants = cva(
       },
     },
     defaultVariants: {
-      type: "default",
+      variant: "default",
       size: "medium",
       shape: "square",
     },
@@ -77,12 +77,10 @@ function Spinner({ className }: { className?: string }) {
 // ---------------------------------------------------------------------------
 
 export interface ButtonProps
-  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "type" | "prefix" | "suffix">,
-    VariantProps<typeof buttonVariants> {
-  /** HTML button type attribute */
-  htmlType?: React.ButtonHTMLAttributes<HTMLButtonElement>["type"];
+  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "prefix" | "suffix">,
+    Omit<VariantProps<typeof buttonVariants>, "variant"> {
   /** Visual style variant */
-  type?: "default" | "secondary" | "tertiary" | "error" | "warning";
+  variant?: "default" | "secondary" | "tertiary" | "error" | "warning";
   /** Render as child element (Radix Slot) */
   asChild?: boolean;
   /** Icon or element before children */
@@ -103,7 +101,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
       className,
-      type = "default",
+      variant = "default",
       size,
       shape,
       asChild = false,
@@ -112,7 +110,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       loading = false,
       shadow = false,
       disabled,
-      htmlType = "button",
+      type = "button",
       children,
       ...props
     },
@@ -126,7 +124,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       return (
         <Comp
           className={cn(
-            buttonVariants({ type, size, shape, className }),
+            buttonVariants({ variant, size, shape, className }),
             shadow && "shadow-sm",
           )}
           ref={ref}
@@ -140,13 +138,13 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <Comp
         className={cn(
-          buttonVariants({ type, size, shape, className }),
+          buttonVariants({ variant, size, shape, className }),
           shadow && "shadow-sm",
           loading && "pointer-events-none",
         )}
         ref={ref}
         disabled={isDisabled}
-        type={htmlType}
+        type={type}
         {...props}
       >
         {loading ? (

@@ -52,7 +52,7 @@ export function DataView<T>({
   return (
     <ul
       className={cn(
-        "divide-y divide-neutral-200 dark:divide-neutral-700",
+        "divide-y divide-gray-200 dark:divide-gray-700",
         className
       )}
     >
