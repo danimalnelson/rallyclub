@@ -40,10 +40,34 @@ export async function syncPlanSubscription(
     try {
       await createPlanSubscriptionFromSubscription(prisma, subscription, accountId);
       console.log(`[Webhook] ✅ Created PlanSubscription from subscription ${subscription.id}`);
-    } catch (error) {
-      console.error(`[Webhook] ❌ Failed to create PlanSubscription from subscription:`, error);
-      throw error;
+    } catch (error: any) {
+      // Handle race condition: checkout.session.completed may have created
+      // the record between our findUnique and this create attempt.
+      if (error?.code === "P2002") {
+        console.log(`[Webhook] PlanSubscription already exists (race condition), falling through to update`);
+      } else {
+        console.error(`[Webhook] ❌ Failed to create PlanSubscription from subscription:`, error);
+        throw error;
+      }
     }
+    
+    // After a race-condition create failure, fall through to update the existing record
+    const raceResolved = await prisma.planSubscription.findUnique({
+      where: { stripeSubscriptionId: subscription.id },
+    });
+    if (!raceResolved) return;
+    
+    await prisma.planSubscription.update({
+      where: { stripeSubscriptionId: subscription.id },
+      data: {
+        status: subscription.status,
+        currentPeriodStart: new Date(subscription.current_period_start * 1000),
+        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+        cancelAtPeriodEnd: subscription.cancel_at_period_end,
+        lastSyncedAt: new Date(),
+      },
+    });
+    console.log(`[Webhook] Synced PlanSubscription ${raceResolved.id} after race resolution: ${subscription.status}`);
     return;
   }
 

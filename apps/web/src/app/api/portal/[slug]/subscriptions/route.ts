@@ -42,7 +42,8 @@ export async function GET(
       return NextResponse.json({ error: "Business not found" }, { status: 404 });
     }
 
-    // Find all plan subscriptions for this consumer (exclude canceled)
+    // Find all plan subscriptions for this consumer
+    // Include "incomplete" locally — Stripe may have already moved them to "active"
     const planSubscriptions = await prisma.planSubscription.findMany({
       where: {
         consumerId: consumer.id,
@@ -50,7 +51,7 @@ export async function GET(
           businessId: business.id,
         },
         status: {
-          notIn: ["canceled", "incomplete", "incomplete_expired"],
+          notIn: ["canceled", "incomplete_expired"],
         },
       },
       include: {
@@ -65,9 +66,9 @@ export async function GET(
       },
     });
 
-    // Fetch Stripe subscription details for each
+    // Fetch Stripe subscription details for each, reconciling stale local statuses
     const stripe = getStripeClient(business.stripeAccountId);
-    const subscriptionsWithDetails = await Promise.all(
+    const subscriptionsWithDetails = (await Promise.all(
       planSubscriptions.map(async (planSub) => {
         try {
           if (!planSub.stripeSubscriptionId) {
@@ -81,6 +82,28 @@ export async function GET(
             planSub.stripeSubscriptionId,
             { expand: ["default_payment_method", "latest_invoice"] }
           );
+
+          // Reconcile: if local status is stale, update it from Stripe
+          if (planSub.status !== stripeSubscription.status) {
+            console.log(`[Portal] Reconciling PlanSubscription ${planSub.id}: ${planSub.status} → ${stripeSubscription.status}`);
+            await prisma.planSubscription.update({
+              where: { id: planSub.id },
+              data: {
+                status: stripeSubscription.status,
+                currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
+                currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
+                cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end,
+                lastSyncedAt: new Date(),
+              },
+            });
+            // Update the local object for the response
+            planSub.status = stripeSubscription.status;
+          }
+
+          // Skip canceled subscriptions from the response
+          if (stripeSubscription.status === "canceled") {
+            return null;
+          }
 
           // Get payment method details
           let paymentMethod = null;
@@ -110,7 +133,16 @@ export async function GET(
               paymentMethod,
             },
           };
-        } catch (error) {
+        } catch (error: any) {
+          // If Stripe says subscription doesn't exist, mark it as canceled locally
+          if (error?.statusCode === 404) {
+            console.log(`[Portal] Stripe subscription ${planSub.stripeSubscriptionId} not found, marking canceled`);
+            await prisma.planSubscription.update({
+              where: { id: planSub.id },
+              data: { status: "canceled", lastSyncedAt: new Date() },
+            });
+            return null;
+          }
           console.error(`Failed to fetch Stripe subscription ${planSub.stripeSubscriptionId}:`, error);
           return {
             ...planSub,
@@ -118,7 +150,7 @@ export async function GET(
           };
         }
       })
-    );
+    )).filter(Boolean);
 
     return NextResponse.json({
       subscriptions: subscriptionsWithDetails,

@@ -31,11 +31,16 @@ export async function POST(
     }
 
     // Find the consumer's stripe customer ID via their subscriptions
+    // Prefer active subscriptions so we get the current Stripe customer
     const planSubscription = await prisma.planSubscription.findFirst({
       where: {
         consumer: { email },
         plan: { businessId: business.id },
       },
+      orderBy: [
+        { status: "asc" }, // "active" sorts before "canceled"
+        { createdAt: "desc" },
+      ],
       select: { stripeCustomerId: true },
     });
 

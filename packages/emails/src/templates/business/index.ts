@@ -5,6 +5,7 @@
 
 export * from "./new-member";
 export * from "./member-churned";
+export * from "./cancellation-scheduled";
 export * from "./monthly-summary";
 export * from "./payment-alert";
 export * from "./subscription-paused";

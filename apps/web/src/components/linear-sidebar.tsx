@@ -46,6 +46,7 @@ const mainNavItems = [
 const settingsNavItems = [
   { href: "/settings", label: "General" },
   { href: "/settings/branding", label: "Branding" },
+  { href: "/settings/notifications", label: "Notifications" },
 ];
 
 // ---------------------------------------------------------------------------

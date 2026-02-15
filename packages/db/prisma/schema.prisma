@@ -137,11 +137,12 @@ enum BusinessStatus {
 
 // ===== Business User (Join Table with Role) =====
 model BusinessUser {
-  id         String   @id @default(cuid())
-  userId     String
-  businessId String
-  role       Role     @default(STAFF)
-  createdAt  DateTime @default(now())
+  id                      String   @id @default(cuid())
+  userId                  String
+  businessId              String
+  role                    Role     @default(STAFF)
+  notificationPreferences Json?    // { newMember, paymentReceived, paymentFailed, cancellationScheduled, subscriptionCanceled, subscriptionPaused, subscriptionResumed }
+  createdAt               DateTime @default(now())
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)

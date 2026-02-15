@@ -51,6 +51,12 @@ const TYPE_ICON_CONFIG: Record<
     bg: "var(--ds-blue-100)",
     label: "Subscription started",
   },
+  CANCELLATION_SCHEDULED: {
+    icon: Clock,
+    color: "var(--ds-amber-700)",
+    bg: "var(--ds-amber-100)",
+    label: "Cancellation scheduled",
+  },
   SUBSCRIPTION_CANCELLED: {
     icon: SubscriptionCancelled,
     color: "var(--ds-red-700)",

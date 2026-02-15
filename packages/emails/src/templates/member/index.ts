@@ -6,6 +6,7 @@
 export * from "./welcome";
 export * from "./payment-failed";
 export * from "./subscription-cancelled";
+export * from "./cancellation-scheduled";
 export * from "./subscription-paused";
 export * from "./subscription-resumed";
 export * from "./renewal-reminder";

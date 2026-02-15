@@ -92,6 +92,19 @@ export default async function MemberDetailPage({
       currency: null,
     });
 
+    // Cancellation scheduled (still active, but will cancel at period end)
+    if (sub.cancelAtPeriodEnd && sub.status !== "canceled") {
+      activityEvents.push({
+        id: `sub-cancel-scheduled-${sub.id}`,
+        type: "CANCELLATION_SCHEDULED",
+        date: sub.updatedAt,
+        description: sub.plan.name,
+        planName: sub.plan.name,
+        amount: null,
+        currency: null,
+      });
+    }
+
     if (sub.status === "canceled") {
       activityEvents.push({
         id: `sub-cancelled-${sub.id}`,

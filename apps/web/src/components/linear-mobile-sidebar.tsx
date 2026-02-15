@@ -46,6 +46,7 @@ const navItems = [
 const settingsNavItems = [
   { href: "/settings", label: "General" },
   { href: "/settings/branding", label: "Branding" },
+  { href: "/settings/notifications", label: "Notifications" },
 ];
 
 export const LinearMobileSidebar = memo(function LinearMobileSidebar({ 

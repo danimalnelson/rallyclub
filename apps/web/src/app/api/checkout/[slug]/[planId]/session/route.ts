@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@wine-club/db";
 import { getStripeClient } from "@wine-club/lib";
+import { decodeConsumerSession } from "@/lib/consumer-auth";
 
 export async function POST(
   req: NextRequest,
@@ -9,7 +10,16 @@ export async function POST(
   try {
     const { slug, planId } = await context.params;
     const body = await req.json().catch(() => ({}));
-    const { consumerEmail } = body;
+
+    // Prefer email from consumer session (signed-in user), fall back to body
+    let consumerEmail: string | undefined = body.consumerEmail;
+    const sessionCookie = req.cookies.get("consumer_session");
+    if (sessionCookie) {
+      const session = decodeConsumerSession(sessionCookie.value);
+      if (session?.email) {
+        consumerEmail = session.email;
+      }
+    }
 
     // Find plan and verify it's active
     const plan = await prisma.plan.findFirst({
@@ -191,10 +201,18 @@ export async function POST(
       mode: "subscription",
       ui_mode: "embedded",
       return_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/${slug}/success?session_id={CHECKOUT_SESSION_ID}`,
-      ...(stripeCustomerId ? { customer: stripeCustomerId } : {}),
-      ...(consumerEmail ? { customer_email: consumerEmail } : {}),
+      ...(stripeCustomerId
+        ? {
+            customer: stripeCustomerId,
+            saved_payment_method_options: {
+              allow_redisplay_filters: ["always", "limited"],
+              payment_method_save: "enabled",
+            },
+          }
+        : consumerEmail
+          ? { customer_email: consumerEmail }
+          : {}),
       line_items: lineItems,
-      payment_method_types: ["card", "link"],
       subscription_data: {
         metadata: {
           planId: plan.id,

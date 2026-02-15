@@ -107,7 +107,7 @@ const Text = React.forwardRef<HTMLElement, TextProps>(
   ) => {
     return (
       <Tag
-        ref={ref as React.Ref<HTMLParagraphElement>}
+        ref={ref as React.Ref<never>}
         className={cn(
           SIZE_CLASSES[size],
           COLOR_CLASSES[color],
