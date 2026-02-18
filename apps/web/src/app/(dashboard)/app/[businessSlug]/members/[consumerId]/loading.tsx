@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { SectionCard } from "@/components/ui/section-card";
 
 function Skeleton({ className = "" }: { className?: string }) {
-  return <div className={`animate-pulse rounded bg-gray-300/70 ${className}`} />;
+  return <div className={`animate-pulse rounded bg-gray-200 dark:bg-gray-700 ${className}`} />;
 }
 
 export default function MemberDetailLoading() {

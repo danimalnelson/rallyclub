@@ -39,6 +39,7 @@ export function FilterPillFromConfig({
   inputValue,
   isOpen,
   onToggle,
+  onClear,
   onApplyText,
   onApplySelect,
   onSetInput,
@@ -48,6 +49,7 @@ export function FilterPillFromConfig({
   inputValue: string;
   isOpen: boolean;
   onToggle: () => void;
+  onClear: () => void;
   onApplyText: () => void;
   onApplySelect: (value: string) => void;
   onSetInput: (value: string) => void;
@@ -68,6 +70,7 @@ export function FilterPillFromConfig({
         activeValue={displayValue}
         active={active}
         onToggle={onToggle}
+        onClear={onClear}
         isOpen={isOpen}
       >
         <div>
@@ -93,6 +96,7 @@ export function FilterPillFromConfig({
       active={active}
       isOpen={isOpen}
       onToggle={onToggle}
+      onClear={onClear}
       onApplySelect={onApplySelect}
     />
   );
@@ -104,6 +108,7 @@ function MultiSelectFilterPill({
   active,
   isOpen,
   onToggle,
+  onClear,
   onApplySelect,
 }: {
   config: SelectFilterConfig;
@@ -111,6 +116,7 @@ function MultiSelectFilterPill({
   active: boolean;
   isOpen: boolean;
   onToggle: () => void;
+  onClear: () => void;
   onApplySelect: (value: string) => void;
 }) {
   const selectedValues = value ? value.split(",") : [];
@@ -140,6 +146,7 @@ function MultiSelectFilterPill({
       activeValue={displayValue}
       active={active}
       onToggle={onToggle}
+      onClear={onClear}
       isOpen={isOpen}
     >
       <div className="min-h-0">

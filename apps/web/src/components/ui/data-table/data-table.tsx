@@ -153,14 +153,8 @@ export function DataTable<T>({
                 value={filterValues[config.key] || ""}
                 inputValue={inputValues[config.key] || ""}
                 isOpen={openFilter === config.key}
-                onToggle={() => {
-                  const v = filterValues[config.key];
-                  if (v) {
-                    clearFilter(config.key);
-                  } else {
-                    toggleFilter(config.key);
-                  }
-                }}
+                onToggle={() => toggleFilter(config.key)}
+                onClear={() => clearFilter(config.key)}
                 onApplyText={() => applyTextFilter(config.key)}
                 onApplySelect={(value) => applySelectFilter(config.key, value)}
                 onSetInput={(value) => setInput(config.key, value)}

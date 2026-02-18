@@ -3,7 +3,7 @@ export type { Column } from "./data-table";
 export { List } from "./list";
 export type { ListColumn, ListGroup, RowHeightPreset, SortState } from "./list";
 export { ListView } from "./list-view";
-export { ListSkeleton } from "./list-skeleton";
+export { ListSkeleton, ListFooterSkeleton } from "./list-skeleton";
 export { TableView } from "./table-view";
 export type { TableColumn } from "./table-view";
 export { useDataTable } from "./use-data-table";

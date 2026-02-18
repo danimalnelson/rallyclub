@@ -1,6 +1,4 @@
-import { PAGE_HEADER_BAR_CLASSES } from "./page-header";
-
-const SKELETON_CLASS = "animate-pulse rounded bg-gray-400";
+const SKELETON_CLASS = "animate-pulse rounded bg-gray-200 dark:bg-gray-700";
 
 /**
  * Filter pill skeletons for use in ListView loading state.
@@ -8,48 +6,42 @@ const SKELETON_CLASS = "animate-pulse rounded bg-gray-400";
  */
 export function FilterPillSkeletons({ count = 4 }: { count?: number }) {
   return (
-    <div className="flex flex-row items-center gap-1.5 shrink-0">
+    <div className="flex flex-row items-center gap-1 shrink-0">
       {[...Array(count)].map((_, i) => (
-        <div key={i} className={`h-6 w-14 shrink-0 rounded-full ${SKELETON_CLASS}`} />
+        <div key={i} className={`h-8 w-16 shrink-0 rounded-md ${SKELETON_CLASS}`} />
       ))}
     </div>
   );
 }
 
 /**
- * Loading skeleton for the page header bar.
- * Matches the layout of table headers: title + filter pills + action button.
+ * Two-row skeleton matching the DataTable sticky header.
+ * Row 1: centered title.  Row 2: filter pills + action button.
  */
 export function PageHeaderSkeleton({
   pillCount = 4,
   showAction = true,
+  actionWidth = "w-20",
 }: {
-  /** Number of filter pill skeletons (default 4) */
   pillCount?: number;
-  /** Show action button skeleton (default true) */
   showAction?: boolean;
+  actionWidth?: string;
 }) {
   return (
-    <div className={`${PAGE_HEADER_BAR_CLASSES} gap-2`}>
-      {/* Title skeleton — matches text-sm font-semibold line height */}
-      <div className={`h-4 w-20 shrink-0 self-center ${SKELETON_CLASS}`} />
-
-      {/* Filter pill skeletons — h-6 rounded-full matches FilterPill */}
-      <div className="flex flex-row items-center gap-1.5 shrink-0 self-center">
-        {[...Array(pillCount)].map((_, i) => (
-          <div
-            key={i}
-            className={`h-6 w-14 shrink-0 rounded-full ${SKELETON_CLASS}`}
-          />
-        ))}
+    <>
+      {/* Row 1: Title */}
+      <div className="sticky top-0 z-20 -mx-3 px-3 flex items-center justify-center h-[60px] border-b border-gray-300 dark:border-gray-600 bg-ds-background-200 dark:bg-gray-100">
+        <div className={`h-4 w-24 ${SKELETON_CLASS}`} />
       </div>
 
-      <div className="flex-1 min-w-0" />
-
-      {/* Action button skeleton — h-9 rounded-md matches Export/Add buttons */}
-      {showAction && (
-        <div className={`h-9 w-20 shrink-0 self-center rounded-md ${SKELETON_CLASS}`} />
-      )}
-    </div>
+      {/* Row 2: Filters + Actions */}
+      <div className="sticky top-[60px] z-20 -mx-3 px-3 flex items-center gap-2 h-[60px] border-b border-gray-300 dark:border-gray-600 bg-ds-background-200 dark:bg-gray-100">
+        <FilterPillSkeletons count={pillCount} />
+        <div className="flex-1" />
+        {showAction && (
+          <div className={`h-8 ${actionWidth} shrink-0 rounded-md ${SKELETON_CLASS}`} />
+        )}
+      </div>
+    </>
   );
 }
