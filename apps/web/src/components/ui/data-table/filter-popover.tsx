@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Button } from "@wine-club/ui";
+import { useEffect, useRef } from "react";
 import { Check } from "geist-icons";
 import { FilterPill } from "./filter-pill";
 import type { FilterConfig, TextFilterConfig, SelectFilterConfig } from "./use-data-table";
@@ -70,11 +69,6 @@ export function FilterPillFromConfig({
         active={active}
         onToggle={onToggle}
         isOpen={isOpen}
-        footer={
-          <Button className="w-full" onClick={onApplyText}>
-            Apply
-          </Button>
-        }
       >
         <div>
           <DelayedFocusInput
@@ -85,7 +79,6 @@ export function FilterPillFromConfig({
               const v = textConfig.inputTransform ? textConfig.inputTransform(e.target.value) : e.target.value;
               onSetInput(v);
             }}
-            onKeyDown={(e) => e.key === "Enter" && onApplyText()}
           />
         </div>
       </FilterPill>
@@ -121,28 +114,15 @@ function MultiSelectFilterPill({
   onApplySelect: (value: string) => void;
 }) {
   const selectedValues = value ? value.split(",") : [];
-  const [pending, setPending] = useState<Set<string>>(new Set(selectedValues));
-
-  // Sync pending state whenever committed value changes (e.g. filter cleared)
-  // or when the dropdown opens (to reset uncommitted selections)
-  useEffect(() => {
-    setPending(new Set(value ? value.split(",") : []));
-  }, [isOpen, value]);
 
   const toggleOption = (optValue: string) => {
-    setPending((prev) => {
-      const next = new Set(prev);
-      if (next.has(optValue)) {
-        next.delete(optValue);
-      } else {
-        next.add(optValue);
-      }
-      return next;
-    });
-  };
-
-  const applySelection = () => {
-    onApplySelect(Array.from(pending).join(","));
+    const current = new Set(selectedValues);
+    if (current.has(optValue)) {
+      current.delete(optValue);
+    } else {
+      current.add(optValue);
+    }
+    onApplySelect(Array.from(current).join(","));
   };
 
   // Build display value for the pill
@@ -161,16 +141,11 @@ function MultiSelectFilterPill({
       active={active}
       onToggle={onToggle}
       isOpen={isOpen}
-      footer={
-        <Button className="w-full" onClick={applySelection}>
-          Apply
-        </Button>
-      }
     >
       <div className="min-h-0">
         <div className="flex flex-col gap-0.5">
           {config.options.map((opt) => {
-            const checked = pending.has(opt.value);
+            const checked = selectedValues.includes(opt.value);
             return (
               <button
                 key={opt.value}

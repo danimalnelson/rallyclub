@@ -45,8 +45,8 @@ function formatJoinedDate(date: Date, timeZone?: string) {
 
 function buildFilterConfigs(allPlanNames: string[]): FilterConfig[] {
   return [
-    { type: "text", key: "name", label: "Name" },
-    { type: "text", key: "email", label: "Email" },
+    { type: "text", key: "name", label: "Name", placeholder: "Name contains..." },
+    { type: "text", key: "email", label: "Email", placeholder: "Email contains..." },
     {
       type: "select",
       key: "status",
@@ -175,12 +175,14 @@ export function MembersTable({
         <div className="flex items-center gap-1.5">
           <Button
             variant="secondary"
+            size="small"
             onClick={exportCsv}
             prefix={<Download className="h-3.5 w-3.5" />}
           >
             Export
           </Button>
           <Button
+            size="small"
             onClick={() => setDrawerOpen(true)}
             prefix={<Plus className="h-3.5 w-3.5" />}
           >

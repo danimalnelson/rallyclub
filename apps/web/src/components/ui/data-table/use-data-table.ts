@@ -89,11 +89,10 @@ export function useDataTable<T>({
     setOpenFilter(null);
   }, [inputValues]);
 
-  // Apply a select filter (commit value directly)
+  // Apply a select filter (commit value directly, keep popover open for multi-select)
   const applySelectFilter = useCallback((key: string, value: string) => {
     setFilterValues((prev) => ({ ...prev, [key]: value }));
     setPage(0);
-    setOpenFilter(null);
   }, []);
 
   // Clear a filter
@@ -104,9 +103,11 @@ export function useDataTable<T>({
     setOpenFilter(null);
   }, []);
 
-  // Update a text input draft
+  // Update a text input draft and apply immediately
   const setInput = useCallback((key: string, value: string) => {
     setInputValues((prev) => ({ ...prev, [key]: value }));
+    setFilterValues((prev) => ({ ...prev, [key]: value }));
+    setPage(0);
   }, []);
 
   // Build active filters object (only non-empty values)

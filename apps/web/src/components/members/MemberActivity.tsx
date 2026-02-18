@@ -38,8 +38,8 @@ const TYPE_ICON_CONFIG: Record<
 > = {
   CHARGE: {
     icon: Dollar,
-    color: "var(--ds-gray-900)",
-    bg: "var(--ds-gray-100)",
+    color: "var(--ds-blue-700)",
+    bg: "var(--ds-blue-100)",
     label: "Renewed",
   },
   REFUND: {
@@ -62,14 +62,14 @@ const TYPE_ICON_CONFIG: Record<
   },
   SUBSCRIPTION_CANCELLED: {
     icon: SubscriptionCancelled,
-    color: "var(--ds-red-700)",
-    bg: "var(--ds-red-100)",
+    color: "var(--ds-amber-700)",
+    bg: "var(--ds-amber-100)",
     label: "Canceled",
   },
   SUBSCRIPTION_PAUSED: {
     icon: PauseCircle,
-    color: "var(--ds-amber-700)",
-    bg: "var(--ds-amber-100)",
+    color: "var(--ds-purple-700)",
+    bg: "var(--ds-purple-100)",
     label: "Paused",
   },
   SUBSCRIPTION_RESUMED: {
@@ -95,6 +95,18 @@ const TYPE_ICON_CONFIG: Record<
     color: "var(--ds-red-700)",
     bg: "var(--ds-red-100)",
     label: "Failed",
+  },
+  START_FAILED: {
+    icon: CrossCircle,
+    color: "var(--ds-gray-900)",
+    bg: "var(--ds-gray-100)",
+    label: "Payment failure (Start)",
+  },
+  RENEWAL_FAILED: {
+    icon: CrossCircle,
+    color: "var(--ds-amber-700)",
+    bg: "var(--ds-amber-100)",
+    label: "Payment failure (Renewal)",
   },
   PAYOUT_FEE: {
     icon: FileText,

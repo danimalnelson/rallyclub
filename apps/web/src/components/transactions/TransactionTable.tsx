@@ -48,15 +48,16 @@ export interface Transaction {
 
 const TYPE_ICON_CONFIG: Record<string, { icon: React.ElementType; color: string; bg: string }> = {
   PAYMENT:              { icon: Dollar, color: "var(--ds-gray-900)", bg: "var(--ds-gray-100)" },
-  CHARGE:               { icon: Dollar, color: "var(--ds-gray-900)", bg: "var(--ds-gray-100)" },
+  CHARGE:               { icon: Dollar, color: "var(--ds-blue-700)", bg: "var(--ds-blue-100)" },
   SUBSCRIPTION_CREATED: { icon: SubscriptionCreated, color: "var(--ds-green-700)", bg: "var(--ds-green-100)" },
+  START_FAILED:         { icon: CrossCircle, color: "var(--ds-gray-900)", bg: "var(--ds-gray-100)" },
+  RENEWAL_FAILED:       { icon: CrossCircle, color: "var(--ds-red-700)", bg: "var(--ds-red-100)" },
   VOIDED:               { icon: CrossCircle, color: "var(--ds-red-700)", bg: "var(--ds-red-100)" },
   PENDING:              { icon: Clock, color: "var(--ds-amber-700)", bg: "var(--ds-amber-100)" },
-  REFUND:               { icon: RefreshCounterClockwise, color: "var(--ds-amber-700)", bg: "var(--ds-amber-100)" },
-  CANCELLATION_SCHEDULED:   { icon: Clock, color: "var(--ds-amber-700)", bg: "var(--ds-amber-100)" },
-  SUBSCRIPTION_CANCELLED:   { icon: SubscriptionCancelled, color: "var(--ds-red-700)", bg: "var(--ds-red-100)" },
-  SUBSCRIPTION_PAUSED:      { icon: PauseCircle, color: "var(--ds-amber-700)", bg: "var(--ds-amber-100)" },
-  PAYMENT_FAILED:           { icon: CrossCircle, color: "var(--ds-red-700)", bg: "var(--ds-red-100)" },
+  REFUND:               { icon: RefreshCounterClockwise, color: "var(--ds-gray-900)", bg: "var(--ds-gray-100)" },
+  CANCELLATION_SCHEDULED:   { icon: SubscriptionCancelled, color: "var(--ds-amber-700)", bg: "var(--ds-amber-100)" },
+  SUBSCRIPTION_CANCELLED:   { icon: SubscriptionCancelled, color: "var(--ds-amber-700)", bg: "var(--ds-amber-100)" },
+  SUBSCRIPTION_PAUSED:      { icon: PauseCircle, color: "var(--ds-purple-700)", bg: "var(--ds-purple-100)" },
   PAYOUT_FEE:               { icon: FileText, color: "var(--ds-gray-900)", bg: "var(--ds-gray-100)" },
 };
 
@@ -76,14 +77,15 @@ function TypeIcon({ type }: { type: string }) {
 }
 
 const TYPE_LABELS: Record<string, string> = {
+  SUBSCRIPTION_CREATED: "Started",
+  START_FAILED: "Failed",
   CHARGE: "Renewed",
+  RENEWAL_FAILED: "Failed",
+  SUBSCRIPTION_PAUSED: "Paused",
+  CANCELLATION_SCHEDULED: "Canceled",
+  SUBSCRIPTION_CANCELLED: "Canceled",
   REFUND: "Refunded",
   PAYOUT_FEE: "Payout fee",
-  SUBSCRIPTION_CREATED: "Started",
-  CANCELLATION_SCHEDULED: "Canceling",
-  SUBSCRIPTION_CANCELLED: "Canceled",
-  SUBSCRIPTION_PAUSED: "Paused",
-  PAYMENT_FAILED: "Failed",
 };
 
 function TransactionTypeLabel({ type }: { type: string }) {
@@ -119,26 +121,21 @@ const FILTER_CONFIGS: FilterConfig[] = [
     key: "type",
     label: "Type",
     options: [
-      { value: "CHARGE", label: "Renewed", icon: <TypeIcon type="CHARGE" /> },
-      { value: "REFUND", label: "Refunded", icon: <TypeIcon type="REFUND" /> },
       { value: "SUBSCRIPTION_CREATED", label: "Started", icon: <TypeIcon type="SUBSCRIPTION_CREATED" /> },
-      { value: "CANCELLATION_SCHEDULED", label: "Canceling", icon: <TypeIcon type="CANCELLATION_SCHEDULED" /> },
-      { value: "SUBSCRIPTION_CANCELLED", label: "Canceled", icon: <TypeIcon type="SUBSCRIPTION_CANCELLED" /> },
+      { value: "CHARGE", label: "Renewed", icon: <TypeIcon type="CHARGE" /> },
       { value: "SUBSCRIPTION_PAUSED", label: "Paused", icon: <TypeIcon type="SUBSCRIPTION_PAUSED" /> },
-      { value: "PAYMENT_FAILED", label: "Failed", icon: <TypeIcon type="PAYMENT_FAILED" /> },
+      { value: "SUBSCRIPTION_CANCELLED,CANCELLATION_SCHEDULED", label: "Canceled", icon: <TypeIcon type="SUBSCRIPTION_CANCELLED" /> },
+      { value: "RENEWAL_FAILED", label: "Failed", icon: <TypeIcon type="RENEWAL_FAILED" /> },
     ],
   },
-  { type: "text", key: "name", label: "Name" },
-  { type: "text", key: "email", label: "Email" },
-  { type: "text", key: "plan", label: "Plan" },
+  { type: "text", key: "name", label: "Name", placeholder: "Name contains..." },
+  { type: "text", key: "email", label: "Email", placeholder: "Email contains..." },
+  { type: "text", key: "plan", label: "Plan", placeholder: "Plan contains..." },
   {
     type: "text",
-    key: "last4",
+    key: "paymentMethod",
     label: "Payment method",
-    placeholder: "e.g. 4242",
-    maxLength: 4,
-    inputTransform: (v) => v.replace(/\D/g, ""),
-    formatActive: (v) => `••${v}`,
+    placeholder: "Payment method contains...",
   },
 ];
 
@@ -157,8 +154,11 @@ function filterFn(t: Transaction, filters: Record<string, string>): boolean {
     const types = filters.type.split(",");
     if (!types.includes(t.type)) return false;
   }
-  if (filters.last4) {
-    if (!t.paymentMethodLast4 || !t.paymentMethodLast4.includes(filters.last4)) return false;
+  if (filters.paymentMethod) {
+    const q = filters.paymentMethod.toLowerCase();
+    const brand = (t.paymentMethodBrand || "").toLowerCase();
+    const last4 = t.paymentMethodLast4 || "";
+    if (!brand.includes(q) && !last4.includes(q)) return false;
   }
   return true;
 }
@@ -274,8 +274,9 @@ export function TransactionTable({
   const [dateRange, setDateRange] = useState<DateRange>({ from: null, to: null });
 
   const dateFiltered = React.useMemo(() => {
-    if (!dateRange.from && !dateRange.to) return transactions;
-    return transactions.filter((t) => {
+    const visible = transactions.filter((t) => t.type !== "START_FAILED");
+    if (!dateRange.from && !dateRange.to) return visible;
+    return visible.filter((t) => {
       const d = t.date instanceof Date ? t.date.getTime() : new Date(t.date).getTime();
       if (dateRange.from && d < dateRange.from.getTime()) return false;
       if (dateRange.to && d > dateRange.to.getTime()) return false;
@@ -373,6 +374,7 @@ export function TransactionTable({
       actions={
         <Button
           variant="secondary"
+          size="small"
           onClick={exportCsv}
           prefix={<Download className="h-3.5 w-3.5" />}
         >

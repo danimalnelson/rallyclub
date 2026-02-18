@@ -106,6 +106,11 @@ async function TransactionsContent({
   }
 
 
+  // Consumers who have at least one successful charge (used to classify failures)
+  const consumersWithCharges = new Set(
+    dbTransactions.filter((tx) => tx.type === "CHARGE").map((tx) => tx.consumerId)
+  );
+
   // Map DB transactions to the Transaction interface
   const transactions: Transaction[] = [
     // Financial events from the Transaction table
@@ -115,12 +120,17 @@ async function TransactionsContent({
         consumerToPlanName.get(tx.consumerId) ??
         "–";
 
+      let uiType = tx.type as string;
+      if (tx.type === "PAYMENT_FAILED") {
+        uiType = consumersWithCharges.has(tx.consumerId) ? "RENEWAL_FAILED" : "START_FAILED";
+      }
+
       const pm = tx.consumer.paymentMethods[0] ?? null;
       return {
         id: tx.id,
         date: tx.createdAt,
         dateDisplay: formatDateDisplay(tx.createdAt, business.timeZone),
-        type: tx.type, // CHARGE, REFUND, PAYOUT_FEE, PAYMENT_FAILED
+        type: uiType,
         amount: tx.amount,
         currency: tx.currency,
         customerEmail: tx.consumer.email,

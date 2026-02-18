@@ -203,6 +203,7 @@
     --input: var(--ds-gray-300-value);
     --ring: var(--ds-gray-1000-value);
     --radius: 0.5rem;
+    --themed-hover-bg: #383838;
   }
 
   .dark {
@@ -239,6 +240,7 @@
     --border: var(--ds-gray-300-value);
     --input: var(--ds-gray-300-value);
     --ring: var(--ds-gray-1000-value);
+    --themed-hover-bg: #e0e0e0;
   }
 }
 

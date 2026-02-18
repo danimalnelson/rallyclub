@@ -44,7 +44,7 @@ function formatBilling(m: Membership) {
 // ---------------------------------------------------------------------------
 
 const FILTER_CONFIGS: FilterConfig[] = [
-  { type: "text", key: "name", label: "Name" },
+  { type: "text", key: "name", label: "Name", placeholder: "Name contains..." },
   {
     type: "select",
     key: "status",
@@ -139,6 +139,7 @@ export function MembershipsTable({
       actions={
         <Button
           variant="secondary"
+          size="small"
           onClick={() => setDrawerOpen(true)}
           prefix={<Plus className="h-3.5 w-3.5" />}
         >

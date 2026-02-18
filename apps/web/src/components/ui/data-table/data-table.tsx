@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Card, CardContent } from "@wine-club/ui";
+import { Button } from "@wine-club/ui";
 import { FilterPillFromConfig } from "./filter-popover";
 import type { UseDataTableReturn } from "./use-data-table";
 
@@ -65,7 +65,7 @@ function DataTableFooter({
   return (
     <div
       key={count}
-      className="sticky bottom-0 z-20 -mx-3 px-3 mt-3 flex items-center justify-between h-10 border-t border-gray-300 dark:border-gray-600 bg-ds-background-200 dark:bg-gray-100 text-xs text-gray-600 dark:text-gray-800"
+      className="sticky bottom-0 z-20 -mx-3 px-3 flex items-center justify-between h-10 border-t border-gray-300 dark:border-gray-600 bg-ds-background-200 dark:bg-gray-100 text-xs text-gray-600 dark:text-gray-800"
     >
       <span>
         {`${count} ${count === 1 ? "result" : "results"}`}
@@ -133,110 +133,112 @@ export function DataTable<T>({
     totalPages,
   } = table;
 
+  const hasToolbar = filterConfigs.length > 0 || extraFilters || actions;
+
   return (
     <>
-      {/* Sticky header: title + filters + actions */}
-      <div className="sticky top-0 z-20 -mx-3 px-3 pt-3 flex items-center gap-2 pb-3 mb-3 border-b border-gray-300 dark:border-gray-600 bg-ds-background-200 dark:bg-gray-100">
-        <h1 className="text-sm font-semibold text-gray-950 dark:text-white w-[120px] shrink-0">{title}</h1>
-        <div className="flex items-center gap-1">
-          {filterConfigs.map((config) => (
-            <FilterPillFromConfig
-              key={config.key}
-              config={config}
-              value={filterValues[config.key] || ""}
-              inputValue={inputValues[config.key] || ""}
-              isOpen={openFilter === config.key}
-              onToggle={() => {
-                const v = filterValues[config.key];
-                if (v) {
-                  clearFilter(config.key);
-                } else {
-                  toggleFilter(config.key);
-                }
-              }}
-              onApplyText={() => applyTextFilter(config.key)}
-              onApplySelect={(value) => applySelectFilter(config.key, value)}
-              onSetInput={(value) => setInput(config.key, value)}
-            />
-          ))}
-          {extraFilters}
-        </div>
-
-        <div className="flex-1" />
-
-        {actions}
+      {/* Row 1: Title */}
+      <div className="sticky top-0 z-20 -mx-3 px-3 flex items-center justify-center h-[60px] border-b border-gray-300 dark:border-gray-600 bg-ds-background-200 dark:bg-gray-100">
+        <h1 className="text-sm font-semibold text-gray-950 dark:text-white">{title}</h1>
       </div>
+
+      {/* Row 2: Filters + Actions */}
+      {hasToolbar && (
+        <div className="sticky top-[60px] z-20 -mx-3 px-3 flex items-center gap-2 h-[60px] border-b border-gray-300 dark:border-gray-600 bg-ds-background-200 dark:bg-gray-100">
+          <div className="flex items-center gap-1">
+            {filterConfigs.map((config) => (
+              <FilterPillFromConfig
+                key={config.key}
+                config={config}
+                value={filterValues[config.key] || ""}
+                inputValue={inputValues[config.key] || ""}
+                isOpen={openFilter === config.key}
+                onToggle={() => {
+                  const v = filterValues[config.key];
+                  if (v) {
+                    clearFilter(config.key);
+                  } else {
+                    toggleFilter(config.key);
+                  }
+                }}
+                onApplyText={() => applyTextFilter(config.key)}
+                onApplySelect={(value) => applySelectFilter(config.key, value)}
+                onSetInput={(value) => setInput(config.key, value)}
+              />
+            ))}
+            {extraFilters}
+          </div>
+
+          <div className="flex-1" />
+
+          {actions}
+        </div>
+      )}
 
       {/* Table */}
       {filtered.length === 0 ? (
-        <Card className="shadow-none">
-          <CardContent className="py-12 text-center">
-            <p className="text-gray-600 dark:text-gray-800">
-              {data.length === 0 ? emptyMessage : filteredEmptyMessage}
-            </p>
-          </CardContent>
-        </Card>
+        <div className="-mx-3 py-12 text-center">
+          <p className="text-gray-600 dark:text-gray-800">
+            {data.length === 0 ? emptyMessage : filteredEmptyMessage}
+          </p>
+        </div>
       ) : (
-        <Card className="shadow-none overflow-hidden">
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full table-fixed border-collapse">
-                <thead className="border-b border-gray-200 dark:border-gray-700 bg-ds-background-200 dark:bg-gray-100">
-                  <tr className="text-left">
-                    {columns.map((col) => (
-                      <th
-                        key={col.key}
-                        scope="col"
-                        className={`px-3 h-[42px] align-middle font-medium text-sm text-gray-800 dark:text-gray-800 ${
-                          col.align === "right" ? "text-right" : ""
-                        } ${col.headerClassName || ""}`}
-                      >
-                        {col.label}
-                      </th>
-                    ))}
-                    {rowActions && (
-                      <th scope="col" className="sticky right-0 z-10 w-[42px] min-w-[42px] shrink-0 bg-ds-background-200 dark:bg-gray-100 px-0" style={{ height: 42 }} />
-                    )}
-                  </tr>
-                </thead>
-                <tbody className="[&>tr]:border-b [&>tr]:border-gray-200 dark:[&>tr]:border-gray-700 [&>tr:last-child]:border-b-0">
-                  {paginated.map((item) => (
-                    <tr
-                      key={keyExtractor(item)}
-                      className={`!h-[42px] ${rowActions ? "group" : ""} ${onRowClick ? "cursor-pointer" : ""}`}
-                      style={{ height: 42, minHeight: 42, maxHeight: 42 }}
-                      onClick={onRowClick ? () => onRowClick(item) : undefined}
+        <div className="-mx-3 overflow-x-auto bg-white dark:bg-gray-100">
+          <table className="w-full table-fixed border-collapse">
+            <thead className="border-b border-gray-200 dark:border-gray-700 bg-ds-background-200 dark:bg-gray-100">
+              <tr className="text-left">
+                {columns.map((col) => (
+                  <th
+                    key={col.key}
+                    scope="col"
+                    className={`px-3 h-[42px] align-middle font-medium text-sm text-gray-800 dark:text-gray-800 ${
+                      col.align === "right" ? "text-right" : ""
+                    } ${col.headerClassName || ""}`}
+                  >
+                    {col.label}
+                  </th>
+                ))}
+                {rowActions && (
+                  <th scope="col" className="sticky right-0 z-10 w-[42px] min-w-[42px] shrink-0 bg-ds-background-200 dark:bg-gray-100 px-0" style={{ height: 42 }} />
+                )}
+              </tr>
+            </thead>
+            <tbody className="[&>tr]:border-b [&>tr]:border-gray-200 dark:[&>tr]:border-gray-700 [&>tr:last-child]:border-b-0">
+              {paginated.map((item) => (
+                <tr
+                  key={keyExtractor(item)}
+                  className={`!h-[42px] ${rowActions ? "group" : ""} ${onRowClick ? "cursor-pointer" : ""}`}
+                  style={{ height: 42, minHeight: 42, maxHeight: 42 }}
+                  onClick={onRowClick ? () => onRowClick(item) : undefined}
+                >
+                  {columns.map((col) => (
+                    <td
+                      key={col.key}
+                      className={`min-w-0 py-0 px-3 text-sm leading-none align-middle overflow-hidden ${
+                        col.align === "right" ? "text-right" : ""
+                      } ${col.cellClassName || ""}`}
                     >
-                      {columns.map((col) => (
-                        <td
-                          key={col.key}
-                          className={`min-w-0 py-0 px-3 text-sm leading-none align-middle overflow-hidden ${
-                            col.align === "right" ? "text-right" : ""
-                          } ${col.cellClassName || ""}`}
-                        >
-                          <div className="min-w-0 max-h-[42px] leading-none truncate overflow-hidden">
-                            {col.render(item)}
-                          </div>
-                        </td>
-                      ))}
-                      {rowActions && (
-                        <td
-                          className="sticky right-0 z-10 w-[42px] min-w-[42px] py-0 px-0 align-middle shrink-0 bg-white dark:bg-gray-100"
-                          onClick={(e) => e.stopPropagation()}
-                          style={{ height: 42 }}
-                        >
-                          <div className="relative flex h-[42px] w-[42px] items-center justify-center">
-                            {rowActions(item)}
-                          </div>
-                        </td>
-                      )}
-                    </tr>
+                      <div className="min-w-0 max-h-[42px] leading-none truncate overflow-hidden">
+                        {col.render(item)}
+                      </div>
+                    </td>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+                  {rowActions && (
+                    <td
+                      className="sticky right-0 z-10 w-[42px] min-w-[42px] py-0 px-0 align-middle shrink-0 bg-white dark:bg-gray-100"
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ height: 42 }}
+                    >
+                      <div className="relative flex h-[42px] w-[42px] items-center justify-center">
+                        {rowActions(item)}
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {/* Sticky footer: result count + pagination */}

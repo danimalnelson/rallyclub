@@ -115,21 +115,6 @@ function getPresetRange(key: PresetKey): DateRange {
 // Pill trigger (uses MenuContext)
 // ---------------------------------------------------------------------------
 
-function PlusIcon({ active, className }: { active?: boolean; className?: string }) {
-  return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={className}>
-      <circle cx="6" cy="6" r="5.5" stroke="currentColor" strokeWidth="1" />
-      <g
-        className="transition-transform duration-300"
-        style={{ transformOrigin: "6px 6px", transform: active ? "rotate(45deg)" : "rotate(0deg)" }}
-      >
-        <path d="M6 3.5V8.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-        <path d="M3.5 6H8.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      </g>
-    </svg>
-  );
-}
-
 function DateRangeTrigger({ label, active, onClear }: { label: string | null; active: boolean; onClear: () => void }) {
   const { isOpen, toggle, triggerRef } = useMenuContext();
 
@@ -148,24 +133,27 @@ function DateRangeTrigger({ label, active, onClear }: { label: string | null; ac
       onClick={active ? onClear : toggle}
       aria-expanded={isOpen}
       aria-haspopup="dialog"
-      className={`group inline-flex items-center gap-1.5 px-2 h-6 rounded-full text-xs font-medium border transition-all duration-300 ${
+      className={`group inline-flex items-center gap-1.5 px-3 h-8 rounded-md text-sm font-medium border transition-all duration-300 ${
         showActive
           ? "bg-gray-950 text-white border-gray-950 dark:bg-white dark:text-gray-950 dark:border-white"
-          : "bg-white text-gray-900 border-gray-300 hover:border-gray-700 hover:text-gray-950 dark:bg-gray-100 dark:text-gray-800 dark:border-gray-600 dark:hover:border-gray-400 dark:hover:text-white"
+          : "bg-white text-gray-950 border-gray-300 hover:bg-[--ds-gray-100] hover:border-gray-500 dark:border-gray-600 dark:bg-gray-100 dark:text-white dark:hover:border-gray-400"
       }`}
     >
-      <span className="flex items-center justify-center w-3 h-3 shrink-0">
-        <PlusIcon
-          active={showActive}
-          className={showActive ? "" : "group-hover:text-gray-950"}
-        />
-      </span>
       <span>Date</span>
       {active && label && (
         <>
           <span className="opacity-40">|</span>
           <span className="font-semibold">{label}</span>
         </>
+      )}
+      {showActive ? (
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="shrink-0">
+          <path d="M3 3L9 9M9 3L3 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      ) : (
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="shrink-0">
+          <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       )}
     </button>
   );
