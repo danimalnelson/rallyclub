@@ -1,15 +1,22 @@
 import { prisma } from "@wine-club/db";
 import { hasPermission, type Permission, type Role } from "@/lib/permissions";
+import { checkSuperAdmin } from "@/lib/data/business";
 
 /**
  * Verifies user has access to a business and returns the business if authorized.
- * Throws error if unauthorized.
+ * Superadmins bypass the membership check entirely.
  */
 export async function requireBusinessAccess(
   userId: string,
   businessId: string,
   requiredRoles?: Role[]
 ) {
+  if (await checkSuperAdmin(userId)) {
+    const business = await prisma.business.findUnique({ where: { id: businessId } });
+    if (!business) throw new Error("Business not found");
+    return business;
+  }
+
   const businessUser = await prisma.businessUser.findUnique({
     where: {
       userId_businessId: {
@@ -26,7 +33,6 @@ export async function requireBusinessAccess(
     throw new Error("Access denied: You do not have access to this business");
   }
 
-  // Check role if specified
   if (requiredRoles && !requiredRoles.includes(businessUser.role as Role)) {
     throw new Error(
       `Access denied: This operation requires ${requiredRoles.join(" or ")} role`
@@ -38,14 +44,19 @@ export async function requireBusinessAccess(
 
 /**
  * Verifies user has a specific permission for a business.
- * Returns the business and the user's role.
- * Throws error if unauthorized.
+ * Superadmins have all permissions (effective role: OWNER).
  */
 export async function requirePermission(
   userId: string,
   businessId: string,
   permission: Permission
 ) {
+  if (await checkSuperAdmin(userId)) {
+    const business = await prisma.business.findUnique({ where: { id: businessId } });
+    if (!business) throw new Error("Business not found");
+    return { business, role: "OWNER" as Role };
+  }
+
   const businessUser = await prisma.businessUser.findUnique({
     where: {
       userId_businessId: {

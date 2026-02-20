@@ -65,10 +65,14 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Send code via email
-    if (!resend) {
-      // Dev fallback: log the code
+    const isDev = process.env.NODE_ENV === "development";
+
+    // Always log code in development so it's accessible from the terminal
+    if (isDev) {
       console.log(`[2FA] Code for ${email}: ${code}`);
+    }
+
+    if (!resend) {
       return NextResponse.json({ success: true });
     }
 
@@ -92,18 +96,23 @@ export async function POST(req: NextRequest) {
 
     if (result.error) {
       console.error("[2FA] Failed to send code email:", result.error.message);
-      return NextResponse.json(
-        { error: "Failed to send verification code" },
-        { status: 500 }
-      );
+      if (!isDev) {
+        return NextResponse.json(
+          { error: "Failed to send verification code" },
+          { status: 500 }
+        );
+      }
     }
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error("[2FA_SEND_ERROR]", error);
-    return NextResponse.json(
-      { error: "Failed to send verification code" },
-      { status: 500 }
-    );
+    if (!isDev) {
+      return NextResponse.json(
+        { error: "Failed to send verification code" },
+        { status: 500 }
+      );
+    }
+    return NextResponse.json({ success: true });
   }
 }

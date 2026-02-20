@@ -11,6 +11,7 @@ declare module "next-auth" {
     businessId?: string;
     twoFactorVerified?: boolean;
     hasPassword?: boolean;
+    isSuperAdmin?: boolean;
   }
 }
 
@@ -20,5 +21,6 @@ declare module "next-auth/jwt" {
     businessId?: string;
     twoFactorVerified?: boolean;
     hasPassword?: boolean;
+    isSuperAdmin?: boolean;
   }
 }

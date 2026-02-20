@@ -138,6 +138,7 @@ export const authOptions: NextAuthOptions = {
         session.businessId = token.businessId as string | undefined;
         session.twoFactorVerified = token.twoFactorVerified ?? false;
         session.hasPassword = token.hasPassword ?? false;
+        session.isSuperAdmin = token.isSuperAdmin ?? false;
       }
       return session;
     },
@@ -145,15 +146,14 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.sub = user.id;
         token.name = user.name;
-        // New sign-in: 2FA not yet verified
         token.twoFactorVerified = false;
 
-        // Check if user has a password set
         const dbUser = await prisma.user.findUnique({
           where: { id: user.id },
-          select: { password: true },
+          select: { password: true, isSuperAdmin: true },
         });
         token.hasPassword = !!dbUser?.password;
+        token.isSuperAdmin = dbUser?.isSuperAdmin ?? false;
       }
 
       // Allow updating via session.update()
@@ -172,13 +172,13 @@ export const authOptions: NextAuthOptions = {
         }
       }
 
-      // Load user data from DB if missing
       if (token.sub && (!token.businessId || !token.name)) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.sub },
           select: {
             name: true,
             password: true,
+            isSuperAdmin: true,
             businesses: {
               select: { businessId: true },
               orderBy: { createdAt: "asc" },
@@ -193,8 +193,8 @@ export const authOptions: NextAuthOptions = {
           if (!token.businessId && dbUser.businesses[0]) {
             token.businessId = dbUser.businesses[0].businessId;
           }
-          // Keep hasPassword in sync
           token.hasPassword = !!dbUser.password;
+          token.isSuperAdmin = dbUser.isSuperAdmin;
         }
       }
 

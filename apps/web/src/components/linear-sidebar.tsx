@@ -81,16 +81,23 @@ function WorkspaceTrigger({ business }: { business: Business }) {
 // User menu (fixed to bottom of sidebar)
 // ---------------------------------------------------------------------------
 
-function UserMenuTrigger({ label }: { label: string }) {
+function UserMenuTrigger({ name, email }: { name?: string | null; email?: string | null }) {
   const { toggle, triggerRef } = useMenuContext();
   return (
     <button
       ref={triggerRef}
       onClick={toggle}
-      className="group w-full flex items-center gap-2 px-2 h-9 rounded-md hover:bg-gray-100 transition-colors"
+      className="group w-full flex items-center gap-2 px-2 py-2 rounded-md hover:bg-gray-100 transition-colors"
     >
-      <span className="text-sm font-medium text-gray-950 truncate flex-1 text-left">{label}</span>
-      <ChevronUpDown size={14} className="text-gray-800 group-hover:text-gray-950 shrink-0" />
+      <div className="flex flex-col flex-1 min-w-0 text-left">
+        <span className="text-sm font-medium text-gray-950 truncate">{name || email}</span>
+        {name && email && (
+          <span className="text-[13px] font-normal text-gray-600 truncate">{email}</span>
+        )}
+      </div>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-gray-800 group-hover:text-gray-950 shrink-0">
+        <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
     </button>
   );
 }
@@ -301,7 +308,7 @@ export const LinearSidebar = memo(function LinearSidebar({
       {(userName || userEmail) && (
         <div className="px-3 py-3 shrink-0">
           <MenuContainer>
-            <UserMenuTrigger label={userName || userEmail || ""} />
+            <UserMenuTrigger name={userName} email={userEmail} />
             <Menu width={215} align="start">
               <MenuItem
                 href={`${basePath}/account`}

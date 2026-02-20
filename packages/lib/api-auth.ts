@@ -97,6 +97,22 @@ export async function requireBusinessAccess(
   | { business: any; error?: never }
   | { error: ReturnType<typeof ApiErrors.notFound | typeof ApiErrors.forbidden>; business?: never }
 > {
+  // Superadmins bypass the membership check
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { isSuperAdmin: true },
+  });
+
+  if (user?.isSuperAdmin) {
+    const business = await prisma.business.findUnique({
+      where: { id: businessId },
+    });
+    if (!business) {
+      return { error: ApiErrors.notFound("Business", { businessId }) };
+    }
+    return { business };
+  }
+
   const business = await prisma.business.findFirst({
     where: {
       id: businessId,
