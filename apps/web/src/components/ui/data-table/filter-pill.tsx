@@ -65,8 +65,8 @@ function FilterPillTrigger({ label, activeValue, active, onClear }: { label: str
       suffix={suffixIcon}
       className={
         showActive
-          ? "border border-gray-950 dark:border-white transition-all duration-300"
-          : "transition-all duration-300"
+          ? "font-normal border border-gray-950 dark:border-white transition-all duration-300"
+          : "font-normal transition-all duration-300"
       }
     >
       {label}

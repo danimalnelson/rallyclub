@@ -29,6 +29,8 @@ export async function POST(req: NextRequest) {
   const userId = token.sub;
   const email = token.email;
 
+  const isDev = process.env.NODE_ENV === "development";
+
   try {
     // Rate limit: max codes per hour
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
@@ -64,8 +66,6 @@ export async function POST(req: NextRequest) {
         expiresAt,
       },
     });
-
-    const isDev = process.env.NODE_ENV === "development";
 
     // Always log code in development so it's accessible from the terminal
     if (isDev) {

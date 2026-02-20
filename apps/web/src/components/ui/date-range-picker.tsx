@@ -131,8 +131,8 @@ function DateRangeTrigger({ label, active, onClear }: { label: string | null; ac
       suffix={suffixIcon}
       className={
         showActive
-          ? "border border-gray-950 dark:border-white transition-all duration-300"
-          : "transition-all duration-300"
+          ? "font-normal border border-gray-950 dark:border-white transition-all duration-300"
+          : "font-normal transition-all duration-300"
       }
     >
       Date
